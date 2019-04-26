@@ -1,25 +1,14 @@
 #ifndef FULLBODYIK_H
 #define FULLBODYIK_H
 
-#include <float.h>
-#include <hrpModel/Body.h>
-#include <hrpUtil/MatrixSolvers.h>
-#include "../ImpedanceController/JointPathEx.h"
+#include <iomanip>
+#include <hrpModel/JointPath.h>
 #include "../ImpedanceController/RatsMatrix.h"
 #include "../TorqueFilter/IIRFilter.h"
-#include <unsupported/Eigen/MatrixFunctions>
+#include "MyUtils.h"
+//#include <unsupported/Eigen/MatrixFunctions>
+//#include <hrpUtil/MatrixSolvers.h>
 
-//tips
-#define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
-#define deg2rad(x) ((x)*M_PI/180)
-#define rad2deg(rad) (rad * 180 / M_PI)
-#define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
-#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
-#define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
-namespace hrp{
-    static hrp::dvector getQAll(const hrp::BodyPtr _robot){ hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->q; } return tmp; };
-    static void setQAll(hrp::BodyPtr _robot, const hrp::dvector in){ assert(in.size() <= _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = in(i); } };
-}
 
 #define OPENHRP_PACKAGE_VERSION_320
 
@@ -52,9 +41,11 @@ class FullbodyInverseKinematicsSolver{
         std::vector<IIRFilter> am_filters;
         const double m_dt;
     public:
+        hrp::BodyPtr m_robot;
         hrp::dvector dq_weight_all, q_ref, q_ref_max_dq, q_ref_constraint_weight;
         hrp::Vector3 cur_momentum_around_COM, cur_momentum_around_COM_filtered, rootlink_rpy_llimit, rootlink_rpy_ulimit;
         FullbodyInverseKinematicsSolver (hrp::BodyPtr _robot, const std::string& _print_str, const double _dt):
+          m_robot(_robot),
           m_dt(_dt),
           WS_DOF(6),
           BASE_DOF(6),
@@ -74,16 +65,17 @@ class FullbodyInverseKinematicsSolver{
             }
         };
         ~FullbodyInverseKinematicsSolver () {};
-        bool checkIKConvergence(const hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list){
+        int numStates(){ return ALL_DOF; };
+        bool checkIKConvergence(const std::vector<IKConstraint>& _ikc_list){
             for ( int i=0; i<_ikc_list.size(); i++ ) {
-                hrp::Link* link_tgt_ptr = _robot->link(_ikc_list[i].target_link_name);
+                hrp::Link* link_tgt_ptr = m_robot->link(_ikc_list[i].target_link_name);
                 hrp::Vector3 pos_err, rot_err;
                 if(link_tgt_ptr){
                     pos_err = _ikc_list[i].targetPos - (link_tgt_ptr->p + link_tgt_ptr->R * _ikc_list[i].localPos);
                     rats::difference_rotation(rot_err, (link_tgt_ptr->R * _ikc_list[i].localR), hrp::rotFromRpy(_ikc_list[i].targetRpy));
                 }
                 else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){  // COM
-                    pos_err = _ikc_list[i].targetPos - (_robot->calcCM() + _ikc_list[i].localR * _ikc_list[i].localPos);
+                    pos_err = _ikc_list[i].targetPos - (m_robot->calcCM() + _ikc_list[i].localR * _ikc_list[i].localPos);
                     rot_err = _ikc_list[i].targetRpy - cur_momentum_around_COM;
                 }
                 else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; }
@@ -94,36 +86,36 @@ class FullbodyInverseKinematicsSolver{
             }
             return true;
         }
-        int solveFullbodyIKLoop (hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list, const int _max_iteration) {
+        int solveFullbodyIKLoop (const std::vector<IKConstraint>& _ikc_list, const int _max_iteration) {
             #ifdef OPENHRP_PACKAGE_VERSION_320
-                hrp::Vector3 base_p_old = _robot->rootLink()->p;
-                hrp::Matrix33 base_R_old = _robot->rootLink()->R;
+                hrp::Vector3 base_p_old = m_robot->rootLink()->p;
+                hrp::Matrix33 base_R_old = m_robot->rootLink()->R;
                 hrp::dvector q_old(J_DOF);
-                for(int i=0;i<J_DOF;i++){ q_old(i) = _robot->joint(i)->q; }
+                for(int i=0;i<J_DOF;i++){ q_old(i) = m_robot->joint(i)->q; }
                 unsigned int loop;
                 for(loop=0; loop < _max_iteration;){
-                    solveFullbodyIKOnce(_robot, _ikc_list);
+                    solveFullbodyIKOnce(_ikc_list);
                     //check ang moment
-                    _robot->rootLink()->v = (_robot->rootLink()->p - base_p_old)/ m_dt;
-                    _robot->rootLink()->w = base_R_old * omegaFromRotEx(base_R_old.transpose() * _robot->rootLink()->R) / m_dt;
-                    for(int i=0;i<J_DOF;i++){ _robot->joint(i)->dq = (_robot->joint(i)->q - q_old(i)) / m_dt; }
-                    _robot->calcForwardKinematics(true,false);
+                    m_robot->rootLink()->v = (m_robot->rootLink()->p - base_p_old)/ m_dt;
+                    m_robot->rootLink()->w = base_R_old * hrp::omegaFromRotEx(base_R_old.transpose() * m_robot->rootLink()->R) / m_dt;
+                    for(int i=0;i<J_DOF;i++){ m_robot->joint(i)->dq = (m_robot->joint(i)->q - q_old(i)) / m_dt; }
+                    m_robot->calcForwardKinematics(true,false);
                     hrp::Vector3 tmp_P, tmp_L;
-                    _robot->calcTotalMomentum(tmp_P, tmp_L);//calcTotalMomentumは漸化的にWorld周りの並進＋回転運動量を出す
-                    cur_momentum_around_COM = tmp_L - _robot->calcCM().cross(tmp_P);
-//                    _robot->calcTotalMomentumFromJacobian(tmp_P, cur_momentum_around_COM);//calcTotalMomentumFromJacobianは重心ヤコビアンと重心周り角運動量ヤコビアンを用いて重心周りの並進＋回転運動量を出す
+                    m_robot->calcTotalMomentum(tmp_P, tmp_L);//calcTotalMomentumは漸化的にWorld周りの並進＋回転運動量を出す
+                    cur_momentum_around_COM = tmp_L - m_robot->calcCM().cross(tmp_P);
+//                    m_robot->calcTotalMomentumFromJacobian(tmp_P, cur_momentum_around_COM);//calcTotalMomentumFromJacobianは重心ヤコビアンと重心周り角運動量ヤコビアンを用いて重心周りの並進＋回転運動量を出す
                     for(int i=0; i<3; i++){
                         cur_momentum_around_COM_filtered(i) = am_filters[i].passFilter(cur_momentum_around_COM(i));
                     }
                     loop++;
-                    if(checkIKConvergence(_robot, _ikc_list)){ break; }
+                    if(checkIKConvergence(_ikc_list)){ break; }
                 }
                 return loop;
             #else
                 std::cerr<<"solveFullbodyIKLoop() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl; return -1;
             #endif
         }
-        void solveFullbodyIKOnce(hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list){
+        void solveFullbodyIKOnce(const std::vector<IKConstraint>& _ikc_list){
             #ifdef OPENHRP_PACKAGE_VERSION_320
                 // count all constraint DOF and allocate Jacobian and vectors
                 int C_DOF = 0; // constraint DOF
@@ -136,27 +128,29 @@ class FullbodyInverseKinematicsSolver{
                 // set end effector constraint into Jacobian
                 int cur_cid_all = 0; //current constraint index of all constraints
                 for ( int i=0; i<_ikc_list.size(); i++ ) {
-                    hrp::Link* link_tgt_ptr = _robot->link(_ikc_list[i].target_link_name);
+                    hrp::Link* link_tgt_ptr = m_robot->link(_ikc_list[i].target_link_name);
                     hrp::dmatrix J_part = hrp::dmatrix::Zero(WS_DOF, ALL_DOF); //全身to拘束点へのヤコビアン
                     hrp::dvector6 dp_part; //pos + rot 速度ではなく差分
                     if(link_tgt_ptr){//ベースリンク，通常リンク共通
                         hrp::Vector3 tgt_cur_pos = link_tgt_ptr->p + link_tgt_ptr->R * _ikc_list[i].localPos;
                         hrp::Matrix33 tgt_cur_rot = link_tgt_ptr->R * _ikc_list[i].localR;
                         dp_part.head(3) =  _ikc_list[i].targetPos - tgt_cur_pos;
-                        dp_part.tail(3) = tgt_cur_rot * omegaFromRotEx(tgt_cur_rot.transpose() * hrp::rotFromRpy(_ikc_list[i].targetRpy));
-                        hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+                        dp_part.tail(3) = tgt_cur_rot * hrp::omegaFromRotEx(tgt_cur_rot.transpose() * hrp::rotFromRpy(_ikc_list[i].targetRpy));
+//                        hrp::JointPathEx tgt_jpath(m_robot, m_robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+                        hrp::JointPath tgt_jpath(m_robot->rootLink(), link_tgt_ptr);
                         hrp::dmatrix J_jpath;
                         tgt_jpath.calcJacobian(J_jpath, _ikc_list[i].localPos);
                         for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ J_part.col(tgt_jpath.joint(id_in_jpath)->jointId) = J_jpath.col(id_in_jpath); } //ジョイントパスのJacobianを全身用に並び替え
                         J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
-                        J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
+                        J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - m_robot->rootLink()->p);
                     }else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){ //重心限定
-                        dp_part.head(3) = _ikc_list[i].targetPos - _robot->calcCM();
+                        dp_part.head(3) = _ikc_list[i].targetPos - m_robot->calcCM();
 //                        dp_part.tail(3) = (_ikc_list[i].targetRpy - cur_momentum_around_COM) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける
                         dp_part.tail(3) = (_ikc_list[i].targetRpy - cur_momentum_around_COM_filtered) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける(+フィルタ)
-                        _robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
-                        _robot->calcAngularMomentumJacobian(NULL, J_am);//world座標系での角運動量を生成するヤコビアン(なので本当はCOM周りには使えない)
+                        m_robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
+                        m_robot->calcAngularMomentumJacobian(NULL, J_am);//world座標系での角運動量を生成するヤコビアン(なので本当はCOM周りには使えない)
                         J_part << J_com, J_am;
+
                     }else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
                     for(int cid=0; cid<WS_DOF; cid++){
                         if(_ikc_list[i].constraint_weight(cid) > 0.0){
@@ -172,7 +166,7 @@ class FullbodyInverseKinematicsSolver{
                 for(int qid=0; qid<ALL_DOF; qid++){
                     if(q_ref_constraint_weight(qid) > 0.0){
                         J_all.row(cur_cid_all)(qid) = 1;
-                        err_all(cur_cid_all) = (qid < J_DOF) ? (q_ref(qid) - _robot->joint(qid)->q) : (q_ref(qid) - hrp::rpyFromRot(_robot->rootLink()->R)(qid-J_DOF));
+                        err_all(cur_cid_all) = (qid < J_DOF) ? (q_ref(qid) - m_robot->joint(qid)->q) : (q_ref(qid) - hrp::rpyFromRot(m_robot->rootLink()->R)(qid-J_DOF));
                         LIMIT_MINMAX(err_all(cur_cid_all), -q_ref_max_dq(qid), q_ref_max_dq(qid));
                         constraint_weight_all(cur_cid_all) = q_ref_constraint_weight(qid);
                         cur_cid_all++;
@@ -182,9 +176,9 @@ class FullbodyInverseKinematicsSolver{
                 // joint limit avoidance (copy from JointPathEx)
                 hrp::dvector dq_weight_all_jlim = hrp::dvector::Ones(ALL_DOF);
                 for ( int j = 0; j < ALL_DOF ; j++ ) {
-                    double jang = (j<J_DOF) ? _robot->joint(j)->q       :   hrp::rpyFromRot(_robot->rootLink()->R)(j - J_DOF);
-                    double jmax = (j<J_DOF) ? _robot->joint(j)->ulimit  :   rootlink_rpy_ulimit(j - J_DOF);
-                    double jmin = (j<J_DOF) ? _robot->joint(j)->llimit  :   rootlink_rpy_llimit(j - J_DOF);
+                    double jang = (j<J_DOF) ? m_robot->joint(j)->q       :   hrp::rpyFromRot(m_robot->rootLink()->R)(j - J_DOF);
+                    double jmax = (j<J_DOF) ? m_robot->joint(j)->ulimit  :   rootlink_rpy_ulimit(j - J_DOF);
+                    double jmin = (j<J_DOF) ? m_robot->joint(j)->llimit  :   rootlink_rpy_llimit(j - J_DOF);
                     double e = deg2rad(1);
                     if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
                     } else if ( eps_eq(jang, jmax,e) ) {
@@ -218,18 +212,19 @@ class FullbodyInverseKinematicsSolver{
                 // debug print
                 static int count;
                 if(count++ % 10000 == 0){
+//                if(true){
                     std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
                     std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
 //                    dbgn(selection_mat);
                     dbgn(H);
-//                    dbg(Wn(0,0));
+                    dbgn(Wn);
                     dbg(g.transpose());
                     dbg(err_all.transpose());
                     dbg(dq_all.transpose());
                     dbg(constraint_weight_all.transpose());
 //                    dbg(dq_weight_all_inv.transpose());
                     std::cout<<"q_ans_all\n";
-                    for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
+                    for(int i=0;i<m_robot->numJoints();i++)std::cerr<<m_robot->joint(i)->q<<" ";
 
                     for(int i=0;i<_ikc_list.size();i++){
                         dbg(_ikc_list[i].target_link_name);
@@ -240,57 +235,39 @@ class FullbodyInverseKinematicsSolver{
                 }
 
                 // update joint angles
-                for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"ERROR nan/inf is found" << std::endl; return;} }
+                for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"[FullbodyIK] ERROR nan/inf is found" << std::endl; return;} }
                 for(int i=0;i<J_DOF;i++){
-                    _robot->joint(i)->q += dq_all(i);
-                    LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit);
+                    m_robot->joint(i)->q += dq_all(i);
+                    LIMIT_MINMAX(m_robot->joint(i)->q, m_robot->joint(i)->llimit, m_robot->joint(i)->ulimit);
                 }
 
                 // update rootlink pos rot
-                _robot->rootLink()->p += dq_all.tail(6).head(3);
+                m_robot->rootLink()->p += dq_all.tail(6).head(3);
                 for(int i=0;i<3;i++){
-                    if(hrp::rpyFromRot(_robot->rootLink()->R)(i) < rootlink_rpy_llimit(i) && dq_all.tail(6).tail(3)(i) < 0) dq_all.tail(6).tail(3)(i) = 0;
-                    if(hrp::rpyFromRot(_robot->rootLink()->R)(i) > rootlink_rpy_ulimit(i) && dq_all.tail(6).tail(3)(i) > 0) dq_all.tail(6).tail(3)(i) = 0;
+                    if(hrp::rpyFromRot(m_robot->rootLink()->R)(i) < rootlink_rpy_llimit(i) && dq_all.tail(6).tail(3)(i) < 0) dq_all.tail(6).tail(3)(i) = 0;
+                    if(hrp::rpyFromRot(m_robot->rootLink()->R)(i) > rootlink_rpy_ulimit(i) && dq_all.tail(6).tail(3)(i) > 0) dq_all.tail(6).tail(3)(i) = 0;
                 }
 
 
                 hrp::Matrix33 dR;
                 hrp::Vector3 omega = dq_all.tail(6).tail(3);
                 hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
-                if(!(_robot->rootLink()->R * dR).isUnitary()){
+                if(!(m_robot->rootLink()->R * dR).isUnitary()){
                     std::cerr <<"ERROR R_base_ans is not Unitary" << std::endl; return;
                 }else{
-                    _robot->rootLink()->R = _robot->rootLink()->R * dR;
+                    m_robot->rootLink()->R = m_robot->rootLink()->R * dR;
                 }
-                _robot->calcForwardKinematics();
+                m_robot->calcForwardKinematics();
             #else
                 std::cerr<<"solveFullbodyIKOnce() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl;
             #endif
         }
 //        void revertRobotStateToCurrentAll (){
 //            hrp::setQAll(m_robot, qorg);
-//            m_robot->rootLink()->p = current_root_p;
-//            m_robot->rootLink()->R = current_root_R;
-//            m_robot->calcForwardKinematics();
+//            mm_robot->rootLink()->p = current_root_p;
+//            mm_robot->rootLink()->R = current_root_R;
+//            mm_robot->calcForwardKinematics();
 //        };
-
-    protected:
-        hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp
-            using ::std::numeric_limits;
-            double alpha = (r(0,0) + r(1,1) + r(2,2) - 1.0) / 2.0;
-            if(fabs(alpha - 1.0) < 1.0e-12) {   //th=0,2PI;
-                return hrp::Vector3::Zero();
-            } else {
-                double th = acos(alpha);
-                double s = sin(th);
-                if (s < numeric_limits<double>::epsilon()) {   //th=PI
-                    return hrp::Vector3( sqrt((r(0,0)+1)*0.5)*th, sqrt((r(1,1)+1)*0.5)*th, sqrt((r(2,2)+1)*0.5)*th );
-                }
-                double k = -0.5 * th / s;
-                return hrp::Vector3( (r(1,2) - r(2,1)) * k, (r(2,0) - r(0,2)) * k, (r(0,1) - r(1,0)) * k );
-            }
-        }
 };
 
 #endif //  FULLBODYIK_H
-

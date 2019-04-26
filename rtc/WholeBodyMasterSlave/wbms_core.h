@@ -1,24 +1,16 @@
 #ifndef WBMS_CORE_H
 #define WBMS_CORE_H
-#include <rtm/idl/BasicDataType.hh>
-#include <rtm/idl/ExtendedDataTypes.hh>
-#include <rtm/Manager.h>
-#include <rtm/DataFlowComponentBase.h>
-#include <rtm/CorbaPort.h>
-#include <rtm/DataInPort.h>
-#include <rtm/DataOutPort.h>
-#include <rtm/idl/BasicDataTypeSkel.h>
-#include <rtm/idl/ExtendedDataTypesSkel.h>
+
 #include "interpolator.h"
-#include "../TorqueFilter/IIRFilter.h"
-#include <hrpModel/Body.h>
+#include <hrpUtil/Eigen4d.h>
+#include <hrpCollision/DistFuncs.h>
+#include "../ImpedanceController/JointPathEx.h"
+#include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
+// geometory
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
-#include <hrpUtil/Eigen4d.h>
-#include <numeric>
-#include <hrpCollision/DistFuncs.h>
-
+// geometory
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -36,40 +28,9 @@ extern "C" {
 }
 #endif
 
-#include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
-#define USE_NEW_FIK
-
 #define DEBUG 0
-#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
-#define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
-#define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
-#define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
-#define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
-#define SGN(x) ((x)>=0 ? 1 : -1)
-#define RTCOUT std::cerr << "[" << m_profile.instance_name << "] "
 
-class UTIL_CONST{
-    public:
-        enum { com, rf, lf, rh, lh, head, zmp, num_pose_tgt };
-        enum { num_ee_tgt=4 };
-        enum { R, L, LR };
-        enum { X, Y, Z, XYZ };
-        enum { XY = 2 };
-        enum { r, p, y, rpy };
-        enum { fx, fy, fz, tx, ty, tz, ft_xyz };
-        enum { MIN, MAX, MINMAX };
-        double G, D2R, INFMIN, INFMAX, Q_BUTTERWORTH, Q_NOOVERSHOOT;
-        UTIL_CONST() :
-            G(9.80665),
-            D2R( M_PI/180.0),
-            Q_BUTTERWORTH(0.707106781),
-            Q_NOOVERSHOOT(0.5),
-            INFMIN( - std::numeric_limits<double>::max()),
-            INFMAX( + std::numeric_limits<double>::max())
-        {};
-};
-
-class BiquadIIRFilterVec : UTIL_CONST {
+class BiquadIIRFilterVec{
     private:
         IIRFilter filters[XYZ];
         hrp::Vector3 ans;
@@ -77,18 +38,18 @@ class BiquadIIRFilterVec : UTIL_CONST {
         BiquadIIRFilterVec(){}
         ~BiquadIIRFilterVec(){}
         void setParameter(const hrp::Vector3& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<XYZ;i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
-        void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::Vector3(fc_in,fc_in,fc_in), HZ, Q); }//overload
-        hrp::Vector3 passFilter(const hrp::Vector3& input){ for(int i=0;i<XYZ;i++){ ans(i) = filters[i].passFilter((double)input(i)); } return ans; }
+        void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){
+            setParameter(hrp::Vector3(fc_in,fc_in,fc_in), HZ, Q);
+        }//overload
+        hrp::Vector3 passFilter(const hrp::Vector3& input){
+            for(int i=0;i<XYZ;i++){
+                ans(i) = filters[i].passFilter((double)input(i));
+            }
+            return ans;
+        }
         void reset(const hrp::Vector3& initial_input){ for(int i=0;i<XYZ;i++){ filters[i].reset((double)initial_input(i));} }
 };
 
-class WBMSPose3D{
-    public:
-        hrp::Vector3 p,rpy;
-        WBMSPose3D(){ clear(); }
-        ~WBMSPose3D(){}
-        void clear(){ p = rpy = hrp::Vector3::Zero(); }
-};
 
 class PoseTGT{
     public:
@@ -100,7 +61,7 @@ class PoseTGT{
         void clear(){ abs.clear(); offs.clear(); cnt.clear(); w=hrp::dvector6::Zero(); is_contact = go_contact = false;}
 };
 
-class HumanPose : UTIL_CONST {
+class HumanPose{
     public:
         std::vector<PoseTGT> tgt;
         HumanPose(){ tgt.resize(num_pose_tgt); }
@@ -365,7 +326,7 @@ class CapsuleCollisionChecker {
 //        }
 };
 
-class WBMSCore : UTIL_CONST {
+class WBMSCore{
     private:
         double CNT_F_TH, h2r_ratio, tgt_h2r_ratio, HZ, DT;
         struct timeval t_calc_start, t_calc_end;
@@ -374,7 +335,6 @@ class WBMSCore : UTIL_CONST {
         std::vector<hrp::Vector2> rflf_points, hull_com, hull_dcp, hull_acp;
         std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rot_filters;
         std::vector<cv::Point2f> points,cvhull;
-        //    RobotConfig rc;
         HumanPose rp_ref_out_old, hp_swap_checked;
         unsigned int loop;
         bool is_initial_loop;
@@ -385,7 +345,6 @@ class WBMSCore : UTIL_CONST {
         HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
         FILE *sr_log, *cz_log, *id_log;
         WBMSPose3D baselinkpose;
-        //    WBMSPose3D ee_contact_pose[4];
         hrp::Vector3 com_vel_old,rh_vel_old, cp_dec, cp_acc;
         std::vector<hrp::Vector3> foot_vert_act[LR], foot_vert_safe[LR], foot_vert_check[LR];
         hrp::Vector2 com_forcp_ref,com_vel_forcp_ref;
@@ -417,7 +376,6 @@ class WBMSCore : UTIL_CONST {
         hrp::Vector3 manip_sv_rot[4];
 
         hrp::Vector2 cp_acc_old;
-        //    WBMSPose3D ee_pose_old[4];
 
         WBMSCore(const double& dt){
             tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -510,13 +468,13 @@ class WBMSCore : UTIL_CONST {
                 hp_wld_raw.tgt[i].offs.rpy =  hp_wld_raw.tgt[i].abs.rpy;
             }
         }
-        void initializeRobotPoseFromHRPBody(const hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& ee_name_ikcp_map_in){
+        void initializeRobotPoseFromHRPBody(const hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& _ee_ikc_map){
             const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
             const int human_l_names[4] = {rf,lf,rh,lh};
             for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
-                if(ee_name_ikcp_map_in.count(robot_l_names[i])){
-                    rp_ref_out.tgt[human_l_names[i]].offs.p = ee_name_ikcp_map_in[robot_l_names[i]].getCurrentTargetPos(robot_in);//          fik_in->getEndEffectorPos(robot_l_names[i]);
-                    rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(ee_name_ikcp_map_in[robot_l_names[i]].getCurrentTargetRot(robot_in));
+                if(_ee_ikc_map.count(robot_l_names[i])){
+                    rp_ref_out.tgt[human_l_names[i]].offs.p = _ee_ikc_map[robot_l_names[i]].getCurrentTargetPos(robot_in);//          fik_in->getEndEffectorPos(robot_l_names[i]);
+                    rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(_ee_ikc_map[robot_l_names[i]].getCurrentTargetRot(robot_in));
                     rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
                 }
             }
@@ -535,11 +493,11 @@ class WBMSCore : UTIL_CONST {
             }
             H_cur = rp_ref_out.tgt[com].offs.p(Z) - std::min((double)rp_ref_out.tgt[rf].offs.p(Z), (double)rp_ref_out.tgt[rf].offs.p(Z));
         }
-        void initializeRequest(hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& ee_name_ikcp_map_in){
+        void initializeRequest(hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& _ee_ikc_map){
             loop = 0;
             is_initial_loop = true;
             initializeHumanPoseFromCurrentInput();
-            initializeRobotPoseFromHRPBody(robot_in, ee_name_ikcp_map_in);
+            initializeRobotPoseFromHRPBody(robot_in, _ee_ikc_map);
             rp_ref_out_old = rp_ref_vel_old = rp_ref_out;
         }
         void update(){//////////  メインループ  ////////////
@@ -558,7 +516,6 @@ class WBMSCore : UTIL_CONST {
 
             overwriteFootZFromFootLandOnCommand (rp_ref_out);
             setFootRotHorizontalIfGoLanding     (rp_ref_out);
-
             for(int i=0, l[2]={rf,lf}; i<2; i++){
                 double fheight = rp_ref_out_old.tgt[l[i]].abs.p(Z) - rp_ref_out_old.tgt[l[i]].offs.p(Z);
                 double horizontal_max_vel = 0 + fheight * 20;
@@ -566,29 +523,22 @@ class WBMSCore : UTIL_CONST {
                 double vertical_max_vel = 0 + fheight * 10;
                 LIMIT_MIN( rp_ref_out.tgt[l[i]].abs.p(Z), rp_ref_out_old.tgt[l[i]].abs.p(Z)-vertical_max_vel*DT);
             }
-
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
             com_forcp_ref = rp_ref_out.tgt[com].abs.p.head(XY);
-//            Vector3ToVector2(rp_ref_out.tgt[com].abs.p,com_forcp_ref);
             static hrp::Vector2 com_forcp_ref_old;
             com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
             com_forcp_ref_old = com_forcp_ref;
-
             applyLPFilter_pre                       (rp_ref_out);
             applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
-            //      surpressGoContactChattering         (rp_ref_out);
-            //      setFootContactPoseByGoContact       (rp_ref_out);
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
             applyLPFilter_post                       (rp_ref_out);
-
             r_zmp_raw = rp_ref_out.tgt[zmp].abs.p;
             applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
             if(DEBUG){
                 fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.tgt[zmp].abs.p(X),rp_ref_out.tgt[zmp].abs.p(Y));
                 fprintf(cz_log,"\n");
             }
-
             //      overwriteFootZFromFootLandOnCommand (rp_ref_out);
             modifyFootRotAndXYForContact        (rp_ref_out);
 
@@ -600,30 +550,6 @@ class WBMSCore : UTIL_CONST {
             is_initial_loop = false;
             gettimeofday(&t_calc_end, NULL);
         }
-        static void Point3DToVector3(const RTC::Point3D& in, hrp::Vector3& out){ out << in.x, in.y, in.z;}
-        static void Oriantation3DToVector3(const RTC::Orientation3D& in, hrp::Vector3& out){ out << in.r, in.p, in.y;}
-        static void Vector3ToPoint3D(const hrp::Vector3& in, RTC::Point3D& out){ out.x = in(X); out.y = in(Y); out.z = in(Z);}
-        static void Vector3ToOriantation3D(const hrp::Vector3& in, RTC::Orientation3D& out){ out.r = in(X); out.p = in(Y); out.y = in(Z);}
-        static void Pose3DToWBMSPose3D(const RTC::Pose3D& in, WBMSPose3D& out){ Point3DToVector3(in.position, out.p); Oriantation3DToVector3(in.orientation, out.rpy); }
-        static void WBMSPose3DToPose3D(const WBMSPose3D& in, RTC::Pose3D& out){ Vector3ToPoint3D(in.p, out.position); Vector3ToOriantation3D(in.rpy, out.orientation); }
-//        static void DoubleSeqToVector6(const RTC::TimedDoubleSeq::_data_seq& in, hrp::dvector6& out){
-//            if(in.length() == 6){out(fx)=in[0]; out(fy)=in[1]; out(fz)=in[2]; out(tz)=in[3]; out(ty)=in[4]; out(tz)=in[5];
-//            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; out = hrp::dvector6::Zero(); }
-//        }
-//        static void Vector6ToDoubleSeq(const hrp::dvector6& in, RTC::TimedDoubleSeq::_data_seq& out){
-//            if(out.length() == 6){out[0]=in(fx); out[1]=in(fy); out[2]=in(fz); out[3]=in(tx); out[4]=in(ty); out[5]=in(tz);
-//            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; }
-//        }
-        static void WrenchToVector6(const OpenHRP::Wrench& in, hrp::dvector6& out){
-          out.head(3) << in.force.x, in.force.y, in.force.z;
-          out.tail(3) << in.torque.x, in.torque.y, in.torque.z;
-        }
-        static void Vector6ToWrench(const hrp::dvector6& in, OpenHRP::Wrench& out){
-            out.force.x = in(0);            out.force.y = in(1);            out.force.z = in(2);
-            out.torque.x = in(3);            out.torque.y = in(4);            out.torque.z = in(5);
-        }
-        static double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(X)*b(Y)-a(Y)*b(X); }
-
 
     private:
         void updateParams(){
@@ -686,7 +612,7 @@ class WBMSCore : UTIL_CONST {
         void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
             if((pos_tgt - pos_cur).norm() > 1e-6){
                 for(int i=0;i<3;i++){
-                    double stop_safe_vel = SGN(pos_tgt(i) - pos_cur(i)) * sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
+                    double stop_safe_vel = sgn(pos_tgt(i) - pos_cur(i)) * sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
                     double vel_ans;
                     if(vel_cur(i) > stop_safe_vel){
                         vel_ans = vel_cur(i) - max_acc * DT;
@@ -715,7 +641,7 @@ class WBMSCore : UTIL_CONST {
             }
         }
         void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
-            hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
+            hrp::Vector3 direc( sgn(pos_tgt(X)-pos_cur(X)), sgn(pos_tgt(Y)-pos_cur(Y)), sgn(pos_tgt(Z)-pos_cur(Z)));
             hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
             for(int i=0;i<XYZ;i++){
                 double stop_safe_vel = sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
@@ -729,8 +655,6 @@ class WBMSCore : UTIL_CONST {
         }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
             hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);//TODO implement
-            //      hrp::Vector2 rf2zmp = hrp::Vector2(old.tgt[zmp].abs.p(X),old.tgt[zmp].abs.p(Y)) - hrp::Vector2(old.tgt[rf].abs.p(X),old.tgt[rf].abs.p(Y));
-            //      hrp::Vector2 lf2zmp = hrp::Vector2(old.tgt[zmp].abs.p(X),old.tgt[zmp].abs.p(Y)) - hrp::Vector2(old.tgt[lf].abs.p(X),old.tgt[lf].abs.p(Y));
             hrp::Vector2 rf2zmp = act_rs.zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
             hrp::Vector2 lf2zmp = act_rs.zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
             if( inside_vec_rf.dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }
@@ -738,7 +662,6 @@ class WBMSCore : UTIL_CONST {
         }
         void limitEEWorkspace(HumanPose& out){
             const double MAX_FW = 0.25;
-            //      const double MAX_FW = 1000000;//manipulability test
             const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
 
             for(int i=0, spl[LR]={rf,lf}, swl[LR]={lf,rf}; i<LR; i++){
@@ -1059,11 +982,11 @@ class WBMSCore : UTIL_CONST {
                 int i_nxt = (i!=hull.size()-1 ? i+1 : 0);
                 hrp::Vector2 cur_pt = hull[i], nxt_pt = hull[i_nxt];
                 hrp::Vector2 cur_edge = nxt_pt - cur_pt;
-                double dBunbo = hrpVector2Cross(anchor_vec,cur_edge);
+                double dBunbo = hrp::hrpVector2Cross(anchor_vec,cur_edge);
                 if( dBunbo != 0.0) {//平行の場合を外す
                     hrp::Vector2 vectorAC = hrp::Vector2(hull[i](0),hull[i](1)) - pt_in_start;
-                    double dR = hrpVector2Cross(vectorAC,cur_edge) / dBunbo;
-                    double dS = hrpVector2Cross(vectorAC,anchor_vec) / dBunbo;
+                    double dR = hrp::hrpVector2Cross(vectorAC,cur_edge) / dBunbo;
+                    double dS = hrp::hrpVector2Cross(vectorAC,anchor_vec) / dBunbo;
                     if(dR > 1e-9 && dS >= 0.0 && dS <= 1.0){//dRには数値誤差が乗る
                         pt_will_cross = pt_in_start + dR * anchor_vec;
                         //dist = dR * anchor_vec.norm();
