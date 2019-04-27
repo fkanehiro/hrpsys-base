@@ -708,7 +708,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr _robot, hrp::Body
 
 
     hrp::dvector estimated_times_from_vel_limit = (hrp::getRobotStateVec(_robot) - hrp::getRobotStateVec(_robot_safe)).array().abs() / avg_q_vel.array();
-    hrp::dvector estimated_times_from_acc_limit = ans_state_vel.array() / avg_q_acc.array();
+    hrp::dvector estimated_times_from_acc_limit = ans_state_vel.array().abs() / avg_q_acc.array();
     double longest_estimated_time_from_vel_limit = estimated_times_from_vel_limit.maxCoeff();
     double longest_estimated_time_from_acc_limit = estimated_times_from_acc_limit.maxCoeff();
     goal_time = hrp::Vector3(longest_estimated_time_from_vel_limit, longest_estimated_time_from_acc_limit, min_goal_time_offset).maxCoeff();
