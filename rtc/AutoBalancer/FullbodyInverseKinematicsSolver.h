@@ -35,7 +35,7 @@ class IKConstraint {
 
 class FullbodyInverseKinematicsSolver{
     protected:
-        hrp::dmatrix J_all, J_all_inv, J_com, J_am;
+        hrp::dmatrix J_all, J_com, J_am;
         hrp::dvector dq_all, err_all, constraint_weight_all, jlim_avoid_weight_old;
         const int WS_DOF, BASE_DOF, J_DOF, ALL_DOF;
         std::vector<IIRFilter> am_filters;
@@ -117,7 +117,7 @@ class FullbodyInverseKinematicsSolver{
         }
         void solveFullbodyIKOnce(const std::vector<IKConstraint>& _ikc_list){
             #ifdef OPENHRP_PACKAGE_VERSION_320
-                // count all valid constraint DOF and allocate Jacobian and vectors
+                // count up all valid constraint DOF and allocate Jacobian and vectors
                 int C_DOF = 0; // constraint DOF
                 for (int i=0;i<_ikc_list.size();i++){ C_DOF += (_ikc_list[i].constraint_weight.array()>0.0).count(); }
                 C_DOF += (q_ref_constraint_weight.array()>0.0).count();
@@ -155,7 +155,7 @@ class FullbodyInverseKinematicsSolver{
                         if(_ikc_list[i].constraint_weight(cid) > 0.0){
                             J_all.row(cur_cid_all) = J_part.row(cid);
 
-                            LIMIT_MINMAX(dp_part(cid), -0.1,0.1);
+LIMIT_MINMAX(dp_part(cid), -0.1,0.1);
 
                             err_all(cur_cid_all) = dp_part(cid);
                             constraint_weight_all(cur_cid_all) = _ikc_list[i].constraint_weight(cid);
@@ -200,12 +200,39 @@ class FullbodyInverseKinematicsSolver{
                     }
                     jlim_avoid_weight_old(j) = jlim_avoid_weight;
                 }
+
                 hrp::dvector dq_weight_all_final = dq_weight_all.array() * dq_weight_all_jlim.array();
+
+
+
+
+
+                hrp::ivector selection_vec = hrp::ivector::Zero(ALL_DOF);
+                selection_vec.head(31).fill(1);
+                selection_vec(6) = 0;
+                selection_vec(7) = 0;
+                selection_vec.tail(6).fill(1);
+
+                const int USE_Q_NUM = (selection_vec.array() == 1).count();
+                hrp::dmatrix selection_mat = hrp::to_SelectionMat(selection_vec);
+
+
+
+
+
 
                 // Solvability-unconcerned Inverse Kinematics by Levenberg-Marquardt Method [sugihara:RSJ2009]
                 const double wn_const = 1e-6;
                 hrp::dmatrix Wn = (static_cast<double>(err_all.transpose() * constraint_weight_all.asDiagonal() * err_all) + wn_const) * hrp::dmatrix::Identity(ALL_DOF, ALL_DOF);
                 Wn = dq_weight_all_final.asDiagonal() * Wn;
+
+
+
+//                dq_weight_all_final = selection_mat * dq_weight_all_final;
+                J_all = J_all * selection_mat.transpose();
+                Wn = selection_mat * Wn * selection_mat.transpose();
+
+
                 hrp::dmatrix H = J_all.transpose() * constraint_weight_all.asDiagonal() * J_all + Wn;
                 hrp::dvector g = J_all.transpose() * constraint_weight_all.asDiagonal() * err_all;
                 dq_all = H.ldlt().solve(g); // dq_all = H.inverse() * g; is slow
@@ -216,30 +243,44 @@ class FullbodyInverseKinematicsSolver{
                 if(count++ % 10000 == 0){
 //                if(true){
                     std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
-                    std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
-//                    dbgn(selection_mat);
+                    dbg(J_all.rows());
+                    dbg(J_all.cols());
+                    dbgn(selection_mat);
+                    dbg(selection_mat.rows());
+                    dbg(selection_mat.cols());
                     dbgn(H);
+                    dbg(H.rows());
+                    dbg(H.cols());
                     dbgn(Wn);
+                    dbg(Wn.rows());
+                    dbg(Wn.cols());
                     dbg(g.transpose());
+                    dbg(g.rows());
+                    dbg(g.cols());
                     dbg(err_all.transpose());
+                    dbg(err_all.rows());
+                    dbg(err_all.cols());
                     dbg(dq_all.transpose());
+                    dbg(dq_all.rows());
+                    dbg(dq_all.cols());
                     dbg(constraint_weight_all.transpose());
-//                    dbg(dq_weight_all_inv.transpose());
-                    std::cout<<"q_ans_all\n";
-                    for(int i=0;i<m_robot->numJoints();i++)std::cerr<<m_robot->joint(i)->q<<" ";
-
-                    for(int i=0;i<_ikc_list.size();i++){
-                        dbg(_ikc_list[i].target_link_name);
-                        dbg(_ikc_list[i].targetPos.transpose());
-                        dbg(_ikc_list[i].targetRpy.transpose());
-                    }
+                    dbg(constraint_weight_all.rows());
+                    dbg(constraint_weight_all.cols());
+                    dbg(hrp::getRobotStateVec(m_robot).transpose());
                     std::cout<<std::endl;
                 }
 
                 // update joint angles
                 for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"[FullbodyIK] ERROR nan/inf is found" << std::endl; return;} }
+
+                dq_all = selection_mat.transpose() * dq_all;
+//                dbg(dq_all.transpose());
+//                dbg(dq_all.rows());
+//                dbg(dq_all.cols());
+
                 for(int i=0;i<J_DOF;i++){
                     m_robot->joint(i)->q += dq_all(i);
+//                    m_robot->joint(i)->q += (selection_mat.transpose() * dq_all)(i);
                     LIMIT_MINMAX(m_robot->joint(i)->q, m_robot->joint(i)->llimit, m_robot->joint(i)->ulimit);
                 }
 

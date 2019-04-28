@@ -38,28 +38,21 @@ static const double Q_BUTTERWORTH = 0.707106781;
 //inline void LIMIT_MINMAX(double& x, const double& min, const double& max){ x = (x<min  ? min : (x<max ? x : max));}
 
 
-class WBMSPose3D{
-    public:
-        hrp::Vector3 p,rpy;
-        WBMSPose3D(){ clear(); }
-        ~WBMSPose3D(){}
-        void clear(){ p = rpy = hrp::Vector3::Zero(); }
-};
-
-
 namespace hrp{
     class Pose3{
         public:
             hrp::Vector3 p;
             hrp::Matrix33 R;
+            Pose3(){}
             Pose3(const double& _X, const double& _Y, const double& _Z, const double& _r, const double& _p, const double& _y){ p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
             Pose3(const hrp::dvector6& _xyz_rpy){ p = _xyz_rpy.head(3); R = hrp::rotFromRpy(_xyz_rpy.tail(3)); }
             Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy){ p = _xyz; R = hrp::rotFromRpy(_rpy); }
             Pose3(const hrp::Vector3& _xyz, const hrp::Matrix33& _R){ p = _xyz; R = _R; }
             hrp::Vector3 rpy() const{ return hrp::rpyFromRot(R); }
+            void setRpy(const double& _r, const double& _p, const double& _y) { R = rotFromRpy(_r,_p,_y); }
+            void setRpy(const hrp::Vector3& _rpy) { R = rotFromRpy(_rpy); }
             hrp::dvector6 to_dvector6() const{ return (hrp::dvector6() << p, hrp::rpyFromRot(R)).finished(); }
-//            hrp::dvector6::SegmentReturnType p(){ return data.head(3); }
-//            hrp::dvector6::SegmentReturnType rpy(){ return data.tail(3); }
+            void reset(){ p.fill(0); R.Identity(); }
     };
 
     inline hrp::Vector3         to_Vector3      (const RTC::Point3D& in)        { return hrp::Vector3(in.x, in.y, in.z); }
@@ -98,11 +91,17 @@ namespace hrp{
             return hrp::Vector3( (r(1,2) - r(2,1)) * k, (r(2,0) - r(0,2)) * k, (r(0,1) - r(1,0)) * k );
         }
     }
-
-    inline void Pose3DToWBMSPose3D(const RTC::Pose3D& in, WBMSPose3D& out){ out.p = hrp::to_Vector3(in.position); out.rpy = hrp::to_Vector3(in.orientation); }
-    inline void WBMSPose3DToPose3D(const WBMSPose3D& in, RTC::Pose3D& out){ hrp::to_Point3D(in.p); hrp::to_Orientation3D(in.rpy); }
     inline double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(X)*b(Y)-a(Y)*b(X); }
-
+    inline hrp::dmatrix to_SelectionMat(const hrp::dvector& in) {
+        hrp::dmatrix ret( (in.array() == 1).count(), in.size() );
+        for (int row=0, col=0; col< in.size(); col++){
+            if(in(col) > 0.0){
+                ret(row, col) = 1;
+                row++;
+            }
+        }
+        return ret;
+    }
 }
 
 

@@ -221,15 +221,15 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
 
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
-        if (m_htrfwIn.isNew()){ m_htrfwIn.read(); wbms->hp_wld_raw.tgt[rf].w = hrp::to_dvector6(m_htrfw.data); }
-        if (m_htlfwIn.isNew()){ m_htlfwIn.read(); wbms->hp_wld_raw.tgt[lf].w = hrp::to_dvector6(m_htlfw.data); }
-        if (m_htcomIn.isNew()){ m_htcomIn.read(); hrp::Pose3DToWBMSPose3D(m_htcom.data,wbms->hp_wld_raw.tgt[com].abs); }
-        if (m_htrfIn.isNew()) { m_htrfIn.read();  hrp::Pose3DToWBMSPose3D(m_htrf.data,wbms->hp_wld_raw.tgt[rf].abs); }
-        if (m_htlfIn.isNew()) { m_htlfIn.read();  hrp::Pose3DToWBMSPose3D(m_htlf.data,wbms->hp_wld_raw.tgt[lf].abs); }
-        if (m_htrhIn.isNew()) { m_htrhIn.read();  hrp::Pose3DToWBMSPose3D(m_htrh.data,wbms->hp_wld_raw.tgt[rh].abs);}
-        if (m_htlhIn.isNew()) { m_htlhIn.read();  hrp::Pose3DToWBMSPose3D(m_htlh.data,wbms->hp_wld_raw.tgt[lh].abs);}
-        if (m_htheadIn.isNew()){ m_htheadIn.read(); hrp::Pose3DToWBMSPose3D(m_hthead.data,wbms->hp_wld_raw.tgt[head].abs);}
-        if (m_htzmpIn.isNew()){ m_htzmpIn.read(); wbms->hp_wld_raw.tgt[zmp].abs.p = hrp::to_Vector3(m_htzmp.data); }
+        if (m_htrfwIn.isNew())  { m_htrfwIn.read(); wbms->hp_wld_raw.tgt[rf].w      = hrp::to_dvector6(m_htrfw.data); }
+        if (m_htlfwIn.isNew())  { m_htlfwIn.read(); wbms->hp_wld_raw.tgt[lf].w      = hrp::to_dvector6(m_htlfw.data); }
+        if (m_htcomIn.isNew())  { m_htcomIn.read(); wbms->hp_wld_raw.tgt[com].abs   = hrp::to_Pose3(m_htcom.data); }
+        if (m_htrfIn.isNew())   { m_htrfIn.read();  wbms->hp_wld_raw.tgt[rf].abs    = hrp::to_Pose3(m_htrf.data); }
+        if (m_htlfIn.isNew())   { m_htlfIn.read();  wbms->hp_wld_raw.tgt[lf].abs    = hrp::to_Pose3(m_htlf.data); }
+        if (m_htrhIn.isNew())   { m_htrhIn.read();  wbms->hp_wld_raw.tgt[rh].abs    = hrp::to_Pose3(m_htrh.data);}
+        if (m_htlhIn.isNew())   { m_htlhIn.read();  wbms->hp_wld_raw.tgt[lh].abs    = hrp::to_Pose3(m_htlh.data);}
+        if (m_htheadIn.isNew()) { m_htheadIn.read();wbms->hp_wld_raw.tgt[head].abs  = hrp::to_Pose3(m_hthead.data);}
+        if (m_htzmpIn.isNew())  { m_htzmpIn.read(); wbms->hp_wld_raw.tgt[zmp].abs.p = hrp::to_Vector3(m_htzmp.data); }
     }
 
     //khi
@@ -317,7 +317,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact;
         }
         wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
-        wbms->baselinkpose.rpy = hrp::rpyFromRot(fik->m_robot->rootLink()->R);
+        wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
     }
 
     // write
@@ -449,7 +449,7 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(){
 }
 
 
-void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref){
+void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref){
     std::vector<IKConstraint> ikc_list;
     if(wbms->wp.use_lower){
         IKConstraint tmp;
@@ -457,7 +457,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
         tmp.localPos = hrp::Vector3::Zero();
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = hrp::to_Vector3(m_basePos.data);// will be ignored by selection_vec
-        tmp.targetRpy = hrp::to_Vector3(m_baseRpy.data);// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+        tmp.targetRpy = com_ref.rpy();// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
         tmp.constraint_weight << 0,0,0,1,1,1;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
@@ -468,7 +468,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
       tmp.localPos = hrp::Vector3::Zero();
       tmp.localR = hrp::Matrix33::Identity();
       tmp.targetPos = hrp::to_Vector3(m_basePos.data);// will be ignored by selection_vec
-      tmp.targetRpy = hrp::to_Vector3(m_baseRpy.data);// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+      tmp.targetRpy = com_ref.rpy();// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
       tmp.constraint_weight << 1,1,1,1,1,1;
       tmp.rot_precision = deg2rad(3);
       ikc_list.push_back(tmp);
@@ -479,7 +479,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
         tmp.localPos = ee_ikc_map["rleg"].localPos;
         tmp.localR = ee_ikc_map["rleg"].localR;
         tmp.targetPos = rf_ref.p;
-        tmp.targetRpy = rf_ref.rpy;
+        tmp.targetRpy = rf_ref.rpy();
         if(wbms->rp_ref_out.tgt[rf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(10);
         }else{
@@ -493,7 +493,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
         tmp.localPos = ee_ikc_map["lleg"].localPos;
         tmp.localR = ee_ikc_map["lleg"].localR;
         tmp.targetPos = lf_ref.p;
-        tmp.targetRpy = lf_ref.rpy;
+        tmp.targetRpy = lf_ref.rpy();
         if(wbms->rp_ref_out.tgt[lf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(10);
         }else{
@@ -512,7 +512,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
         }else{
             tmp.targetPos = rh_ref.p;
         }
-        tmp.targetRpy = rh_ref.rpy;
+        tmp.targetRpy = rh_ref.rpy();
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
@@ -527,15 +527,16 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
         }else{
             tmp.targetPos = lh_ref.p;
         }
-        tmp.targetRpy = lh_ref.rpy;
+        tmp.targetRpy = lh_ref.rpy();
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
-    }if(fik->m_robot->link("HEAD_JOINT1") != NULL){
+    }
+    if(fik->m_robot->link("HEAD_JOINT1") != NULL){
         IKConstraint tmp;
         tmp.target_link_name = "HEAD_JOINT1";
-        tmp.targetRpy = head_ref.rpy;
+        tmp.targetRpy = head_ref.rpy();
         tmp.constraint_weight << 0,0,0,0,0.1,0.1;
         tmp.rot_precision = deg2rad(1);
         ikc_list.push_back(tmp);
@@ -543,7 +544,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
     // if(robot_in->link("HEAD_P") != NULL){
     //     IKConstraint tmp;
     //     tmp.target_link_name = "HEAD_P";
-    //     tmp.targetRpy = head_ref.rpy;
+    //     tmp.targetRpy = head_ref.rpy();
     //     tmp.constraint_weight << 0,0,0,0,0.1,0.1;
     //     tmp.rot_precision = deg2rad(1);
     //     ikc_list.push_back(tmp);
@@ -612,7 +613,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
 //        tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
         tmp.constraint_weight << 10,10,0.001,0,0,0;
 //        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
-//            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
+//            tmp.constraint_weight << 10,10,1,1e-5,1e-5,0;
 //            tmp.rot_precision = 100;//angular momentum precision
 //        }else{
 //            tmp.constraint_weight << 10,10,1,0,0,0;

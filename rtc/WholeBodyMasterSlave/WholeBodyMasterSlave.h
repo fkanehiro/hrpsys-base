@@ -176,7 +176,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         ControlMode mode;
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
-        void solveFullbodyIK(const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref);
+        void solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref);
         void processTransition();
         void preProcessForWholeBodyMasterSlave();
         void processWholeBodyMasterSlave(const HumanPose& pose_ref);
