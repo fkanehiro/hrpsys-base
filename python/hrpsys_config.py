@@ -408,6 +408,8 @@ class HrpsysConfigurator(object):
                 connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
                 connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
                 connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
+                connectPorts(self.st.port("actCapturePoint"), self.wbms.port("actCapturePoint"))
+                connectPorts(self.st.port("zmp"), self.wbms.port("zmp"))
             
             connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))

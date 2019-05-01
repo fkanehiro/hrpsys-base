@@ -95,7 +95,10 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         RTC::InPort<OpenHRP::TimedWrench> m_htrfwIn;
         OpenHRP::TimedWrench m_htlfw;
         RTC::InPort<OpenHRP::TimedWrench> m_htlfwIn;
-
+        RTC::TimedPoint3D m_actCP;
+        RTC::InPort<RTC::TimedPoint3D> m_actCPIn;
+        RTC::TimedPoint3D m_actZMP;
+        RTC::InPort<RTC::TimedPoint3D> m_actZMPIn;
 #ifdef USE_DEBUG_PORT
     TimedPose3D m_htcom_dbg;
     RTC::OutPort<RTC::TimedPose3D> m_htcom_dbgOut;
@@ -174,6 +177,12 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
 
         hrp::Vector3 torso_rot_rmc;
         ControlMode mode;
+
+        hrp::Vector3 rel_act_cp;
+        hrp::Vector3 rel_act_zmp;
+        int cp_flag;
+        hrp::Vector3 lt,rt;
+        enum cp_enum{ CP_IDLE, CP_LF, CP_RF, CP_STATIC};
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
         void solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref);

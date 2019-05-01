@@ -22,6 +22,7 @@ static const double Q_BUTTERWORTH = 0.707106781;
 
 #define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 #define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
+#define dbgv(var) std::cout<<#var"= "<<(var.transpose())<<std::endl
 #define RTCOUT std::cerr << "[" << m_profile.instance_name << "] "
 
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
@@ -41,9 +42,10 @@ static const double Q_BUTTERWORTH = 0.707106781;
 namespace hrp{
     class Pose3{
         public:
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             hrp::Vector3 p;
             hrp::Matrix33 R;
-            Pose3(){}
+            Pose3(){ p.fill(0); R.setIdentity();}
             Pose3(const double& _X, const double& _Y, const double& _Z, const double& _r, const double& _p, const double& _y){ p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
             Pose3(const hrp::dvector6& _xyz_rpy){ p = _xyz_rpy.head(3); R = hrp::rotFromRpy(_xyz_rpy.tail(3)); }
             Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy){ p = _xyz; R = hrp::rotFromRpy(_rpy); }
@@ -52,7 +54,7 @@ namespace hrp{
             void setRpy(const double& _r, const double& _p, const double& _y) { R = rotFromRpy(_r,_p,_y); }
             void setRpy(const hrp::Vector3& _rpy) { R = rotFromRpy(_rpy); }
             hrp::dvector6 to_dvector6() const{ return (hrp::dvector6() << p, hrp::rpyFromRot(R)).finished(); }
-            void reset(){ p.fill(0); R.Identity(); }
+            void reset(){ p.fill(0); R.setIdentity(); }
     };
 
     inline hrp::Vector3         to_Vector3      (const RTC::Point3D& in)        { return hrp::Vector3(in.x, in.y, in.z); }
@@ -93,11 +95,13 @@ namespace hrp{
     }
     inline double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(X)*b(Y)-a(Y)*b(X); }
     inline hrp::dmatrix to_SelectionMat(const hrp::dvector& in) {
-        hrp::dmatrix ret( (in.array() == 1).count(), in.size() );
-        for (int row=0, col=0; col< in.size(); col++){
-            if(in(col) > 0.0){
-                ret(row, col) = 1;
-                row++;
+        hrp::dmatrix ret = hrp::dmatrix::Zero( (in.array() > 0.0).count(), in.size() );
+        if(ret.rows() != 0 && ret.cols() != 0){
+            for (int row=0, col=0; col< in.size(); col++){
+                if(in(col) > 0.0){
+                    ret(row, col) = 1;
+                    row++;
+                }
             }
         }
         return ret;
