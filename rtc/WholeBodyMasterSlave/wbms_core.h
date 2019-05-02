@@ -6,15 +6,26 @@
 #include <hrpCollision/DistFuncs.h>
 #include "../ImpedanceController/JointPathEx.h"
 #include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
-// geometory
+// geometry
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
+#include <opencv2/core/eigen.hpp>
+
+// geometry
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/assign/list_of.hpp>
 
 //#include<Eigen/StdVector>
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix2d)
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix3d)
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Vector3d)
+
+
+#define F(x) (x == R ? rf : lf)
+
 
 #define DEBUG 0
 
@@ -307,13 +318,11 @@ class CapsuleCollisionChecker {
 
 class WBMSCore{
     private:
-        double CNT_F_TH, h2r_ratio, tgt_h2r_ratio, HZ, DT;
+        double HZ, DT;
         struct timeval t_calc_start, t_calc_end;
         BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters, com_in_filter;
         hrp::Vector3 com_old, com_oldold, comacc, com_CP_ref_old, r_zmp_raw;
-        std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> > rflf_points, hull_com, hull_dcp, hull_acp;
         std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rpy_filters;
-        std::vector<cv::Point2f> points,cvhull;
         HumanPose rp_ref_out_old, hp_swap_checked;
         unsigned int loop;
         bool is_initial_loop;
@@ -324,19 +333,17 @@ class WBMSCore{
         HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
         FILE *sr_log, *cz_log, *id_log;
         hrp::Pose3 baselinkpose;
-        hrp::Vector3 com_vel_old,rh_vel_old, cp_dec, cp_acc;
-        std::vector<hrp::Vector3, Eigen::aligned_allocator<hrp::Vector3> > foot_vert_act[LR], foot_vert_safe[LR], foot_vert_check[LR];
+        hrp::Vector3 cp_dec, cp_acc;
+        hrp::dmatrix foot_vert3d_act[LR], foot_vert3d_check[LR]; // A = [p0 p1 p2 p3]
         hrp::Vector2 com_forcp_ref,com_vel_forcp_ref;
         hrp::dvector6 invdyn_ft;
         hrp::Vector4 foot_vert_act_fblr[LR], foot_vert_safe_fblr[LR], foot_vert_check_fblr[LR];
         struct WBMSparameters {
                 double auto_swing_foot_landing_threshold;
-                double foot_vertical_vel_limit_coeff;
-                double human_com_height;
+                double human_to_robot_ratio;
                 bool set_com_height_fix;
                 double set_com_height_fix_val;
                 double swing_foot_height_offset;
-                double swing_foot_max_height;
                 double upper_body_rmc_ratio;
                 bool use_head;
                 bool use_upper;
@@ -347,20 +354,13 @@ class WBMSCore{
                 hrp::Vector3 com, zmp;
         }act_rs;
 
-        hrp::Vector2 cp_acc_old;
-
         WBMSCore(const double& dt){
-            tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
-            //      tgt_h2r_ratio = h2r_ratio = 1.0;
             DT = dt;
             HZ = (int)(1.0/DT);
-            CNT_F_TH = 20.0;
             loop = 0;
             //////////  hrp::Vector は初期化必要  ///////////
             com_old = com_oldold = comacc = hrp::Vector3::Zero();
             r_zmp_raw = hrp::Vector3::Zero();
-            com_vel_old = hrp::Vector3::Zero();
-            rh_vel_old = hrp::Vector3::Zero();
             cp_dec = cp_acc = hrp::Vector3::Zero();
             invdyn_ft = hrp::dvector6::Zero();
             tgt_pos_filters.resize(num_pose_tgt);
@@ -378,26 +378,20 @@ class WBMSCore{
             foot_vert_act_fblr[L] << 0.13, -0.10,  0.08, -0.06;
             foot_vert_check_fblr[R] << 0.02+0.002, -0.01-0.002,  0.02+0.002,  0.01-0.002;
             foot_vert_check_fblr[L] << 0.02+0.002, -0.01-0.002, -0.01+0.002, -0.02-0.002;
-            //      foot_vert_check_fblr[R] << 0.13, -0.10,  0.06, -0.08;
-            //      foot_vert_check_fblr[L] << 0.13, -0.10,  0.08, -0.06;
             foot_vert_safe_fblr[R] << 0.02, -0.01,  0.02,  0.01;
             foot_vert_safe_fblr[L] << 0.02, -0.01, -0.01, -0.02;
             for(int i=0;i<LR;i++){
-                make_rect_verts(foot_vert_act_fblr[i], foot_vert_act[i]);
-                make_rect_verts(foot_vert_check_fblr[i], foot_vert_check[i]);
-                make_rect_verts(foot_vert_safe_fblr[i], foot_vert_safe[i]);
+                foot_vert3d_act[i]      = make_rect_3d(foot_vert_act_fblr[i]);
+                foot_vert3d_check[i]    = make_rect_3d(foot_vert_check_fblr[i]);
             }
             cp_force_go_contact[R] = false;
             cp_force_go_contact[L] = false;
 
-            //      WBMSparam.auto_swing_foot_landing_threshold = 0.02;
             wp.auto_swing_foot_landing_threshold = 0.04;
-            wp.foot_vertical_vel_limit_coeff = 4.0;
-            wp.human_com_height = 1.00;
+            wp.human_to_robot_ratio = 1.0;//human 1.1m vs jaxon 1.06m
             wp.set_com_height_fix = false;
             wp.set_com_height_fix_val = 0.02;
             wp.swing_foot_height_offset = 0.02;
-            wp.swing_foot_max_height = 0.5;
             wp.upper_body_rmc_ratio = 0.0;
             wp.use_head = true;
             wp.use_upper = true;
@@ -405,12 +399,6 @@ class WBMSCore{
             rp_ref_out_old.reset();
             rp_ref_out.reset();
             rp_ref_vel_old.reset();
-            rflf_points.reserve(8);//あらかじめreserveして高速化
-            points.reserve(8);
-            hull_com.reserve(6);
-            hull_dcp.reserve(6);
-            hull_dcp.reserve(6);
-            cvhull.reserve(6);
             if(DEBUG){
                 sr_log = fopen("/home/ishiguro/HumanSync_support_region.log","w+");
                 cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
@@ -419,12 +407,12 @@ class WBMSCore{
             is_initial_loop = true;
             cout<<"WBMSCore constructed"<<endl;
         }
-        static void make_rect_verts(const hrp::Vector4& ForwardBackLeftRight, std::vector<hrp::Vector3, Eigen::aligned_allocator<hrp::Vector3> >& out){
-            out.clear();
-            out.push_back(hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(2),  0));//左前
-            out.push_back(hrp::Vector3(ForwardBackLeftRight(1), ForwardBackLeftRight(2),  0));//左後
-            out.push_back(hrp::Vector3(ForwardBackLeftRight(1), ForwardBackLeftRight(3),  0));//右後
-            out.push_back(hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(3),  0));//右前
+        hrp::dmatrix make_rect_3d(const hrp::Vector4& ForwardBackLeftRight){
+            return (hrp::dmatrix(3,4) << // (XYZ,4)とかの#defineマクロ効かない
+                hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(2), 0),//左前
+                hrp::Vector3(ForwardBackLeftRight(1), ForwardBackLeftRight(2), 0),//左後
+                hrp::Vector3(ForwardBackLeftRight(1), ForwardBackLeftRight(3), 0),//右後
+                hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(3), 0)).finished();//右前
         }
         ~WBMSCore(){
             if(DEBUG)fclose(sr_log);
@@ -449,8 +437,6 @@ class WBMSCore{
                     rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
                 }
             }
-dbgv(rp_ref_out.tgt[rh].abs.rpy());
-dbgv(rp_ref_out.tgt[rh].offs.rpy());
             rp_ref_out.tgt[com].offs.p = act_rs.com = act_rs.zmp = robot_in->calcCM();
             com_CP_ref_old = rp_ref_out.tgt[com].offs.p;
             rp_ref_out.tgt[com].offs.R = robot_in->rootLink()->R;
@@ -475,45 +461,29 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
         }
         void update(){//////////  メインループ  ////////////
             gettimeofday(&t_calc_start, NULL);
-            updateParams                        ();
-            autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)
-            convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
+            autoLRSwapCheck                     (hp_wld_raw, hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)(動作中に入れ替わると余計なお世話かも)
+            convertHumanToRobot                 (hp_swap_checked, rp_ref_out);
             hp_plot = rp_ref_out;
-            if(wp.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + wp.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
+            if(wp.set_com_height_fix) rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + wp.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
             lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
-//            limitEEWorkspace                    (rp_ref_out);
+            limitEEWorkspace                    (rp_ref_out);
             setFootContactPoseByGoContact       (rp_ref_out);
-            if(DEBUG){ fprintf(cz_log,"com_in: %f %f ",rp_ref_out.tgt[com].abs.p(X),rp_ref_out.tgt[com].abs.p(Y)); }
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
-
+            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
             overwriteFootZFromFootLandOnCommand (rp_ref_out);
             setFootRotHorizontalIfGoLanding     (rp_ref_out);
-            for(int i=0, l[2]={rf,lf}; i<2; i++){
-                double fheight = rp_ref_out_old.tgt[l[i]].abs.p(Z) - rp_ref_out_old.tgt[l[i]].offs.p(Z);
-                double horizontal_max_vel = 0 + fheight * 20;
-                for(int j=0;j<XY;j++)LIMIT_MINMAX( rp_ref_out.tgt[l[i]].abs.p(j), rp_ref_out_old.tgt[l[i]].abs.p(j)-horizontal_max_vel*DT, rp_ref_out_old.tgt[l[i]].abs.p(j)+horizontal_max_vel*DT);
-                double vertical_max_vel = 0 + fheight * 10;
-                LIMIT_MIN( rp_ref_out.tgt[l[i]].abs.p(Z), rp_ref_out_old.tgt[l[i]].abs.p(Z)-vertical_max_vel*DT);
-            }
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
+            limitFootVelNearGround              (rp_ref_out);
+            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
             com_forcp_ref = rp_ref_out.tgt[com].abs.p.head(XY);
             static hrp::Vector2 com_forcp_ref_old;
             com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
             com_forcp_ref_old = com_forcp_ref;
-            applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
+            applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
+            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
             applyLPFilter_post                       (rp_ref_out);
             r_zmp_raw = rp_ref_out.tgt[zmp].abs.p;
             applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
-            if(DEBUG){
-                fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.tgt[zmp].abs.p(X),rp_ref_out.tgt[zmp].abs.p(Y));
-                fprintf(cz_log,"\n");
-            }
-//                  overwriteFootZFromFootLandOnCommand (rp_ref_out);
             modifyFootRotAndXYForContact        (rp_ref_out);
             H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
-            com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
-            rh_vel_old = (rp_ref_out.tgt[rh].abs.p - rp_ref_out_old.tgt[rh].abs.p)/DT;
             rp_ref_out_old = rp_ref_out;
             loop++;
             is_initial_loop = false;
@@ -521,25 +491,16 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
         }
 
     private:
-        void updateParams(){
-            updateHumanToRobotRatio(tgt_h2r_ratio);
-        }
-        void updateHumanToRobotRatio(const double h2r_r_goal){//h2r_ratioに伴って変わる変数の処理もここに書く
-            const double step = 0.001;
-            if(h2r_r_goal - h2r_ratio > step){h2r_ratio += step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
-            else if(h2r_r_goal - h2r_ratio < (-1)*step){h2r_ratio -= step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
-            else{h2r_ratio = h2r_r_goal;}
-        }
         void autoLRSwapCheck(const HumanPose& in, HumanPose& out){
             out = in;
             if(in.tgt[rh].offs.p(Y) > in.tgt[lh].offs.p(Y) ){ out.tgt[rh] = in.tgt[lh]; out.tgt[lh] = in.tgt[rh]; }
             if(in.tgt[rf].offs.p(Y) > in.tgt[lf].offs.p(Y) ){ out.tgt[rf] = in.tgt[lf]; out.tgt[lf] = in.tgt[rf]; }
         }
-        void convertRelHumanPoseToRelRobotPose(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
+        void convertHumanToRobot(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
             //      out = in;//ダメゼッタイ
             for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
-                out.tgt[l[i]].abs.p   =  h2r_ratio * (in.tgt[l[i]].abs.p - in.tgt[l[i]].offs.p)   + out.tgt[l[i]].offs.p;
-                out.tgt[l[i]].abs.R =  in.tgt[l[i]].abs.R * in.tgt[l[i]].offs.R.transpose() * out.tgt[l[i]].offs.R;
+                out.tgt[l[i]].abs.p = wp.human_to_robot_ratio * (in.tgt[l[i]].abs.p - in.tgt[l[i]].offs.p) + out.tgt[l[i]].offs.p;
+                out.tgt[l[i]].abs.R = in.tgt[l[i]].abs.R * in.tgt[l[i]].offs.R.transpose() * out.tgt[l[i]].offs.R;
             }
             for(int i=0, l[4]={rf,lf,rh,lh}; i<4; i++){
                 out.tgt[l[i]].w = in.tgt[l[i]].w;
@@ -547,36 +508,21 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             }
             out.tgt[zmp].abs = in.tgt[zmp].abs;//最近使わない
         }
-        void applyLPFilter_post(HumanPose& tgt){
-            if(is_initial_loop){
-                for(int i=0, l[1]={com}; i<1; i++){
-                    tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
-                    tgt_rpy_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy());
-                }
-            }
-            for(int i=0, l[1]={com}; i<1; i++){
-                tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
-                tgt.tgt[l[i]].abs.setRpy(tgt_rpy_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy()));
-            }
-        }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
-            hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);//TODO implement
+            hrp::Vector3 inside_vec_rf = old.tgt[rf].abs.R * hrp::Vector3(0,1,0);
+            hrp::Vector3 inside_vec_lf = old.tgt[lf].abs.R * hrp::Vector3(0,-1,0);
             hrp::Vector2 rf2zmp = act_rs.zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
             hrp::Vector2 lf2zmp = act_rs.zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
-            if( inside_vec_rf.dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }
-            if( inside_vec_lf.dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
+            if( inside_vec_rf.head(XY).dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }//2D,3D混ざって微妙
+            if( inside_vec_lf.head(XY).dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
         }
         void limitEEWorkspace(HumanPose& out){
             const double MAX_FW = 0.25;
             const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
-
-            dbgv(out.tgt[lf].abs.p);
             for(int i=0, spl[LR]={rf,lf}, swl[LR]={lf,rf}; i<LR; i++){
                 PoseTGT& support_leg = out.tgt[spl[i]];
                 PoseTGT& swing_leg = out.tgt[swl[i]];
                 hrp::Vector2 inside_vec_baserel = ( spl[i]==rf ? hrp::Vector2(0,+1) : hrp::Vector2(0,-1) );
-
-//                hrp::Vector2 sp2sw_vec( swing_leg.abs.p(X) - support_leg.cnt.p(X), swing_leg.abs.p(Y) - support_leg.cnt.p(Y) );
                 hrp::Vector2 sp2sw_vec = swing_leg.abs.p.head(XY) - support_leg.cnt.p.head(XY);
                 if(swing_leg.go_contact && sp2sw_vec.norm() > MAX_FW){ sp2sw_vec = sp2sw_vec.normalized() * MAX_FW; }//着地時に足を広げすぎないよう制限
                 Eigen::Matrix2d base_rot;
@@ -589,23 +535,13 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
                 swing_leg.abs.p.head(XY) = sp2sw_vec + support_leg.cnt.p.head(XY);
             }
             const double base2hand_min = 0.0;
-            dbgv(out.tgt[lf].abs.p);
             for(int i=0, l[2]={rh,lh}; i<2; i++){
-//                hrp::Vector2 horizontal_dist(out.tgt[l[i]].abs.p(X) - baselinkpose.p(X), out.tgt[l[i]].abs.p(Y) - baselinkpose.p(Y));
                 hrp::Vector2 horizontal_dist = out.tgt[l[i]].abs.p.head(XY) - baselinkpose.p.head(XY);
                 if(horizontal_dist.norm() < base2hand_min){
                     horizontal_dist = base2hand_min * horizontal_dist.normalized();
                 }
                 out.tgt[l[i]].abs.p.head(XY) = baselinkpose.p.head(XY) + horizontal_dist;
             }
-            dbgv(out.tgt[lf].abs.p);
-            LIMIT_MINMAX( out.tgt[com].abs.p(Z), out.tgt[com].offs.p(Z) - 0.15, out.tgt[com].offs.p(Z) + 0.03 );//COM高さ方向の制限
-            //      for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( out.tgt[com].abs.rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
-            //      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
-            //        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( out.tgt[l[i]].abs.rpy(j), rc.ee_rot_limit[l[i]][MIN](j) + out.tgt[com].abs.rpy(j), rc.ee_rot_limit[l[i]][MAX](j) + out.tgt[com].abs.rpy(j) ); }
-            //      }
-            if(!wp.use_head)out.tgt[head].abs.R = hrp::Matrix33::Identity();
-            dbgv(out.tgt[lf].abs.p);
         }
         void setFootContactPoseByGoContact(HumanPose& out){
             for(int i=0, l[LR]={rf,lf}; i<LR; i++){
@@ -619,19 +555,14 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
                 }
             }
         }
-        void setFootRotHorizontalIfGoLanding(HumanPose& out){
-            if( out.tgt[rf].go_contact){
-//                out.tgt[rf].abs.rpy(r) = out.tgt[rf].abs.rpy(p) = 0;
-                out.tgt[rf].abs.setRpy(0,0,out.tgt[rf].abs.rpy()(y));
-            }
-            if( out.tgt[lf].go_contact){
-//                out.tgt[lf].abs.rpy(r) = out.tgt[lf].abs.rpy(p) = 0;
-                out.tgt[lf].abs.setRpy(0,0,out.tgt[lf].abs.rpy()(y));
-            }
+        bool applyCOMToSupportRegionLimit(const hrp::Pose3& rfin_abs, const hrp::Pose3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
+            hrp::dmatrix hull_com = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R], foot_vert_safe_fblr[L]);
+            hrp::Vector2 cog = comin_abs.head(XY);
+            if(!isPointInHull2DOpenCV(cog,hull_com)){ calcNearestPointOnHull(cog, hull_com, cog); }//外に出たら最近傍点に頭打ち
+            comin_abs.head(XY) = cog.head(XY);
+            return true;
         }
         void overwriteFootZFromFootLandOnCommand(HumanPose& out){
-            //      limitGroundContactVelocity(out.tgt[rf].go_contact, rp_ref_out_old.tgt[rf], out.tgt[rf], out.tgt[rf].is_contact);
-            //      limitGroundContactVelocity(out.tgt[lf].go_contact, rp_ref_out_old.tgt[lf], out.tgt[lf], out.tgt[lf].is_contact);
             for(int i=0, l[LR]={rf,lf}; i<LR; i++){
                 if(out.tgt[l[i]].go_contact || cp_force_go_contact[i]){
                     out.tgt[l[i]].abs.p(Z) = out.tgt[l[i]].offs.p(Z);
@@ -642,86 +573,55 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
                 out.tgt[l[i]].is_contact = ((out.tgt[l[i]].abs.p(Z)-out.tgt[l[i]].offs.p(Z)) <= contact_threshold);
             }
         }
-        //    void limitGroundContactVelocity(const bool& go_land_in, const PoseTGT& f_old_in, PoseTGT& f_in_out, bool& is_f_contact_out){
-        //      LIMIT_MIN( f_in_out.abs.p(Z), f_in_out.offs.p(Z));
-        //      double input_vel = (f_in_out.abs.p(Z) - f_old_in.abs.p(Z)) / DT;
-        //      const double vel_limit_k = WBMSparam.foot_vertical_vel_limit_coeff;//地面から0.02[m]地点で0.02*8=0.16[m/s]出ている計算
-        //      double limit_vel = - vel_limit_k * (f_old_in.abs.p(Z) - f_old_in.offs.p(Z));//sinの時は平均0.05~0.10[m/s]
-        //      const double max_vel_threshold = -0.01;
-        //      LIMIT_MAX( limit_vel, max_vel_threshold);//速度0に近づくと目標になかなか到達しないから
-        //      LIMIT_MIN( input_vel, limit_vel);//着地時の下向きの速度を制限
-        //      f_in_out.abs.p(Z) = f_old_in.abs.p(Z) + input_vel * DT;
-        //      LIMIT_MIN( f_in_out.abs.p(Z), f_in_out.offs.p(Z));
-        //      const double contact_threshold = 0.005;
-        //      is_f_contact_out = ((f_in_out.abs.p(Z)-f_in_out.offs.p(Z)) <= contact_threshold);
-        //    }
-        void modifyFootRotAndXYForContact(HumanPose& out){
-            calcFootRotAndXYTransitionForContact(out.tgt[rf],foot_vert_act[R]);
-            calcFootRotAndXYTransitionForContact(out.tgt[lf],foot_vert_act[L]);
+        void setFootRotHorizontalIfGoLanding(HumanPose& out){
+            if( out.tgt[rf].go_contact){
+                out.tgt[rf].abs.setRpy(0,0,out.tgt[rf].abs.rpy()(y));
+            }
+            if( out.tgt[lf].go_contact){
+                out.tgt[lf].abs.setRpy(0,0,out.tgt[lf].abs.rpy()(y));
+            }
         }
-        void calcFootRotAndXYTransitionForContact(PoseTGT& foot_in, const std::vector<hrp::Vector3, Eigen::aligned_allocator<hrp::Vector3> >& act_sole_size){
-            std::vector<hrp::Vector3, Eigen::aligned_allocator<hrp::Vector3> > act_foot_vert;
-            double min_height = foot_in.abs.p(Z);
-            int min_height_id = 0;
-            for(int i=0;i<act_sole_size.size();i++){
-                act_foot_vert.push_back(foot_in.abs.R * act_sole_size[i]);
-                act_foot_vert[i](Z) += foot_in.abs.p(Z);
-                if(act_foot_vert[i](Z) < min_height){
-                    min_height = act_foot_vert[i](Z);
-                    min_height_id = i;
+        void limitFootVelNearGround(HumanPose& out){
+            for(int i=0, l[2]={rf,lf}; i<2; i++){
+                double fheight = rp_ref_out_old.tgt[l[i]].abs.p(Z) - rp_ref_out_old.tgt[l[i]].offs.p(Z);
+                double horizontal_max_vel = 0 + fheight * 20;
+                for(int j=0; j<XY; j++){
+                    LIMIT_MINMAX( out.tgt[l[i]].abs.p(j), rp_ref_out_old.tgt[l[i]].abs.p(j) - horizontal_max_vel * DT, rp_ref_out_old.tgt[l[i]].abs.p(j) + horizontal_max_vel * DT);
                 }
-            }
-            if(act_foot_vert[min_height_id](Z) < foot_in.offs.p(Z)){
-//                foot_in.abs.p(Z) += foot_in.offs.p(Z) - act_foot_vert[min_height_id](Z);
+                double vertical_max_vel = 0 + fheight * 10;
+                LIMIT_MIN( out.tgt[l[i]].abs.p(Z), rp_ref_out_old.tgt[l[i]].abs.p(Z) - vertical_max_vel * DT);
             }
         }
-        bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
-            hull_com.clear();
-            createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R], foot_vert_safe_fblr[L], hull_com);
-            hrp::Vector2 cog = comin_abs.head(XY);
-            if(!isPointInHullOpenCV(cog,hull_com)){ calcNearestPointOnHull(cog,hull_com,cog); }//外に出たら最近傍点に頭打ち
-            comin_abs.head(XY) = cog.head(XY);
-            return true;
+        void modifyFootRotAndXYForContact(HumanPose& out){
+            avoidFootSinkIntoFloor(out.tgt[rf],foot_vert3d_act[R]);
+            avoidFootSinkIntoFloor(out.tgt[lf],foot_vert3d_act[L]);
         }
-        bool applyCOMStateLimitByCapturePoint(const hrp::Vector3& com_in, const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& com_ans_old, hrp::Vector3& com_ans){
+        void avoidFootSinkIntoFloor(PoseTGT& foot_in, const hrp::dmatrix& act_sole_vert){
+            hrp::dmatrix act_sole_vert_abs = (foot_in.abs.R * act_sole_vert).colwise() + foot_in.abs.p;// translate and rotate each cols
+            double min_height = act_sole_vert_abs.row(Z).minCoeff(); // pick up min Z height
+            if(min_height < foot_in.offs.p(Z)){
+                foot_in.abs.p(Z) += (foot_in.offs.p(Z) - min_height);
+            }
+        }
+        bool applyCOMStateLimitByCapturePoint(const hrp::Vector3& com_in, const hrp::Pose3& rfin_abs, const hrp::Pose3& lfin_abs, hrp::Vector3& com_ans_old, hrp::Vector3& com_ans){
             com_ans = com_in;
             if (is_initial_loop)com_ans_old = com_in;
             hrp::Vector3 com_vel = (com_in - com_ans_old)/DT;
-            hull_dcp.clear();
-            hull_acp.clear();
             hrp::Vector4 marginDelta_for_dcp(+0.001,-0.001,0.001,-0.001);
             hrp::Vector4 marginDelta_for_acp(+0.010,-0.010,0.010,-0.010);
-            createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_dcp, foot_vert_safe_fblr[L]+marginDelta_for_dcp, hull_dcp);
-            createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_acp, foot_vert_safe_fblr[L]+marginDelta_for_acp, hull_acp);
+            hrp::dmatrix hull_dcp = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_dcp, foot_vert_safe_fblr[L]+marginDelta_for_dcp);
+            hrp::dmatrix hull_acp = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_acp, foot_vert_safe_fblr[L]+marginDelta_for_acp);
             hrp::Vector2 com_vel_ans_2d;
-//            regulateCOMVelocityByCapturePointVec( hrp::Vector2(com_ans_old(X),com_ans_old(Y)), hrp::Vector2(com_vel(X),com_vel(Y)), hull_dcp, hull_acp, com_vel_ans_2d);
             regulateCOMVelocityByCapturePointVec( com_ans_old.head(XY), com_vel.head(XY), hull_dcp, hull_acp, com_vel_ans_2d);
             com_ans.head(XY) = com_ans_old.head(XY) + com_vel_ans_2d * DT;
             com_ans_old = com_ans;
-//            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H_cur / G ), cp_dec);
-//            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) - com_vel_ans_2d * sqrt( H_cur / G ), cp_acc);
-            cp_dec.head(2) = com_ans.head(XY) + com_vel_ans_2d * sqrt( H_cur / G );
-            cp_acc.head(2) = com_ans.head(XY) - com_vel_ans_2d * sqrt( H_cur / G );
-            if(DEBUG){
-                fprintf(cz_log,"com_ans: %f %f ",com_ans(X),com_ans(Y));
-                fprintf(cz_log,"com_ans_cp_d: %f %f ",cp_dec(X),cp_dec(Y));
-                fprintf(cz_log,"com_ans_cp_a: %f %f ",cp_acc(X),cp_acc(Y));
-                for(int i=0;i<hull_dcp.size();i++)fprintf(sr_log,"hull_vert%d: %f %f\n",i,hull_dcp[i](X),hull_dcp[i](Y));
-                fprintf(sr_log,"hull_vert%d: %f %f\n",(int)hull_dcp.size(),hull_dcp[0](X),hull_dcp[0](Y));//閉じる
-                fprintf(sr_log,"\n");
-            }
+            cp_dec.head(XY) = com_ans.head(XY) + com_vel_ans_2d * sqrt( H_cur / G );
+            cp_acc.head(XY) = com_ans.head(XY) - com_vel_ans_2d * sqrt( H_cur / G );
             return true;
         }
-        void regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull_d, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull_a, hrp::Vector2& com_vel_ans){
+        void regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const hrp::dmatrix& hull_d, const hrp::dmatrix& hull_a, hrp::Vector2& com_vel_ans){
             hrp::Vector2 com_vel_decel_ok,com_vel_accel_ok;
             com_vel_decel_ok = com_vel_accel_ok = com_vel_ans = com_vel;
-            //      //減速CP条件(現在のCPを常に両足裏で頭打ち)
-            //      hrp::Vector2 cp_dec_tmp = com_pos + com_vel * sqrt( H_cur / G );
-            //      hrp::Vector2 cp_dec_ragulated;
-            //      if(!isPointInHullOpenCV(cp_dec_tmp,hull_d)){
-            //        calcCrossPointOnHull(com_pos, cp_dec_tmp, hull_d, cp_dec_ragulated);
-            //        com_vel_decel_ok = (cp_dec_ragulated - com_pos) / sqrt( H_cur / G );
-            //      }
 
             const double foot_ave_vel = 2.0;
             double lf_landing_delay = (rp_ref_out.tgt[lf].abs.p[Z] - rp_ref_out.tgt[lf].offs.p[Z]) / foot_ave_vel;
@@ -729,72 +629,41 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             if(com_vel(Y)>0 ){ rf_landing_delay = 0; }
             if(com_vel(Y)<0 ){ lf_landing_delay = 0; }
             double foot_landing_delay = std::max(rf_landing_delay, lf_landing_delay);
-            //      const double foot_landing_delay =0;//debug
             //減速CP条件(現在のCPを常に両足裏で頭打ち)
-
             //      hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);//TODO implement
             //      if(com_vel(Y)>1e-5 || fabs(com_vel(Y))<=1e-5 ){
             //        foot_landing_delay = 0;
             //      }
-            hrp::Vector2 cp_dec_ragulated = com_pos + com_vel * sqrt( H_cur / G ) + com_vel * foot_landing_delay;
-            if(!isPointInHullOpenCV(cp_dec_ragulated,hull_d)){
+            hrp::Vector2 cp_dec_ragulated = com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay);
+            if(!isPointInHull2DOpenCV(cp_dec_ragulated, hull_d)){
                 calcCrossPointOnHull(com_pos, cp_dec_ragulated, hull_d, cp_dec_ragulated);
                 com_vel_decel_ok = (cp_dec_ragulated - com_pos) / ( sqrt( H_cur / G ) + foot_landing_delay);
             }
 
-#define F(x) (x == R ? rf : lf)
-
-            std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> > f_hull_wld[LR], f_hull_wld_ans[LR];
-            for(int i=0;i<foot_vert_check[R].size();i++){ f_hull_wld[R].push_back(foot_vert_check[R][i].head(XY) + rp_ref_out.tgt[F(R)].abs.p.head(XY)); }
-            for(int i=0;i<foot_vert_check[L].size();i++){ f_hull_wld[L].push_back(foot_vert_check[L][i].head(XY) + rp_ref_out.tgt[F(L)].abs.p.head(XY)); }
-            //      for(int i=0;i<foot_vert_safe[R].size();i++){ f_hull_wld[R].push_back(foot_vert_safe[R][i].head(XY) + rp_ref_out.tgt[F(R)].abs.p.head(XY)); }
-            //      for(int i=0;i<foot_vert_safe[L].size();i++){ f_hull_wld[L].push_back(foot_vert_safe[L][i].head(XY) + rp_ref_out.tgt[F(L)].abs.p.head(XY)); }
-            makeConvexHullOpenCV(f_hull_wld[R], f_hull_wld_ans[R]);
-            makeConvexHullOpenCV(f_hull_wld[L], f_hull_wld_ans[L]);
-            //      if(!isPointInHullOpenCV(cp_dec_ragulated, f_hull_wld_ans[R])){ rp_ref_out.tgt[lf].go_contact = true; }
-            //      if(!isPointInHullOpenCV(cp_dec_ragulated, f_hull_wld_ans[L])){ rp_ref_out.tgt[rf].go_contact = true; }
-            if(!isPointInHullOpenCV(cp_dec_ragulated, f_hull_wld_ans[R])){ cp_force_go_contact[L] = true; }else{ cp_force_go_contact[L] = false; }
-            if(!isPointInHullOpenCV(cp_dec_ragulated, f_hull_wld_ans[L])){ cp_force_go_contact[R] = true; }else{ cp_force_go_contact[R] = false; }
+            //ついでに減速CPによる強制遊脚着地も判定
+            hrp::dmatrix foot_vert3d_check_wld[LR], one_foot_hull2d[LR];
+            for(int i=0; i<LR; i++){
+                foot_vert3d_check_wld[i] = (rp_ref_out.tgt[F(i)].abs.R * foot_vert3d_check[i]).colwise() + rp_ref_out.tgt[F(i)].abs.p; // rotate and translate in 3D
+                one_foot_hull2d[i] = makeConvexHull2DOpenCV( foot_vert3d_check_wld[i].topRows(XY) ); // project into 2D and make convex hull
+            }
+            cp_force_go_contact[L] = !isPointInHull2DOpenCV(cp_dec_ragulated, one_foot_hull2d[R]); // if CapturePoint go out of R sole region, L foot must be go contact
+            cp_force_go_contact[R] = !isPointInHull2DOpenCV(cp_dec_ragulated, one_foot_hull2d[L]); // if CapturePoint go out of L sole region, R foot must be go contact
 
             //加速CP条件(ACP使用)
-            hrp::Vector2 cp_acc_tmp = com_pos - com_vel * sqrt( H_cur / G );
-            hrp::Vector2 cp_acc_ragulated;
-            if(!isPointInHullOpenCV(cp_acc_tmp,hull_a)){
-                calcCrossPointOnHull(com_pos, cp_acc_tmp, hull_a, cp_acc_ragulated);
+            hrp::Vector2 cp_acc_ragulated = com_pos - com_vel * sqrt( H_cur / G );
+            if(!isPointInHull2DOpenCV(cp_acc_ragulated, hull_a)){
+                calcCrossPointOnHull(com_pos, cp_acc_ragulated, hull_a, cp_acc_ragulated);
                 com_vel_accel_ok = (-cp_acc_ragulated + com_pos ) / sqrt( H_cur / G );
             }
-            cp_acc_old = cp_acc_ragulated;
 
-            static hrp::Vector2 com_vel_ans_old = com_vel;
-            //加速減速条件マージ
-            if( com_vel_decel_ok.dot(com_vel) < com_vel_accel_ok.dot(com_vel)){//normじゃダメ？
-                com_vel_ans = com_vel_decel_ok;
-            }else{
-                com_vel_ans = com_vel_accel_ok;
-            }
-            com_vel_ans_old = com_vel_ans;
+            //加速減速条件マージ com_vel進行方向をより減速させるものを採用？
+            com_vel_ans = (com_vel_decel_ok.dot(com_vel) < com_vel_accel_ok.dot(com_vel)) ? com_vel_decel_ok : com_vel_accel_ok; //normじゃダメ？
         }
-        //    void regulateCOMVelocityB
-        void surpressGoContactChattering(HumanPose& out){
-            //      static std::deque<int> buffer[LR];
-            static int count[LR];
-            for(int i=0;i<LR;i++){
-                if(out.tgt[F(i)].go_contact){ count[i]++; }
-                else{ count[i]--; }
-                LIMIT_MINMAX(count[i],0,100);
-                if(count[i]>0){ out.tgt[F(i)].go_contact = true; }
-            }
-        }
-        void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull_ans){
-            rflf_points.clear();
-            hull_ans.clear();
-            for(int i=0;i<2;i++){
-                for(int j=2;j<4;j++){
-                    rflf_points.push_back(hrp::Vector2(rfin_abs(X) + rf_mgn(i),    rfin_abs(Y) + rf_mgn(j)));
-                    rflf_points.push_back(hrp::Vector2(lfin_abs(X) + lf_mgn(i),    lfin_abs(Y) + lf_mgn(j)));
-                }
-            }
-            makeConvexHullOpenCV(rflf_points, hull_ans);
+        hrp::dmatrix createSupportRegionByFootPos(const hrp::Pose3& rfin_abs, const hrp::Pose3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn){
+            hrp::dmatrix rf_sole_verts_abs = (rfin_abs.R * make_rect_3d(rf_mgn)).colwise() + rfin_abs.p;
+            hrp::dmatrix lf_sole_verts_abs = (lfin_abs.R * make_rect_3d(lf_mgn)).colwise() + lfin_abs.p;
+            hrp::dmatrix both_sole_verts_abs = (hrp::dmatrix(3, rf_sole_verts_abs.cols()+lf_sole_verts_abs.cols()) << rf_sole_verts_abs, lf_sole_verts_abs).finished();
+            return makeConvexHull2DOpenCV(both_sole_verts_abs.topRows(XY));
         }
         void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const hrp::dvector6& rfwin, const hrp::dvector6& lfwin, hrp::Vector3& zmp_ans){
             hrp::Vector3 rfzmp,lfzmp;
@@ -813,7 +682,8 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
             zmp_ans(2) = 0;
         }
-        void calcXYMarginToHull(const hrp::Vector2& check_point, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull, hrp::Vector4& margin_ans){
+        void calcXYMarginToHull(const hrp::Vector2& check_point, const hrp::dmatrix& hull, hrp::Vector4& margin_ans){
+            if(hull.rows() != 2){ std::cerr << "Invalid input for calcXYMarginToHull" << std::endl; dbgn(hull); }
             hrp::Vector4 margin_abs;
             hrp::Vector2 cross_pt, anchor_vec[4] = {hrp::Vector2(1,0), hrp::Vector2(-1,0), hrp::Vector2(0,1), hrp::Vector2(0,-1)};//前後左右に伸ばしたアンカーとの交点を見る
             for(int direc=0;direc<4;direc++){
@@ -825,32 +695,33 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             margin_ans(2) =  margin_abs(2);
             margin_ans(3) = -margin_abs(3);
         }
-        bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull, hrp::Vector2& pt_will_cross){
+        bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const hrp::dmatrix& hull, hrp::Vector2& pt_will_cross){
+            if(hull.rows() != 2){ std::cerr << "Invalid input for calcCrossPointOnHull" << std::endl; dbgn(hull); }
             hrp::Vector2 anchor_vec = pt_out_goal - pt_in_start;
-            for(int i=0;i<hull.size();i++){
-                int i_nxt = (i!=hull.size()-1 ? i+1 : 0);
-                hrp::Vector2 cur_pt = hull[i], nxt_pt = hull[i_nxt];
+            for(int i=0;i<hull.cols();i++){
+                int i_nxt = (i!=hull.cols()-1 ? i+1 : 0);
+                hrp::Vector2 cur_pt = hull.col(i), nxt_pt = hull.col(i_nxt);
                 hrp::Vector2 cur_edge = nxt_pt - cur_pt;
                 double dBunbo = hrp::hrpVector2Cross(anchor_vec,cur_edge);
                 if( dBunbo != 0.0) {//平行の場合を外す
-                    hrp::Vector2 vectorAC = hrp::Vector2(hull[i](0),hull[i](1)) - pt_in_start;
+                    hrp::Vector2 vectorAC = hull.col(i) - pt_in_start;
                     double dR = hrp::hrpVector2Cross(vectorAC,cur_edge) / dBunbo;
                     double dS = hrp::hrpVector2Cross(vectorAC,anchor_vec) / dBunbo;
                     if(dR > 1e-9 && dS >= 0.0 && dS <= 1.0){//dRには数値誤差が乗る
                         pt_will_cross = pt_in_start + dR * anchor_vec;
-                        //dist = dR * anchor_vec.norm();
                         return true;
                     }
                 }
             }
             return false;
         }
-        double calcNearestPointOnHull(const hrp::Vector2& tgt_pt, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull, hrp::Vector2& pt_ans){
+        double calcNearestPointOnHull(const hrp::Vector2& tgt_pt, const hrp::dmatrix& hull, hrp::Vector2& pt_ans){
+            if(hull.rows() != 2){ std::cerr << "Invalid input for calcNearestPointOnHull" << std::endl; dbgn(hull); }
             double cur_nearest_dist, ans_nearest_dist;
             hrp::Vector2 cur_nearest_pt, ans_nearest_pt;
-            for(int i=0;i<hull.size();i++){
-                int i_nxt = (i!=hull.size()-1 ? i+1 : 0);
-                hrp::Vector2 cur_pt = hull[i], nxt_pt = hull[i_nxt];
+            for(int i=0;i<hull.cols();i++){
+                int i_nxt = (i!=hull.cols()-1 ? i+1 : 0);
+                hrp::Vector2 cur_pt = hull.col(i), nxt_pt = hull.col(i_nxt);
                 hrp::Vector2 cur_edge = nxt_pt - cur_pt;
                 hrp::Vector2 tgt_pt_v = tgt_pt - cur_pt;
                 double tgt_pt_projected_length = tgt_pt_v.dot(cur_edge.normalized());
@@ -873,18 +744,39 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             pt_ans = ans_nearest_pt;
             return ans_nearest_dist;
         }
-        void makeConvexHullOpenCV(const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& pts, std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull_ans){
-            points.clear();
-            cvhull.clear();
-            hull_ans.clear();
-            for(int i=0;i<pts.size();i++){ points.push_back( cv::Point2f( pts[i](0), pts[i](1)) ); }
-            cv::convexHull(cv::Mat(points),cvhull,true);
-            for(int i=0;i<cvhull.size();i++){ hull_ans.push_back( hrp::Vector2( cvhull[i].x, cvhull[i].y ) );  }
+        hrp::dmatrix makeConvexHull2DOpenCV(const hrp::dmatrix& pts_2d){
+            if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHullOpenCV" << std::endl; dbgn(pts_2d); }
+            cv::Mat pts_2d_cv;
+            std::vector<cv::Point2f> points(pts_2d.cols()), hull_2d_cv;
+            for(int i=0; i<pts_2d.cols(); i++){
+                points[i] = cv::Point2f(pts_2d.col(i)(X), pts_2d.col(i)(Y));
+            }
+            cv::convexHull( cv::Mat(points), hull_2d_cv, true);
+            hrp::dmatrix hull_2d(2, hull_2d_cv.size());
+            for(int i=0; i<hull_2d_cv.size(); i++){
+                hull_2d.col(i) << hull_2d_cv[i].x,  hull_2d_cv[i].y;
+            }
+            return hull_2d;
         }
-        bool isPointInHullOpenCV(const hrp::Vector2& pt, const std::vector<hrp::Vector2, Eigen::aligned_allocator<hrp::Vector2> >& hull){
-            cvhull.clear();
-            for(int i=0;i<hull.size();i++){ cvhull.push_back( cv::Point2f( hull[i](0), hull[i](1)) ); }
-            return (cv::pointPolygonTest(cv::Mat(cvhull), cv::Point2f(pt(0),pt(1)), false) > 0);
+        bool isPointInHull2DOpenCV(const hrp::Vector2& pt, const hrp::dmatrix& hull){
+            if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2dOpenCV" << std::endl; dbgn(hull); }
+            std::vector<cv::Point2f> hull_cv(hull.cols());
+            for(int i=0; i<hull.cols(); i++){
+                hull_cv[i] = cv::Point2f(hull.col(i)(X), hull.col(i)(Y));
+            }
+            return (cv::pointPolygonTest(cv::Mat(hull_cv), cv::Point2f(pt(X),pt(Y)), false) > 0);
+        }
+        void applyLPFilter_post(HumanPose& tgt){
+            if(is_initial_loop){
+                for(int i=0, l[1]={com}; i<1; i++){
+                    tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
+                    tgt_rpy_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy());
+                }
+            }
+            for(int i=0, l[1]={com}; i<1; i++){
+                tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
+                tgt.tgt[l[i]].abs.setRpy(tgt_rpy_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy()));
+            }
         }
         void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
             comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
@@ -893,6 +785,98 @@ dbgv(rp_ref_out.tgt[rh].offs.rpy());
             com_oldold = com_old;
             com_old = comin;
         }
+
+
+        //        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+        //              namespace bg = boost::geometry;
+        //              typedef bg::model::d2::point_xy<double> point;
+        //              typedef bg::model::polygon<point> polygon;
+        //              polygon lr_region,s_region;
+        //              const double XUMARGIN = 0.04;//CHIDORI
+        //              const double XLMARGIN = -0.02;
+        //              const double YUMARGIN = 0.01;
+        //              const double YLMARGIN = -0.01;
+        //        //      const double XUMARGIN = 0.02;//JAXON
+        //        //      const double XLMARGIN = -0.01;
+        //        //      const double YUMARGIN = 0.0;
+        //        //      const double YLMARGIN = -0.0;
+        //              bg::model::linestring<point> s_line = boost::assign::list_of<point>
+        //                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
+        //                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
+        //                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
+        //                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
+        //                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
+        //                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
+        //                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
+        //                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
+        //                     ;
+        //              bg::convex_hull(s_line, s_region);
+        //              point com2d(comin_abs(0),comin_abs(1));
+        //              Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
+        //              enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
+        //              point_state_t pt_state = PT_IN_NO_PATTERN;
+        //              if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
+        //                pt_state = PT_IN_REGION;
+        //              }else{
+        //        //        cout<<"COM out of s_region"<<endl;
+        //                Eigen::Vector2d check_point(com2d.x(),com2d.y());
+        //                int ans_lid=-1;
+        //                for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+        //                  Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
+        //                  Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
+        //                  Eigen::Vector2d edge_v = next_vert - cur_vert;
+        //                  Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
+        //                  //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
+        //                  if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+        //                    ans_lid = i;
+        //                    ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+        //                    pt_state = PT_FIX_TO_EDGE;
+        //                    break;
+        //                  }
+        //                }
+        //                if(pt_state == PT_FIX_TO_EDGE){
+        //                  cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+        //                }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+        //                  double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
+        //                  int ans_pid = 0;
+        //                  for(int i=1;i<s_region.outer().size();i++){
+        //                    if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
+        //                      cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
+        //                      ans_pid = i;
+        //                    }
+        //                  }
+        //                  ans_point(0) = s_region.outer()[ans_pid].x();
+        //                  ans_point(1) = s_region.outer()[ans_pid].y();
+        //                  cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+        //                  pt_state = PT_FIX_TO_VERTEX;
+        //                }
+        //              }
+        //        //      double FNUM_Z = 0.005;
+        //              double FNUM_Z = 0.01;
+        //              lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
+        //              hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
+        //        //      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
+        //        //      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
+        //
+        //              if(loop%50==0){
+        //                if(pt_state != PT_IN_REGION){
+        //                  std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
+        //                }
+        //                for(int i=0;i<s_region.outer().size();i++){
+        //                  fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
+        //                }
+        //                fprintf(sr_log,"\n");
+        //                fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+        //                fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
+        //                fprintf(cz_log,"\n\n");
+        //              }
+        //              comin_abs(0) = ans_point(0);
+        //              comin_abs(1) = ans_point(1);
+        //        //      rp_ref_out.zmp(0) = comin_abs(0);
+        //        //      rp_ref_out.zmp(1) = comin_abs(1);
+        //              return true;
+        //            }
+
 };
 
 #endif // WBMS_CORE_H

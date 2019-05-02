@@ -220,7 +220,7 @@ class FullbodyInverseKinematicsSolver{
 
             // rtconf localhost:15005/wbms.rtc set debugLevel 1 とかにしたい
             static int count;
-            if(count++ % 1000 == 0){
+            if(count++ % 10000 == 0){
 //                if(true){
                 std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
                 dbg(J_all.rows());

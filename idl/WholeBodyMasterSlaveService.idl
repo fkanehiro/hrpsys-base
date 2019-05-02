@@ -20,11 +20,9 @@ module OpenHRP
     struct WholeBodyMasterSlaveParam
     {
         double auto_swing_foot_landing_threshold;
-        double foot_vertical_vel_limit_coeff;
-        double human_com_height;
+        double human_to_robot_ratio;
         double set_com_height_fix_val;
         double swing_foot_height_offset;
-        double swing_foot_max_height;
         double upper_body_rmc_ratio;
         boolean set_com_height_fix;
         boolean use_head;

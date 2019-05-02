@@ -165,7 +165,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     t_ip->set(&output_ratio);
     q_ip = new interpolator(fik->numStates(), m_dt, interpolator::CUBICSPLINE, 1); // or HOFFARBIB, QUINTICSPLINE
     q_ip->clear();
-    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0); // all joint max avarage vel = 1.0 rad/s
+    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 2.0); // all joint max avarage vel = 1.0 rad/s
     avg_q_acc = hrp::dvector::Constant(fik->numStates(), 16.0); // all joint max avarage acc = 16.0 rad/s^2
     avg_q_vel.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link vel
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
@@ -497,21 +497,21 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
 //            state = CP_RF;
 //        }
 //    }
-
-    if(state == CP_IDLE){
-        cp_count = 0;
-    }
-    else if(state == CP_LF || state == CP_RF){
-        if(cp_count ++ > 50){
-            state = CP_STATIC;
-        }
-    }
-    else if(state == CP_STATIC){
-        if(cp_count ++ > 100){
-            state = CP_IDLE;
-        }
-    }
-    const double FH = 0.05;
+//
+//    if(state == CP_IDLE){
+//        cp_count = 0;
+//    }
+//    else if(state == CP_LF || state == CP_RF){
+//        if(cp_count ++ > 50){
+//            state = CP_STATIC;
+//        }
+//    }
+//    else if(state == CP_STATIC){
+//        if(cp_count ++ > 100){
+//            state = CP_IDLE;
+//        }
+//    }
+//    const double FH = 0.05;
 
 
     if(wbms->wp.use_lower){
@@ -527,21 +527,21 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
 
-        if(state == CP_RF){
-            if(cp_count==1){
-                rt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
-                wbms->rp_ref_out.tgt[rf].is_contact = false;
-            }else if(cp_count==50){
-//                rt += hrp::Vector3(0,0,-FH);
-                wbms->rp_ref_out.tgt[rf].is_contact = true;
-            }
-        }
-        if(state == CP_STATIC){
-            if(rt(Z) > 0){
-                rt(Z) -= FH/450;
-            }
-        }
-        tmp.targetPos += rt;
+//        if(state == CP_RF){
+//            if(cp_count==1){
+//                rt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
+//                wbms->rp_ref_out.tgt[rf].is_contact = false;
+//            }else if(cp_count==50){
+////                rt += hrp::Vector3(0,0,-FH);
+//                wbms->rp_ref_out.tgt[rf].is_contact = true;
+//            }
+//        }
+//        if(state == CP_STATIC){
+//            if(rt(Z) > 0){
+//                rt(Z) -= FH/450;
+//            }
+//        }
+//        tmp.targetPos += rt;
 
 
         ikc_list.push_back(tmp);
@@ -559,22 +559,22 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
 
-
-        if(state == CP_LF){
-            if(cp_count==1){
-                lt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
-                wbms->rp_ref_out.tgt[lf].is_contact = false;
-            }else if(cp_count==50){
-//                lt += hrp::Vector3(0,0,-FH);
-                wbms->rp_ref_out.tgt[lf].is_contact = true;
-            }
-        }
-        if(state == CP_STATIC){
-            if(lt(Z) > 0){
-                lt(Z) -= FH/50;
-            }
-        }
-        tmp.targetPos += lt;
+//
+//        if(state == CP_LF){
+//            if(cp_count==1){
+//                lt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
+//                wbms->rp_ref_out.tgt[lf].is_contact = false;
+//            }else if(cp_count==50){
+////                lt += hrp::Vector3(0,0,-FH);
+//                wbms->rp_ref_out.tgt[lf].is_contact = true;
+//            }
+//        }
+//        if(state == CP_STATIC){
+//            if(lt(Z) > 0){
+//                lt(Z) -= FH/50;
+//            }
+//        }
+//        tmp.targetPos += lt;
 
         ikc_list.push_back(tmp);
     }
@@ -687,8 +687,8 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
-        tmp.constraint_weight << 3,3,0.01,0.1,0.1,0;
-//        tmp.constraint_weight << 3,3,0.01,0,0,0;
+//        tmp.constraint_weight << 3,3,0.01,0.1,0.1,0;
+        tmp.constraint_weight << 3,3,0.01,0,0,0;
 //        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
 //            tmp.constraint_weight << 10,10,1,1e-5,1e-5,0;
 //            tmp.rot_precision = 100;//angular momentum precision
@@ -884,12 +884,10 @@ bool WholeBodyMasterSlave::stopWholeBodyMasterSlave(){
 bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTCOUT << "setWholeBodyMasterSlaveParam" << std::endl;
     wbms->wp.auto_swing_foot_landing_threshold = i_param.auto_swing_foot_landing_threshold;
-    wbms->wp.foot_vertical_vel_limit_coeff = i_param.foot_vertical_vel_limit_coeff;
-    wbms->wp.human_com_height = i_param.human_com_height;
+    wbms->wp.human_to_robot_ratio = i_param.human_to_robot_ratio;
     wbms->wp.set_com_height_fix = i_param.set_com_height_fix;
     wbms->wp.set_com_height_fix_val = i_param.set_com_height_fix_val;
     wbms->wp.swing_foot_height_offset = i_param.swing_foot_height_offset;
-    wbms->wp.swing_foot_max_height = i_param.swing_foot_max_height;
     wbms->wp.upper_body_rmc_ratio = i_param.upper_body_rmc_ratio;
     if(mode.now() == MODE_IDLE){
         wbms->wp.use_head = i_param.use_head;
@@ -905,12 +903,10 @@ bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBody
 bool WholeBodyMasterSlave::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTCOUT << "getWholeBodyMasterSlaveParam" << std::endl;
     i_param.auto_swing_foot_landing_threshold = wbms->wp.auto_swing_foot_landing_threshold;
-    i_param.foot_vertical_vel_limit_coeff = wbms->wp.foot_vertical_vel_limit_coeff;
-    i_param.human_com_height = wbms->wp.human_com_height;
+    i_param.human_to_robot_ratio = wbms->wp.human_to_robot_ratio;
     i_param.set_com_height_fix = wbms->wp.set_com_height_fix;
     i_param.set_com_height_fix_val = wbms->wp.set_com_height_fix_val;
     i_param.swing_foot_height_offset = wbms->wp.swing_foot_height_offset;
-    i_param.swing_foot_max_height = wbms->wp.swing_foot_max_height;
     i_param.upper_body_rmc_ratio = wbms->wp.upper_body_rmc_ratio;
     i_param.use_head = wbms->wp.use_head;
     i_param.use_upper = wbms->wp.use_upper;
