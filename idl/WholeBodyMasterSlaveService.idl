@@ -28,12 +28,14 @@ module OpenHRP
         boolean use_head;
         boolean use_upper;
         boolean use_lower;
+        StrSequence use_joints;
+        StrSequence use_targets;
     };
     boolean startWholeBodyMasterSlave();
     boolean stopWholeBodyMasterSlave();
     boolean pauseWholeBodyMasterSlave();
     boolean resumeWholeBodyMasterSlave();
-    void setWholeBodyMasterSlaveParam(in WholeBodyMasterSlaveParam i_param);
-    void getWholeBodyMasterSlaveParam(out WholeBodyMasterSlaveParam i_param);
+    void setParams(in WholeBodyMasterSlaveParam i_param);
+    void getParams(out WholeBodyMasterSlaveParam i_param);
   };
 };

@@ -3,8 +3,7 @@
 #define DEBUGP (loop%200==0)
 #define DEBUGP_ONCE (loop==0)
 
-static const char* WholeBodyMasterSlave_spec[] =
-{
+static const char* WholeBodyMasterSlave_spec[] = {
         "implementation_id", "WholeBodyMasterSlave",
         "type_name",         "WholeBodyMasterSlave",
         "description",       "wholebodymasterslave component",
@@ -18,17 +17,6 @@ static const char* WholeBodyMasterSlave_spec[] =
         "conf.default.debugLevel", "0",
         ""
 };
-
-//static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
-//{
-//    int pre = os.precision();
-//    os.setf(std::ios::fixed);
-//    os << std::setprecision(6)
-//       << (tm.sec + tm.nsec/1e9)
-//       << std::setprecision(pre);
-//    os.unsetf(std::ios::fixed);
-//    return os;
-//}
 
 WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
         m_qRefIn("qRef", m_qRef),// from sh
@@ -152,6 +140,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     RTCOUT << "setup fullbody ik finished" << std::endl;
 
     wbms = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
+    wbms->wp.use_joints = getJointNameAll(fik->m_robot);
+    wbms->wp.use_targets.push_back("rleg");
+    wbms->wp.use_targets.push_back("lleg");
+    wbms->wp.use_targets.push_back("rarm");
+    wbms->wp.use_targets.push_back("rarm");
+    wbms->wp.use_targets.push_back("com");
+    wbms->wp.use_targets.push_back("head");
     sccp = boost::shared_ptr<CapsuleCollisionChecker>(new CapsuleCollisionChecker(fik->m_robot));
     RTCOUT << "setup main function class finished" << std::endl;
 
@@ -165,7 +160,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     t_ip->set(&output_ratio);
     q_ip = new interpolator(fik->numStates(), m_dt, interpolator::CUBICSPLINE, 1); // or HOFFARBIB, QUINTICSPLINE
     q_ip->clear();
-    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 2.0); // all joint max avarage vel = 1.0 rad/s
+    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0); // all joint max avarage vel = 1.0 rad/s
     avg_q_acc = hrp::dvector::Constant(fik->numStates(), 16.0); // all joint max avarage acc = 16.0 rad/s^2
     avg_q_vel.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link vel
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
@@ -180,10 +175,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
 
     RTCOUT << "onInitialize() OK" << std::endl;
     loop = 0;
-    return RTC::RTC_OK;
-}
-
-RTC::ReturnCode_t WholeBodyMasterSlave::onFinalize(){
     return RTC::RTC_OK;
 }
 
@@ -217,11 +208,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::setupEEIKConstraintFromConf(std::map<std
     return RTC::RTC_OK;
 }
 
-#define TIMECALC 1
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
-    if(DEBUGP_ONCE)RTCOUT << "onExecute(" << ec_id << ")" << std::endl;
-    struct timeval t_calc_start, t_calc_end;
-    if(TIMECALC)gettimeofday(&t_calc_start, NULL);
+    if(DEBUGP_ONCE) RTCOUT << "onExecute(" << ec_id << ")" << std::endl;
+    time_report_str.clear();
+    clock_gettime(CLOCK_REALTIME, &startT);
     if (m_qRefIn.isNew()) { m_qRefIn.read(); }
     if (m_basePosIn.isNew()) { m_basePosIn.read(); }
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
@@ -241,6 +231,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
         if (m_actZMPIn.isNew())  { m_actZMPIn.read(); rel_act_zmp = hrp::to_Vector3(m_actZMP.data);}
     }
+    addTimeReport("InPort");
 
     //khi
     if(m_htlfw.data.force.y == 1 && m_htrfw.data.force.y == 1 && mode.now() == MODE_IDLE){
@@ -254,11 +245,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if ( is_legged_robot ) {
         processTransition();
         mode.update();
-//        if(DEBUGP)dbg(mode.now());
-        struct timespec startT, endT;
-        clock_gettime(CLOCK_REALTIME, &startT);
-
-        if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processTransition" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
         if (mode.isRunning()) {
             if(mode.isInitialize()){
@@ -269,22 +255,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             fik->q_ref.head(m_qRef.data.length()) = hrp::to_dvector(m_qRef.data);//あえてseqからのbaselink poseは信用しない
 
             wbms->update();//////HumanSynchronizerの主要処理
-            if(DEBUGP)RTCOUT << "update():"<<wbms->getUpdateTime()<<std::endl;
             if(DEBUGP)wbms->rp_ref_out.print();
+            addTimeReport("MainFunc");
 
             solveFullbodyIK(wbms->rp_ref_out.tgt[com].abs, wbms->rp_ref_out.tgt[rf].abs, wbms->rp_ref_out.tgt[lf].abs, wbms->rp_ref_out.tgt[rh].abs, wbms->rp_ref_out.tgt[lh].abs, wbms->rp_ref_out.tgt[head].abs);
+            addTimeReport("IK");
 
-            if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processWholeBodyMasterSlave" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
-            //逆動力学
-            //        calcAccelerationsForInverseDynamics(m_robot, idsb);
-            //        hrp::Vector3 ref_zmp_invdyn;
-            //        calcWorldZMPFromInverseDynamics(m_robot, idsb, ref_zmp_invdyn);processTransition
-            //        ref_zmp_invdyn = invdyn_zmp_filters.passFilter(ref_zmp_invdyn);
-            //        updateInvDynStateBuffer(idsb);
-
-            if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ calcWorldZMPFromInverseDynamics" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
-
-            processHOFFARBIBFilter(fik->m_robot, m_robot_vsafe);
+            smoothingJointAngles(fik->m_robot, m_robot_vsafe);
 
             hrp::Vector3 com = m_robot_vsafe->calcCM();
             static hrp::Vector3 com_old = com;
@@ -326,6 +303,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             }
             m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = wbms->rp_ref_out.tgt[rf].is_contact;
             m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact;
+            addTimeReport("SetOutPut");
         }
         wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
         wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
@@ -401,9 +379,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     WBMSCore::Vector6ToDoubleSeq(wbms->invdyn_ft,m_invdyn_dbg.data);
     m_invdyn_dbgOut.write();
 #endif
-if(TIMECALC){gettimeofday(&t_calc_end, NULL); if(DEBUGP)cout<<"t_last:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6<<endl; t_calc_start = t_calc_end;}
-loop ++;
-return RTC::RTC_OK;
+    addTimeReport("OutPort");
+    if(DEBUGP) RTCOUT << time_report_str << std::endl;
+    loop ++;
+    return RTC::RTC_OK;
 }
 
 
@@ -767,10 +746,9 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
     const int IK_MAX_LOOP = 2;
     clock_gettime(CLOCK_REALTIME, &startT);
     int loop_result = fik->solveFullbodyIKLoop(ikc_list, IK_MAX_LOOP);
-    if(loop%100==0){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK"<<loop_result<<"loop" << std::endl;}
 }
 
-void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe){
+void WholeBodyMasterSlave::smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe){
     double goal_time = 0.0;
     const double min_goal_time_offset = 0.1;
 
@@ -881,18 +859,20 @@ bool WholeBodyMasterSlave::stopWholeBodyMasterSlave(){
 }
 
 
-bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
+bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTCOUT << "setWholeBodyMasterSlaveParam" << std::endl;
-    wbms->wp.auto_swing_foot_landing_threshold = i_param.auto_swing_foot_landing_threshold;
-    wbms->wp.human_to_robot_ratio = i_param.human_to_robot_ratio;
-    wbms->wp.set_com_height_fix = i_param.set_com_height_fix;
-    wbms->wp.set_com_height_fix_val = i_param.set_com_height_fix_val;
-    wbms->wp.swing_foot_height_offset = i_param.swing_foot_height_offset;
-    wbms->wp.upper_body_rmc_ratio = i_param.upper_body_rmc_ratio;
+    wbms->wp.auto_swing_foot_landing_threshold  = i_param.auto_swing_foot_landing_threshold;
+    wbms->wp.human_to_robot_ratio               = i_param.human_to_robot_ratio;
+    wbms->wp.set_com_height_fix                 = i_param.set_com_height_fix;
+    wbms->wp.set_com_height_fix_val             = i_param.set_com_height_fix_val;
+    wbms->wp.swing_foot_height_offset           = i_param.swing_foot_height_offset;
+    wbms->wp.upper_body_rmc_ratio               = i_param.upper_body_rmc_ratio;
     if(mode.now() == MODE_IDLE){
-        wbms->wp.use_head = i_param.use_head;
-        wbms->wp.use_upper = i_param.use_upper;
-        wbms->wp.use_lower = i_param.use_lower;
+        wbms->wp.use_head                       = i_param.use_head;
+        wbms->wp.use_upper                      = i_param.use_upper;
+        wbms->wp.use_lower                      = i_param.use_lower;
+        wbms->wp.use_joints                     = hrp::to_string_vector(i_param.use_joints);
+        wbms->wp.use_targets                    = hrp::to_string_vector(i_param.use_targets);
     }else{
       RTCOUT << "use_head, use_upper, use_lower can be changed in MODE_IDLE" << std::endl;
     }
@@ -900,23 +880,26 @@ bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBody
 }
 
 
-bool WholeBodyMasterSlave::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
+bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTCOUT << "getWholeBodyMasterSlaveParam" << std::endl;
-    i_param.auto_swing_foot_landing_threshold = wbms->wp.auto_swing_foot_landing_threshold;
-    i_param.human_to_robot_ratio = wbms->wp.human_to_robot_ratio;
-    i_param.set_com_height_fix = wbms->wp.set_com_height_fix;
-    i_param.set_com_height_fix_val = wbms->wp.set_com_height_fix_val;
-    i_param.swing_foot_height_offset = wbms->wp.swing_foot_height_offset;
-    i_param.upper_body_rmc_ratio = wbms->wp.upper_body_rmc_ratio;
-    i_param.use_head = wbms->wp.use_head;
-    i_param.use_upper = wbms->wp.use_upper;
-    i_param.use_lower = wbms->wp.use_lower;
+    i_param.auto_swing_foot_landing_threshold   = wbms->wp.auto_swing_foot_landing_threshold;
+    i_param.human_to_robot_ratio                = wbms->wp.human_to_robot_ratio;
+    i_param.set_com_height_fix                  = wbms->wp.set_com_height_fix;
+    i_param.set_com_height_fix_val              = wbms->wp.set_com_height_fix_val;
+    i_param.swing_foot_height_offset            = wbms->wp.swing_foot_height_offset;
+    i_param.upper_body_rmc_ratio                = wbms->wp.upper_body_rmc_ratio;
+    i_param.use_head                            = wbms->wp.use_head;
+    i_param.use_upper                           = wbms->wp.use_upper;
+    i_param.use_lower                           = wbms->wp.use_lower;
+    i_param.use_joints                          = hrp::to_StrSequence(wbms->wp.use_joints);
+    i_param.use_targets                         = hrp::to_StrSequence(wbms->wp.use_targets);
     return true;
 }
 
 
 RTC::ReturnCode_t WholeBodyMasterSlave::onActivated(RTC::UniqueId ec_id){ RTCOUT << "onActivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
 RTC::ReturnCode_t WholeBodyMasterSlave::onDeactivated(RTC::UniqueId ec_id){ RTCOUT << "onDeactivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
+RTC::ReturnCode_t WholeBodyMasterSlave::onFinalize(){ return RTC::RTC_OK; }
 
 extern "C"{
     void WholeBodyMasterSlaveInit(RTC::Manager* manager) {

@@ -319,7 +319,6 @@ class CapsuleCollisionChecker {
 class WBMSCore{
     private:
         double HZ, DT;
-        struct timeval t_calc_start, t_calc_end;
         BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters, com_in_filter;
         hrp::Vector3 com_old, com_oldold, comacc, com_CP_ref_old, r_zmp_raw;
         std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rpy_filters;
@@ -348,11 +347,12 @@ class WBMSCore{
                 bool use_head;
                 bool use_upper;
                 bool use_lower;
-        };
-        struct WBMSparameters wp;
+                std::vector<std::string> use_joints;
+                std::vector<std::string> use_targets;
+        } wp;
         struct ActualRobotState {
                 hrp::Vector3 com, zmp;
-        }act_rs;
+        } act_rs;
 
         WBMSCore(const double& dt){
             DT = dt;
@@ -420,7 +420,6 @@ class WBMSCore{
             if(DEBUG)fclose(id_log);
             cout<<"WBMSCore destructed"<<endl;
         }
-        double getUpdateTime() const { return (double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6; }
         void initializeHumanPoseFromCurrentInput(){
             std::string ns[7] = {"com","rf","lf","rh","lh","zmp","head"};
             for(int i=0;i<7;i++){
@@ -460,7 +459,6 @@ class WBMSCore{
             rp_ref_out_old = rp_ref_vel_old = rp_ref_out;
         }
         void update(){//////////  メインループ  ////////////
-            gettimeofday(&t_calc_start, NULL);
             autoLRSwapCheck                     (hp_wld_raw, hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)(動作中に入れ替わると余計なお世話かも)
             convertHumanToRobot                 (hp_swap_checked, rp_ref_out);
             hp_plot = rp_ref_out;
@@ -487,7 +485,6 @@ class WBMSCore{
             rp_ref_out_old = rp_ref_out;
             loop++;
             is_initial_loop = false;
-            gettimeofday(&t_calc_end, NULL);
         }
 
     private:
@@ -787,95 +784,91 @@ class WBMSCore{
         }
 
 
-        //        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-        //              namespace bg = boost::geometry;
-        //              typedef bg::model::d2::point_xy<double> point;
-        //              typedef bg::model::polygon<point> polygon;
-        //              polygon lr_region,s_region;
-        //              const double XUMARGIN = 0.04;//CHIDORI
-        //              const double XLMARGIN = -0.02;
-        //              const double YUMARGIN = 0.01;
-        //              const double YLMARGIN = -0.01;
-        //        //      const double XUMARGIN = 0.02;//JAXON
-        //        //      const double XLMARGIN = -0.01;
-        //        //      const double YUMARGIN = 0.0;
-        //        //      const double YLMARGIN = -0.0;
-        //              bg::model::linestring<point> s_line = boost::assign::list_of<point>
-        //                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
-        //                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
-        //                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
-        //                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
-        //                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
-        //                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
-        //                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
-        //                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
-        //                     ;
-        //              bg::convex_hull(s_line, s_region);
-        //              point com2d(comin_abs(0),comin_abs(1));
-        //              Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
-        //              enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
-        //              point_state_t pt_state = PT_IN_NO_PATTERN;
-        //              if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
-        //                pt_state = PT_IN_REGION;
-        //              }else{
-        //        //        cout<<"COM out of s_region"<<endl;
-        //                Eigen::Vector2d check_point(com2d.x(),com2d.y());
-        //                int ans_lid=-1;
-        //                for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
-        //                  Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
-        //                  Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
-        //                  Eigen::Vector2d edge_v = next_vert - cur_vert;
-        //                  Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
-        //                  //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
-        //                  if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
-        //                    ans_lid = i;
-        //                    ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
-        //                    pt_state = PT_FIX_TO_EDGE;
-        //                    break;
-        //                  }
-        //                }
-        //                if(pt_state == PT_FIX_TO_EDGE){
-        //                  cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-        //                }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
-        //                  double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
-        //                  int ans_pid = 0;
-        //                  for(int i=1;i<s_region.outer().size();i++){
-        //                    if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
-        //                      cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
-        //                      ans_pid = i;
-        //                    }
-        //                  }
-        //                  ans_point(0) = s_region.outer()[ans_pid].x();
-        //                  ans_point(1) = s_region.outer()[ans_pid].y();
-        //                  cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-        //                  pt_state = PT_FIX_TO_VERTEX;
-        //                }
-        //              }
-        //        //      double FNUM_Z = 0.005;
-        //              double FNUM_Z = 0.01;
-        //              lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
-        //              hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
-        //        //      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
-        //        //      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
-        //
-        //              if(loop%50==0){
-        //                if(pt_state != PT_IN_REGION){
-        //                  std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
-        //                }
-        //                for(int i=0;i<s_region.outer().size();i++){
-        //                  fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
-        //                }
-        //                fprintf(sr_log,"\n");
-        //                fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-        //                fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
-        //                fprintf(cz_log,"\n\n");
-        //              }
-        //              comin_abs(0) = ans_point(0);
-        //              comin_abs(1) = ans_point(1);
-        //        //      rp_ref_out.zmp(0) = comin_abs(0);
-        //        //      rp_ref_out.zmp(1) = comin_abs(1);
-        //              return true;
-        //            }
+        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+//              namespace bg = boost::geometry;
+//              typedef bg::model::d2::point_xy<double> point;
+//              typedef bg::model::polygon<point> polygon;
+//              polygon lr_region,s_region;
+//              const double XUMARGIN = 0.04;//CHIDORI
+//              const double XLMARGIN = -0.02;
+//              const double YUMARGIN = 0.01;
+//              const double YLMARGIN = -0.01;
+//              bg::model::linestring<point> s_line = boost::assign::list_of<point>
+//                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
+//                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
+//                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
+//                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
+//                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
+//                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
+//                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
+//                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
+//                     ;
+//              bg::convex_hull(s_line, s_region);
+//              point com2d(comin_abs(0),comin_abs(1));
+//              Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
+//              enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
+//              point_state_t pt_state = PT_IN_NO_PATTERN;
+//              if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
+//                pt_state = PT_IN_REGION;
+//              }else{
+//        //        cout<<"COM out of s_region"<<endl;
+//                Eigen::Vector2d check_point(com2d.x(),com2d.y());
+//                int ans_lid=-1;
+//                for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+//                  Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
+//                  Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
+//                  Eigen::Vector2d edge_v = next_vert - cur_vert;
+//                  Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
+//                  //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
+//                  if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+//                    ans_lid = i;
+//                    ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+//                    pt_state = PT_FIX_TO_EDGE;
+//                    break;
+//                  }
+//                }
+//                if(pt_state == PT_FIX_TO_EDGE){
+//                  cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+//                }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+//                  double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
+//                  int ans_pid = 0;
+//                  for(int i=1;i<s_region.outer().size();i++){
+//                    if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
+//                      cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
+//                      ans_pid = i;
+//                    }
+//                  }
+//                  ans_point(0) = s_region.outer()[ans_pid].x();
+//                  ans_point(1) = s_region.outer()[ans_pid].y();
+//                  cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+//                  pt_state = PT_FIX_TO_VERTEX;
+//                }
+//              }
+//        //      double FNUM_Z = 0.005;
+//              double FNUM_Z = 0.01;
+//              lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
+//              hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
+//        //      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
+//        //      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
+//
+//              if(loop%50==0){
+//                if(pt_state != PT_IN_REGION){
+//                  std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
+//                }
+//                for(int i=0;i<s_region.outer().size();i++){
+//                  fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
+//                }
+//                fprintf(sr_log,"\n");
+//                fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+//                fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
+//                fprintf(cz_log,"\n\n");
+//              }
+//              comin_abs(0) = ans_point(0);
+//              comin_abs(1) = ans_point(1);
+//        //      rp_ref_out.zmp(0) = comin_abs(0);
+//        //      rp_ref_out.zmp(1) = comin_abs(1);
+//              return true;
+            }
 
 };
 

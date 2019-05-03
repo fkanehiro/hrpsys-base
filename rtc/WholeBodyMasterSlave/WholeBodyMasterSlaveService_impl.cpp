@@ -34,14 +34,14 @@ CORBA::Boolean WholeBodyMasterSlaveService_impl::resumeWholeBodyMasterSlave()
     return m_wholebodymasterslave->resumeWholeBodyMasterSlave();
 };
 
-void WholeBodyMasterSlaveService_impl::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param)
+void WholeBodyMasterSlaveService_impl::setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param)
 {
-  m_wholebodymasterslave->setWholeBodyMasterSlaveParam(i_param);
+  m_wholebodymasterslave->setParams(i_param);
 };
 
-void WholeBodyMasterSlaveService_impl::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam_out i_param)
+void WholeBodyMasterSlaveService_impl::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam_out i_param)
 {
-//  i_param = new OpenHRP::WholeBodyMasterSlaveParam::WholeBodyMasterSlaveParam();
-//  return  m_wholebodymasterslave->getWholeBodyMasterSlaveParam(*i_param);
-  m_wholebodymasterslave->getWholeBodyMasterSlaveParam(i_param);
+  i_param = new OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam();
+  m_wholebodymasterslave->getParams(*i_param);
+//  m_wholebodymasterslave->getParams(i_param); // error: no matching function for call to ‘WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam_out&)’
 };

@@ -12,6 +12,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
+#include <time.h>
 
 #include "WholeBodyMasterSlaveService_impl.h"
 #include "wbms_core.h"
@@ -62,8 +63,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         bool stopWholeBodyMasterSlave();
         bool pauseWholeBodyMasterSlave();
         bool resumeWholeBodyMasterSlave();
-        bool setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
-        bool getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
+        bool setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
+        bool getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
 
     protected:
         RTC::TimedDoubleSeq m_qRef;
@@ -183,14 +184,23 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         int cp_flag;
         hrp::Vector3 lt,rt;
         enum cp_enum{ CP_IDLE, CP_LF, CP_RF, CP_STATIC};
+        struct timespec startT, endT;
+        std::string time_report_str;
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
         void solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref);
         void processTransition();
         void preProcessForWholeBodyMasterSlave();
         void processWholeBodyMasterSlave(const HumanPose& pose_ref);
-        void processHOFFARBIBFilter(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe);
-        bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
+        void smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe);
+        bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; }
+        void addTimeReport(const std::string& prefix){
+            clock_gettime(CLOCK_REALTIME, &endT);
+            std::stringstream ss;
+            ss << prefix << "= " << std::fixed <<std::setprecision(2) << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-6) << " [ms] / ";
+            time_report_str += ss.str();
+            clock_gettime(CLOCK_REALTIME, &startT);
+        }
 };
 
 
