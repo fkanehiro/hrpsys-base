@@ -16,7 +16,12 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/multi/geometries/multi_point.hpp>
 #include <boost/assign/list_of.hpp>
+namespace bg = boost::geometry;
+typedef bg::model::d2::point_xy<double> bg_point;
+typedef bg::model::multi_point<bg_point> bg_multi_point;
+typedef bg::model::polygon<bg_point> bg_polygon;
 
 //#include<Eigen/StdVector>
 //EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Matrix2d)
@@ -423,7 +428,7 @@ class WBMSCore{
         void initializeHumanPoseFromCurrentInput(){
             std::string ns[7] = {"com","rf","lf","rh","lh","zmp","head"};
             for(int i=0;i<7;i++){
-                hp_wld_raw.tgt[i].offs   =  hp_wld_raw.tgt[i].abs;
+                hp_wld_raw.tgt[i].offs = hp_wld_raw.tgt[i].abs;
             }
         }
         void initializeRobotPoseFromHRPBody(const hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& _ee_ikc_map){
@@ -555,7 +560,7 @@ class WBMSCore{
         bool applyCOMToSupportRegionLimit(const hrp::Pose3& rfin_abs, const hrp::Pose3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
             hrp::dmatrix hull_com = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R], foot_vert_safe_fblr[L]);
             hrp::Vector2 cog = comin_abs.head(XY);
-            if(!isPointInHull2DOpenCV(cog,hull_com)){ calcNearestPointOnHull(cog, hull_com, cog); }//外に出たら最近傍点に頭打ち
+            if(!isPointInHull2D(cog,hull_com)){ calcNearestPointOnHull(cog, hull_com, cog); }//外に出たら最近傍点に頭打ち
             comin_abs.head(XY) = cog.head(XY);
             return true;
         }
@@ -571,10 +576,10 @@ class WBMSCore{
             }
         }
         void setFootRotHorizontalIfGoLanding(HumanPose& out){
-            if( out.tgt[rf].go_contact){
+            if( out.tgt[rf].go_contact || cp_force_go_contact[R]){
                 out.tgt[rf].abs.setRpy(0,0,out.tgt[rf].abs.rpy()(y));
             }
-            if( out.tgt[lf].go_contact){
+            if( out.tgt[lf].go_contact || cp_force_go_contact[L]){
                 out.tgt[lf].abs.setRpy(0,0,out.tgt[lf].abs.rpy()(y));
             }
         }
@@ -632,7 +637,7 @@ class WBMSCore{
             //        foot_landing_delay = 0;
             //      }
             hrp::Vector2 cp_dec_ragulated = com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay);
-            if(!isPointInHull2DOpenCV(cp_dec_ragulated, hull_d)){
+            if(!isPointInHull2D(cp_dec_ragulated, hull_d)){
                 calcCrossPointOnHull(com_pos, cp_dec_ragulated, hull_d, cp_dec_ragulated);
                 com_vel_decel_ok = (cp_dec_ragulated - com_pos) / ( sqrt( H_cur / G ) + foot_landing_delay);
             }
@@ -641,14 +646,14 @@ class WBMSCore{
             hrp::dmatrix foot_vert3d_check_wld[LR], one_foot_hull2d[LR];
             for(int i=0; i<LR; i++){
                 foot_vert3d_check_wld[i] = (rp_ref_out.tgt[F(i)].abs.R * foot_vert3d_check[i]).colwise() + rp_ref_out.tgt[F(i)].abs.p; // rotate and translate in 3D
-                one_foot_hull2d[i] = makeConvexHull2DOpenCV( foot_vert3d_check_wld[i].topRows(XY) ); // project into 2D and make convex hull
+                one_foot_hull2d[i] = makeConvexHull2D( foot_vert3d_check_wld[i].topRows(XY) ); // project into 2D and make convex hull
             }
-            cp_force_go_contact[L] = !isPointInHull2DOpenCV(cp_dec_ragulated, one_foot_hull2d[R]); // if CapturePoint go out of R sole region, L foot must be go contact
-            cp_force_go_contact[R] = !isPointInHull2DOpenCV(cp_dec_ragulated, one_foot_hull2d[L]); // if CapturePoint go out of L sole region, R foot must be go contact
+            cp_force_go_contact[L] = !isPointInHull2D(cp_dec_ragulated, one_foot_hull2d[R]); // if CapturePoint go out of R sole region, L foot must be go contact
+            cp_force_go_contact[R] = !isPointInHull2D(cp_dec_ragulated, one_foot_hull2d[L]); // if CapturePoint go out of L sole region, R foot must be go contact
 
             //加速CP条件(ACP使用)
             hrp::Vector2 cp_acc_ragulated = com_pos - com_vel * sqrt( H_cur / G );
-            if(!isPointInHull2DOpenCV(cp_acc_ragulated, hull_a)){
+            if(!isPointInHull2D(cp_acc_ragulated, hull_a)){
                 calcCrossPointOnHull(com_pos, cp_acc_ragulated, hull_a, cp_acc_ragulated);
                 com_vel_accel_ok = (-cp_acc_ragulated + com_pos ) / sqrt( H_cur / G );
             }
@@ -660,7 +665,7 @@ class WBMSCore{
             hrp::dmatrix rf_sole_verts_abs = (rfin_abs.R * make_rect_3d(rf_mgn)).colwise() + rfin_abs.p;
             hrp::dmatrix lf_sole_verts_abs = (lfin_abs.R * make_rect_3d(lf_mgn)).colwise() + lfin_abs.p;
             hrp::dmatrix both_sole_verts_abs = (hrp::dmatrix(3, rf_sole_verts_abs.cols()+lf_sole_verts_abs.cols()) << rf_sole_verts_abs, lf_sole_verts_abs).finished();
-            return makeConvexHull2DOpenCV(both_sole_verts_abs.topRows(XY));
+            return makeConvexHull2D(both_sole_verts_abs.topRows(XY));
         }
         void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const hrp::dvector6& rfwin, const hrp::dvector6& lfwin, hrp::Vector3& zmp_ans){
             hrp::Vector3 rfzmp,lfzmp;
@@ -678,19 +683,6 @@ class WBMSCore{
                 zmp_ans(1) = ( rfzmp(1)*rfwin(fz) + lfzmp(1)*lfwin(fz) ) / ( rfwin(fz) + lfwin(fz));
             }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
             zmp_ans(2) = 0;
-        }
-        void calcXYMarginToHull(const hrp::Vector2& check_point, const hrp::dmatrix& hull, hrp::Vector4& margin_ans){
-            if(hull.rows() != 2){ std::cerr << "Invalid input for calcXYMarginToHull" << std::endl; dbgn(hull); }
-            hrp::Vector4 margin_abs;
-            hrp::Vector2 cross_pt, anchor_vec[4] = {hrp::Vector2(1,0), hrp::Vector2(-1,0), hrp::Vector2(0,1), hrp::Vector2(0,-1)};//前後左右に伸ばしたアンカーとの交点を見る
-            for(int direc=0;direc<4;direc++){
-                calcCrossPointOnHull(check_point, check_point+anchor_vec[direc], hull, cross_pt);
-                margin_abs(direc) = (cross_pt - check_point).norm();
-            }
-            margin_ans(0) =  margin_abs(0);
-            margin_ans(1) = -margin_abs(1);
-            margin_ans(2) =  margin_abs(2);
-            margin_ans(3) = -margin_abs(3);
         }
         bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const hrp::dmatrix& hull, hrp::Vector2& pt_will_cross){
             if(hull.rows() != 2){ std::cerr << "Invalid input for calcCrossPointOnHull" << std::endl; dbgn(hull); }
@@ -741,8 +733,12 @@ class WBMSCore{
             pt_ans = ans_nearest_pt;
             return ans_nearest_dist;
         }
-        hrp::dmatrix makeConvexHull2DOpenCV(const hrp::dmatrix& pts_2d){
-            if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHullOpenCV" << std::endl; dbgn(pts_2d); }
+        hrp::dmatrix makeConvexHull2D(const hrp::dmatrix& pts_2d){
+//            return makeConvexHull2D_OpenCV(pts_2d);
+            return makeConvexHull2D_Boost(pts_2d);
+        }
+        hrp::dmatrix makeConvexHull2D_OpenCV(const hrp::dmatrix& pts_2d){
+            if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHull2D_OpenCV" << std::endl; dbgn(pts_2d); }
             cv::Mat pts_2d_cv;
             std::vector<cv::Point2f> points(pts_2d.cols()), hull_2d_cv;
             for(int i=0; i<pts_2d.cols(); i++){
@@ -755,13 +751,42 @@ class WBMSCore{
             }
             return hull_2d;
         }
-        bool isPointInHull2DOpenCV(const hrp::Vector2& pt, const hrp::dmatrix& hull){
+        hrp::dmatrix makeConvexHull2D_Boost(const hrp::dmatrix& pts_2d){
+            if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHull_Boost" << std::endl; dbgn(pts_2d); }
+            bg_multi_point tmp;
+            tmp.resize(pts_2d.cols());
+            for(int i=0; i<pts_2d.cols(); i++){
+                tmp[i] = bg_point(pts_2d.col(i)(X), pts_2d.col(i)(Y));
+            }
+            bg_polygon hull_bg;
+            bg::convex_hull(tmp, hull_bg);
+            hrp::dmatrix hull_2d(2, hull_bg.outer().size());
+            for(int i=0; i<hull_bg.outer().size(); i++){
+                hull_2d.col(i) << hull_bg.outer()[i].x(), hull_bg.outer()[i].y();
+            }
+            return hull_2d;
+        }
+        bool isPointInHull2D(const hrp::Vector2& pt, const hrp::dmatrix& hull){
+//            return isPointInHull2D_OpenCV(pt, hull);
+            return isPointInHull2D_Boost(pt, hull);
+        }
+        bool isPointInHull2D_OpenCV(const hrp::Vector2& pt, const hrp::dmatrix& hull){
             if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2dOpenCV" << std::endl; dbgn(hull); }
             std::vector<cv::Point2f> hull_cv(hull.cols());
             for(int i=0; i<hull.cols(); i++){
                 hull_cv[i] = cv::Point2f(hull.col(i)(X), hull.col(i)(Y));
             }
             return (cv::pointPolygonTest(cv::Mat(hull_cv), cv::Point2f(pt(X),pt(Y)), false) > 0);
+        }
+        bool isPointInHull2D_Boost(const hrp::Vector2& pt, const hrp::dmatrix& hull){
+            if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2D_Boost" << std::endl; dbgn(hull); }
+            const bg_point pt_bg(pt(X), pt(Y));
+            bg_polygon hull_bg;
+            hull_bg.outer().resize(hull.cols());
+            for(int i=0; i<hull.cols(); i++){
+                hull_bg.outer()[i] = bg_point(hull.col(i)(X), hull.col(i)(Y));
+            }
+            return bg::within(pt_bg, hull_bg);
         }
         void applyLPFilter_post(HumanPose& tgt){
             if(is_initial_loop){
@@ -782,9 +807,7 @@ class WBMSCore{
             com_oldold = com_old;
             com_old = comin;
         }
-
-
-        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+//        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
 //              namespace bg = boost::geometry;
 //              typedef bg::model::d2::point_xy<double> point;
 //              typedef bg::model::polygon<point> polygon;
@@ -868,7 +891,7 @@ class WBMSCore{
 //        //      rp_ref_out.zmp(0) = comin_abs(0);
 //        //      rp_ref_out.zmp(1) = comin_abs(1);
 //              return true;
-            }
+//            }
 
 };
 
