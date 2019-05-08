@@ -62,6 +62,8 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
         m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
 #endif
         m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
+        m_AutoBalancerServicePort("AutoBalancerService"),
+        m_StabilizerServicePort("StabilizerService"),
         m_debugLevel(0)
 {
     m_service0.wholebodymasterslave(this);
@@ -117,6 +119,15 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
     addPort(m_WholeBodyMasterSlaveServicePort);
 
+
+
+    m_AutoBalancerServicePort.registerConsumer("service0","AutoBalancerService", m_AutoBalancerServiceConsumer);
+    m_StabilizerServicePort.registerConsumer("service0","StabilizerService", m_StabilizerServiceConsumer);
+    addPort(m_AutoBalancerServicePort);
+    addPort(m_StabilizerServicePort);
+
+
+
     RTC::Properties& prop =  getProperties();
     coil::stringTo(m_dt, prop["dt"].c_str());
     RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -140,11 +151,19 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     RTCOUT << "setup fullbody ik finished" << std::endl;
 
     wbms = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
-    wbms->wp.use_joints = getJointNameAll(fik->m_robot);
+    if(fik->m_robot->name() == "RHP4B"){
+        for(int i=0; i<fik->m_robot->numJoints(); i++){
+            if(fik->m_robot->joint(i)->name.find("-linear-joint") == std::string::npos){
+                wbms->wp.use_joints.push_back(fik->m_robot->joint(i)->name);
+            }
+        }
+    }else{
+        wbms->wp.use_joints = getJointNameAll(fik->m_robot);
+    }
     wbms->wp.use_targets.push_back("rleg");
     wbms->wp.use_targets.push_back("lleg");
     wbms->wp.use_targets.push_back("rarm");
-    wbms->wp.use_targets.push_back("rarm");
+    wbms->wp.use_targets.push_back("larm");
     wbms->wp.use_targets.push_back("com");
     wbms->wp.use_targets.push_back("head");
     sccp = boost::shared_ptr<CapsuleCollisionChecker>(new CapsuleCollisionChecker(fik->m_robot));
@@ -160,7 +179,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     t_ip->set(&output_ratio);
     q_ip = new interpolator(fik->numStates(), m_dt, interpolator::CUBICSPLINE, 1); // or HOFFARBIB, QUINTICSPLINE
     q_ip->clear();
-    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0); // all joint max avarage vel = 1.0 rad/s
+    avg_q_vel = hrp::dvector::Constant(fik->numStates(), 2.0); // all joint max avarage vel = 1.0 rad/s
     avg_q_acc = hrp::dvector::Constant(fik->numStates(), 16.0); // all joint max avarage acc = 16.0 rad/s^2
     avg_q_vel.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link vel
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
@@ -251,9 +270,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
                 preProcessForWholeBodyMasterSlave();
                 idsb.setInitState(fik->m_robot, m_dt);//逆動力学初期化
             }
-
-            fik->q_ref.head(m_qRef.data.length()) = hrp::to_dvector(m_qRef.data);//あえてseqからのbaselink poseは信用しない
-
             wbms->update();//////HumanSynchronizerの主要処理
             if(DEBUGP)wbms->rp_ref_out.print();
             addTimeReport("MainFunc");
@@ -275,13 +291,24 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             wbms->act_rs.com = com;
             wbms->act_rs.zmp = ref_zmp;
 
-            const std::string tmp[] = {"R_CROTCH_R","R_CROTCH_P","R_CROTCH_Y","R_KNEE_P","R_ANKLE_R","R_ANKLE_P","L_CROTCH_R","L_CROTCH_P","L_CROTCH_Y","L_KNEE_P","L_ANKLE_R","L_ANKLE_P",};
-            const std::vector<std::string> lower(tmp, tmp+12);
+
+
+            if(wbms->rp_ref_out.tgt[rf].is_contact && !wbms->rp_ref_out.tgt[lf].is_contact){
+                ref_zmp.head(XY) = m_robot_vsafe->link(ee_ikc_map["rleg"].target_link_name)->p.head(XY);
+//                ref_zmp(X) + 0.05;
+            }
+            if(wbms->rp_ref_out.tgt[lf].is_contact && !wbms->rp_ref_out.tgt[rf].is_contact){
+                ref_zmp.head(XY) = m_robot_vsafe->link(ee_ikc_map["lleg"].target_link_name)->p.head(XY);
+//                ref_zmp(X) + 0.05;
+            }
+
+
+
+
             // qRef
             for (int i = 0; i < m_qRef.data.length(); i++ ){
-              if(!wbms->wp.use_lower && std::find(lower.begin(), lower.end(), fik->m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
-              else{
-                m_qRef.data[i] = output_ratio * m_robot_vsafe->joint(i)->q  + (1 - output_ratio) * m_qRef.data[i];
+              if(has(wbms->wp.use_joints, fik->m_robot->joint(i)->name)){
+                  m_qRef.data[i] = output_ratio * m_robot_vsafe->joint(i)->q  + (1 - output_ratio) * m_qRef.data[i];
               }
             }
 //            m_qRef.data = hrp::to_DoubleSeq(output_ratio * hrp::getQAll(m_robot_vsafe)  + (1 - output_ratio) * hrp::to_dvector(m_qRef.data));
@@ -326,7 +353,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_htrf_dbgOut.write();
     m_htlf_dbg.tm = m_qRef.tm;
     WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[lf].abs, m_htlf_dbg.data);
-    m_htlf_dbgOut.write();
+    m_htlf_dbgOut.write();m_AutoBalancerService
     m_htrh_dbg.tm = m_qRef.tm;
     WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[rh].abs, m_htrh_dbg.data);
     m_htrh_dbgOut.write();
@@ -463,148 +490,246 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
       tmp.rot_precision = deg2rad(3);
       ikc_list.push_back(tmp);
     }
-
     hrp::Vector3 act_cp = fik->m_robot->rootLink()->p + fik->m_robot->rootLink()->R * rel_act_cp;
-    hrp::Vector3 act_zmp = fik->m_robot->rootLink()->p + fik->m_robot->rootLink()->R * rel_act_zmp;
-    static int cp_count = 0;
-    static cp_enum state = CP_IDLE;
+    act_cp(Z) = 0.3;
+//    act_cp = 0.9 * act_cp + 0.1 * (fik->m_robot->rootLink()->p + fik->m_robot->rootLink()->R * rel_act_cp);
+    static hrp::Vector3 track_cp = act_cp;
 
-//    if(act_zmp.head(XY).norm() > 0.1 && state == CP_IDLE){
-//        if(act_zmp(Y) > 0){
-//            state = CP_LF;
-//        }else{
-//            state = CP_RF;
+    if(!std::isnan(act_cp(X)) && !std::isnan(act_cp(Y)) && !std::isnan(act_cp(Z))){
+        hrp::Vector3 direc = act_cp - track_cp;
+        const double speed = 0.3;
+        LIMIT_MINMAX(direc(X), -speed*m_dt, speed*m_dt);
+        LIMIT_MINMAX(direc(Y), -speed*m_dt, speed*m_dt);
+        LIMIT_MINMAX(direc(Z), -0.01*m_dt, 0.01*m_dt);
+//        if(direc.norm()>speed*m_dt){
+//            direc = direc.normalized() * speed*m_dt;
 //        }
-//    }
-//
-//    if(state == CP_IDLE){
-//        cp_count = 0;
-//    }
-//    else if(state == CP_LF || state == CP_RF){
-//        if(cp_count ++ > 50){
-//            state = CP_STATIC;
-//        }
-//    }
-//    else if(state == CP_STATIC){
-//        if(cp_count ++ > 100){
-//            state = CP_IDLE;
-//        }
-//    }
-//    const double FH = 0.05;
+        track_cp += direc;
+    }
+
+//    hrp::Vector3 act_zmp = fik->m_robot->rootLink()->p + fik->m_robot->rootLink()->R * rel_act_zmp;
+//    static int cp_count = 0;
+    const double L = 100;
+    const double sink = 0.0;
+    const double fh = 0.05;
+    const bool start_cp = false;
+//    const bool start_cp = ((act_cp - fik->m_robot->calcCM()).head(XY).norm()>0.025);
+//    dbgv(act_cp);
+//    dbgv(track_cp);
+//    dbgv(fik->m_robot->calcCM());
 
 
-    if(wbms->wp.use_lower){
+
+    if (act_cp.head(XY).norm()>0.02)
+    {
+
+
+
+
+    try {
+        OpenHRP::AutoBalancerService::FootstepsSequence fss;
+        OpenHRP::AutoBalancerService::StepParamsSequence spss;
+        fss.length(2);
+        spss.length(2);
+        fss[0].fs.length(1);
+        fss[1].fs.length(1);
+        spss[0].sps.length(1);
+        spss[1].sps.length(1);
+        fss[0].fs[0].leg = "rleg";
+        fss[0].fs[0].pos[0] = 0;
+        fss[0].fs[0].pos[1] = -0.1;
+        fss[0].fs[0].pos[2] = 0;
+        fss[0].fs[0].rot[0] = 1;
+        fss[0].fs[0].rot[1] = 0;
+        fss[0].fs[0].rot[2] = 0;
+        fss[0].fs[0].rot[3] = 0;
+        fss[1].fs[0].leg = "lleg";
+        fss[1].fs[0].pos[0] = act_cp(Y)>0 ? 0.3*act_cp.head(XY).normalized()(X) : 0;
+        fss[1].fs[0].pos[1] = act_cp(Y)>0 ? 0.3*act_cp.head(XY).normalized()(Y) : 0.1;
+        fss[1].fs[0].pos[2] = 0;
+        fss[1].fs[0].rot[0] = 1;
+        fss[1].fs[0].rot[1] = 0;
+        fss[1].fs[0].rot[2] = 0;
+        fss[1].fs[0].rot[3] = 0;
+        spss[0].sps[0].step_height = 0.1;
+        spss[1].sps[0].step_height = 0.1;
+        spss[0].sps[0].step_time = 0.01;
+        spss[1].sps[0].step_time = 0.5;
+        spss[0].sps[0].toe_angle = 0;
+        spss[1].sps[0].toe_angle = 0;
+        spss[0].sps[0].heel_angle = 0;
+        spss[1].sps[0].heel_angle = 0;
+//        m_AutoBalancerServiceConsumer->setFootSteps(fss,1);
+        m_AutoBalancerServiceConsumer->setFootStepsWithParam(fss,spss,1);
+    } catch(CORBA::COMM_FAILURE& ex) {
+//        dbg("1");
+    } catch(CORBA::MARSHAL& ex) {
+//        dbg("2");
+    } catch(CORBA::BAD_PARAM& ex) {
+//        dbg("3");
+    } catch(CORBA::OBJECT_NOT_EXIST& ex) {
+//        dbg("4");
+    } catch(CORBA::SystemException& ex) {
+//        dbg("5");
+    } catch(CORBA::Exception&) {
+//        dbg("6");
+    } catch(omniORB::fatalException& fe) {
+//        dbg("7");
+    }
+    catch(...) {
+//        dbg("8");
+    }
+//    dbg("ok");
+    // サービスポートによる処理
+}
+
+
+
+
+
+
+
+
+    if(has(wbms->wp.use_targets, "rleg")){
         IKConstraint tmp;
         tmp.target_link_name = ee_ikc_map["rleg"].target_link_name;
         tmp.localPos = ee_ikc_map["rleg"].localPos;
         tmp.localR = ee_ikc_map["rleg"].localR;
         tmp.targetPos = rf_ref.p;
+
+
+//        if(start_cp){
+//            double h = fh * (-sin(2* M_PI * loop / L) - sink);
+//            wbms->rp_ref_out.tgt[rf].is_contact = (h<0);
+//            LIMIT_MIN(h, 0);
+//            tmp.targetPos(Z) += h;
+//            static hrp::Vector2 xy = tmp.targetPos.head(XY);
+//            if(!wbms->rp_ref_out.tgt[rf].is_contact){
+//                xy = track_cp.head(XY);
+//            }
+//            tmp.targetPos.head(XY) += xy;
+//        }
+
+
         tmp.targetRpy = rf_ref.rpy();
         if(wbms->rp_ref_out.tgt[rf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(3);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
-
-//        if(state == CP_RF){
-//            if(cp_count==1){
-//                rt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
-//                wbms->rp_ref_out.tgt[rf].is_contact = false;
-//            }else if(cp_count==50){
-////                rt += hrp::Vector3(0,0,-FH);
-//                wbms->rp_ref_out.tgt[rf].is_contact = true;
-//            }
-//        }
-//        if(state == CP_STATIC){
-//            if(rt(Z) > 0){
-//                rt(Z) -= FH/450;
-//            }
-//        }
-//        tmp.targetPos += rt;
-
-
         ikc_list.push_back(tmp);
     }
-    if(wbms->wp.use_lower){
+    if(has(wbms->wp.use_targets, "lleg")){
         IKConstraint tmp;
         tmp.target_link_name = ee_ikc_map["lleg"].target_link_name;
         tmp.localPos = ee_ikc_map["lleg"].localPos;
         tmp.localR = ee_ikc_map["lleg"].localR;
         tmp.targetPos = lf_ref.p;
+
+
+//        if(start_cp){
+//            double h = fh * (sin(2*M_PI * loop / L) - sink);
+//            wbms->rp_ref_out.tgt[lf].is_contact = (h<0);
+//            LIMIT_MIN(h, 0);
+//            tmp.targetPos(Z) += h;
+//            static hrp::Vector2 xy = tmp.targetPos.head(XY);
+//            if(!wbms->rp_ref_out.tgt[lf].is_contact){
+//                xy = track_cp.head(XY);
+//            }
+//            tmp.targetPos.head(XY) += xy;
+//        }
+
+
+
         tmp.targetRpy = lf_ref.rpy();
         if(wbms->rp_ref_out.tgt[lf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(3);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
-
-//
-//        if(state == CP_LF){
-//            if(cp_count==1){
-//                lt += (hrp::Vector3() << act_zmp.head(XY).normalized() * 0.1, FH).finished();
-//                wbms->rp_ref_out.tgt[lf].is_contact = false;
-//            }else if(cp_count==50){
-////                lt += hrp::Vector3(0,0,-FH);
-//                wbms->rp_ref_out.tgt[lf].is_contact = true;
-//            }
-//        }
-//        if(state == CP_STATIC){
-//            if(lt(Z) > 0){
-//                lt(Z) -= FH/50;
-//            }
-//        }
-//        tmp.targetPos += lt;
-
         ikc_list.push_back(tmp);
     }
-    const double dist = 0.0;
-    {
+    if(has(wbms->wp.use_targets, "rarm")){
         IKConstraint tmp;
         tmp.target_link_name = ee_ikc_map["rarm"].target_link_name;
         tmp.localPos = ee_ikc_map["rarm"].localPos;
         tmp.localR = ee_ikc_map["rarm"].localR;
-        if((rh_ref.p-lh_ref.p).norm()<dist){
-            tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (rh_ref.p-lh_ref.p).normalized()*dist/2;
-        }else{
-            tmp.targetPos = rh_ref.p;
-        }
+        tmp.targetPos = rh_ref.p;
         tmp.targetRpy = rh_ref.rpy();
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
+
+
+
+
+        if(start_cp){
+             tmp.constraint_weight << 0,0,0,0,0,0;
+             if(act_cp(Y)<0 || true){
+                 hrp::Vector2 h_direc = act_cp.head(XY);
+                 h_direc = h_direc.normalized() * 0.5;
+                 tmp.targetPos << h_direc, 0;
+                 tmp.constraint_weight << 1,1,1,0,0,0;
+             }
+             tmp.targetPos << -0.5, -0.3, 0;
+
+
+
+
+         }
+
+
+
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
-    }{
+    }
+    if(has(wbms->wp.use_targets, "larm")){
         IKConstraint tmp;
         tmp.target_link_name = ee_ikc_map["larm"].target_link_name;
         tmp.localPos = ee_ikc_map["larm"].localPos;
         tmp.localR = ee_ikc_map["larm"].localR;
-        if((rh_ref.p-lh_ref.p).norm()<dist){
-            tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (lh_ref.p-rh_ref.p).normalized()*dist/2;
-        }else{
-            tmp.targetPos = lh_ref.p;
-        }
+        tmp.targetPos = lh_ref.p;
         tmp.targetRpy = lh_ref.rpy();
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
+
+
+
+
+        if(start_cp){
+            tmp.constraint_weight << 0,0,0,0,0,0;
+            if(act_cp(Y)>0 || true){
+                hrp::Vector2 h_direc = act_cp.head(XY);
+                h_direc = h_direc.normalized() * 0.5;
+                tmp.targetPos << h_direc, 0;
+                tmp.constraint_weight << 1,1,1,0,0,0;
+            }
+            tmp.targetPos << -0.5, 0.3, 0;
+        }
+
+
+
+
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
     }
-    if(fik->m_robot->link("HEAD_JOINT1") != NULL){
-        IKConstraint tmp;
-        tmp.target_link_name = "HEAD_JOINT1";
-        tmp.targetRpy = head_ref.rpy();
-        tmp.constraint_weight << 0,0,0,0,0.1,0.1;
-        tmp.rot_precision = deg2rad(1);
-        ikc_list.push_back(tmp);
+    if(has(wbms->wp.use_targets, "head")){
+        if(fik->m_robot->link("HEAD_JOINT1") != NULL){
+            IKConstraint tmp;
+            tmp.target_link_name = "HEAD_JOINT1";
+            tmp.targetRpy = head_ref.rpy();
+            tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+            tmp.rot_precision = deg2rad(1);
+            ikc_list.push_back(tmp);
+        }
+        if(fik->m_robot->link("HEAD_P") != NULL){
+            IKConstraint tmp;
+            tmp.target_link_name = "HEAD_P";
+            tmp.targetRpy = head_ref.rpy();
+            tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+            tmp.rot_precision = deg2rad(1);
+            ikc_list.push_back(tmp);
+        }
     }
-    // if(robot_in->link("HEAD_P") != NULL){
-    //     IKConstraint tmp;
-    //     tmp.target_link_name = "HEAD_P";
-    //     tmp.targetRpy = head_ref.rpy();
-    //     tmp.constraint_weight << 0,0,0,0,0.1,0.1;
-    //     tmp.rot_precision = deg2rad(1);
-    //     ikc_list.push_back(tmp);
-    // }
     if(wbms->rp_ref_out.tgt[rf].is_contact){
         sccp->avoid_priority.head(12).head(6).fill(4);
     }else{
@@ -659,12 +784,21 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
     }
 
 
-    if(wbms->wp.use_lower){
+    if(has(wbms->wp.use_targets, "com")){
         IKConstraint tmp;
         tmp.target_link_name = "COM";
         tmp.localPos = hrp::Vector3::Zero();
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = com_ref.p;// COM height will not be constraint
+
+
+
+//        if(start_cp){
+//            tmp.targetPos.head(XY) += track_cp.head(XY);
+//            tmp.targetPos(Z) = track_cp(Z);
+//        }
+
+
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
 //        tmp.constraint_weight << 3,3,0.01,0.1,0.1,0;
         tmp.constraint_weight << 3,3,0.01,0,0,0;
@@ -680,10 +814,8 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
     if( fik->m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT0")->jointId) = 0.1;//JAXON
     if( fik->m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
     if( fik->m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
-    if( fik->m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_Y")->jointId) = 0.1;//K
-    if( fik->m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_P")->jointId) = 0.1;
-//        if( fik->m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_Y")->jointId) = 0;//K
-//        if( fik->m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_P")->jointId) = 0;
+//    if( fik->m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_Y")->jointId) = 0.1;//K
+//    if( fik->m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_P")->jointId) = 0.1;
 //    fik->q_ref_constraint_weight(fik->m_robot->link("CHEST_Y")->jointId) = 1;
 //    fik->q_ref_constraint_weight(fik->m_robot->link("CHEST_P")->jointId) = 1;
 
@@ -716,11 +848,15 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         LIMIT_MINMAX(fik->m_robot->joint(i)->q, fik->m_robot->joint(i)->llimit, fik->m_robot->joint(i)->ulimit);
     }
 
-//    fik_in->q_ref = init_sync_state;
-    if(fik->m_robot->name() == "RHP4B"){
-        fik->dq_weight_all.fill(0);
-        fik->dq_weight_all.head(31).fill(1);
-        fik->dq_weight_all.tail(6).fill(1);
+
+    fik->q_ref.head(m_qRef.data.length()) = hrp::to_dvector(m_qRef.data);//あえてseqからのbaselink poseは信用しない
+
+
+    for(int i=0; i<fik->m_robot->numJoints(); i++){
+        if(!has(wbms->wp.use_joints, fik->m_robot->joint(i)->name)){
+            fik->dq_weight_all(i) = 0;
+            fik->m_robot->joint(i)->q = m_qRef.data[i];
+        }
     }
 
 

@@ -410,6 +410,8 @@ class HrpsysConfigurator(object):
                 connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
                 connectPorts(self.st.port("actCapturePoint"), self.wbms.port("actCapturePoint"))
                 connectPorts(self.st.port("zmp"), self.wbms.port("zmp"))
+                connectPorts(self.wbms.port("AutoBalancerService"), self.abc.port("AutoBalancerService"))
+                connectPorts(self.wbms.port("StabilizerService"), self.st.port("StabilizerService"))
             
             connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))

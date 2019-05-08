@@ -102,6 +102,8 @@ namespace hrp{
     }
 }
 
+inline bool has(const std::vector<std::string> v, const std::string& s){ return (std::find(v.begin(), v.end(), s) != v.end());}
+
 inline std::ostream& operator<<(std::ostream& os, hrp::Pose3& in){
     os << "p = " << in.p.transpose() << std::endl;
     os << "R =\n" << in.R << std::endl;

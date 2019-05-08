@@ -14,13 +14,15 @@
 
 // geometry
 #include <boost/geometry.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/multi/geometries/multi_point.hpp>
-#include <boost/assign/list_of.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+//#include <boost/assign/list_of.hpp>
 namespace bg = boost::geometry;
 typedef bg::model::d2::point_xy<double> bg_point;
 typedef bg::model::multi_point<bg_point> bg_multi_point;
+typedef bg::model::linestring<bg_point> bg_linestring;
 typedef bg::model::polygon<bg_point> bg_polygon;
 
 //#include<Eigen/StdVector>
@@ -33,6 +35,34 @@ typedef bg::model::polygon<bg_point> bg_polygon;
 
 
 #define DEBUG 0
+
+inline bg_point to_bg_point(const hrp::Vector2& hrp_point2d){ return bg_point(hrp_point2d(X), hrp_point2d(Y)); }
+inline hrp::Vector2 to_Vector2(const bg_point& bg_point2d){ return hrp::Vector2(bg_point2d.x(), bg_point2d.y()); }
+inline bg_polygon to_bg_hull(const hrp::dmatrix& hrp_hull){
+    if(hrp_hull.rows() != 2){ std::cerr << "Invalid input for to_bg_hull" << std::endl; dbgn(hrp_hull); }
+    bg_polygon hull_bg;
+    hull_bg.outer().resize(hrp_hull.cols());
+    for(int i=0; i<hrp_hull.cols(); i++){
+        hull_bg.outer()[i] = bg_point(hrp_hull.col(i)(X), hrp_hull.col(i)(Y));
+    }
+    return hull_bg;
+}
+
+class LIP_model{
+    private:
+        double G, dt;
+    public:
+        LIP_model(){};
+        double com_height;
+        std::deque<hrp::Vector3> com;
+        void update(const hrp::Vector3 com_new){ com.pop_back(); com.push_front(com_new); }
+        hrp::Vector3 vel(){ return (com[1] - com[0]) / dt ; }
+        hrp::Vector3 DCM(){ return com[0] + vel() * sqrt( com_height / G ); }
+        hrp::Vector3 CCM(){ return com[0] - vel() * sqrt( com_height / G ); }
+        hrp::Vector3 acc(){ return (com[2] - 2* com[1] + com[0]) / ( dt * dt ); }
+//        hrp::Vector3 ZMP(){ return (hrp::Vector3() << com[0].head(XY) - acc().head(XY) * ( com_height / G ), com[0](Z) - com_height).finished; }
+};
+
 
 class BiquadIIRFilterVec{
     private:
@@ -325,7 +355,7 @@ class WBMSCore{
     private:
         double HZ, DT;
         BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters, com_in_filter;
-        hrp::Vector3 com_old, com_oldold, comacc, com_CP_ref_old, r_zmp_raw;
+        hrp::Vector3 com_old, com_oldold, comacc, com_CP_ref_old;
         std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rpy_filters;
         HumanPose rp_ref_out_old, hp_swap_checked;
         unsigned int loop;
@@ -343,20 +373,20 @@ class WBMSCore{
         hrp::dvector6 invdyn_ft;
         hrp::Vector4 foot_vert_act_fblr[LR], foot_vert_safe_fblr[LR], foot_vert_check_fblr[LR];
         struct WBMSparameters {
-                double auto_swing_foot_landing_threshold;
-                double human_to_robot_ratio;
-                bool set_com_height_fix;
-                double set_com_height_fix_val;
-                double swing_foot_height_offset;
-                double upper_body_rmc_ratio;
-                bool use_head;
-                bool use_upper;
-                bool use_lower;
-                std::vector<std::string> use_joints;
-                std::vector<std::string> use_targets;
+            double auto_swing_foot_landing_threshold;
+            double human_to_robot_ratio;
+            bool set_com_height_fix;
+            double set_com_height_fix_val;
+            double swing_foot_height_offset;
+            double upper_body_rmc_ratio;
+            bool use_head;
+            bool use_upper;
+            bool use_lower;
+            std::vector<std::string> use_joints;
+            std::vector<std::string> use_targets;
         } wp;
         struct ActualRobotState {
-                hrp::Vector3 com, zmp;
+            hrp::Vector3 com, zmp;
         } act_rs;
 
         WBMSCore(const double& dt){
@@ -365,7 +395,6 @@ class WBMSCore{
             loop = 0;
             //////////  hrp::Vector は初期化必要  ///////////
             com_old = com_oldold = comacc = hrp::Vector3::Zero();
-            r_zmp_raw = hrp::Vector3::Zero();
             cp_dec = cp_acc = hrp::Vector3::Zero();
             invdyn_ft = hrp::dvector6::Zero();
             tgt_pos_filters.resize(num_pose_tgt);
@@ -482,8 +511,7 @@ class WBMSCore{
             com_forcp_ref_old = com_forcp_ref;
             applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
-            applyLPFilter_post                       (rp_ref_out);
-            r_zmp_raw = rp_ref_out.tgt[zmp].abs.p;
+//            applyLPFilter_post                       (rp_ref_out);
             applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
             modifyFootRotAndXYForContact        (rp_ref_out);
             H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
@@ -559,9 +587,9 @@ class WBMSCore{
         }
         bool applyCOMToSupportRegionLimit(const hrp::Pose3& rfin_abs, const hrp::Pose3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
             hrp::dmatrix hull_com = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R], foot_vert_safe_fblr[L]);
-            hrp::Vector2 cog = comin_abs.head(XY);
-            if(!isPointInHull2D(cog,hull_com)){ calcNearestPointOnHull(cog, hull_com, cog); }//外に出たら最近傍点に頭打ち
-            comin_abs.head(XY) = cog.head(XY);
+            if(!isPointInHull2D(comin_abs.head(XY), hull_com)){
+                comin_abs.head(XY) = calcNearestPointOnHull(comin_abs.head(XY), hull_com);
+            }//外に出たら最近傍点に頭打ち
             return true;
         }
         void overwriteFootZFromFootLandOnCommand(HumanPose& out){
@@ -577,10 +605,10 @@ class WBMSCore{
         }
         void setFootRotHorizontalIfGoLanding(HumanPose& out){
             if( out.tgt[rf].go_contact || cp_force_go_contact[R]){
-                out.tgt[rf].abs.setRpy(0,0,out.tgt[rf].abs.rpy()(y));
+                out.tgt[rf].abs.setRpy(0, 0, out.tgt[rf].abs.rpy()(y));
             }
             if( out.tgt[lf].go_contact || cp_force_go_contact[L]){
-                out.tgt[lf].abs.setRpy(0,0,out.tgt[lf].abs.rpy()(y));
+                out.tgt[lf].abs.setRpy(0, 0, out.tgt[lf].abs.rpy()(y));
             }
         }
         void limitFootVelNearGround(HumanPose& out){
@@ -684,58 +712,50 @@ class WBMSCore{
             }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
             zmp_ans(2) = 0;
         }
-        bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const hrp::dmatrix& hull, hrp::Vector2& pt_will_cross){
+        bool calcCrossPointOnHull(const hrp::Vector2& inside_start_pt, const hrp::Vector2& outside_goal_pt, const hrp::dmatrix& hull, hrp::Vector2& ans_cross_pt){
             if(hull.rows() != 2){ std::cerr << "Invalid input for calcCrossPointOnHull" << std::endl; dbgn(hull); }
-            hrp::Vector2 anchor_vec = pt_out_goal - pt_in_start;
-            for(int i=0;i<hull.cols();i++){
-                int i_nxt = (i!=hull.cols()-1 ? i+1 : 0);
-                hrp::Vector2 cur_pt = hull.col(i), nxt_pt = hull.col(i_nxt);
-                hrp::Vector2 cur_edge = nxt_pt - cur_pt;
-                double dBunbo = hrp::hrpVector2Cross(anchor_vec,cur_edge);
-                if( dBunbo != 0.0) {//平行の場合を外す
-                    hrp::Vector2 vectorAC = hull.col(i) - pt_in_start;
-                    double dR = hrp::hrpVector2Cross(vectorAC,cur_edge) / dBunbo;
-                    double dS = hrp::hrpVector2Cross(vectorAC,anchor_vec) / dBunbo;
-                    if(dR > 1e-9 && dS >= 0.0 && dS <= 1.0){//dRには数値誤差が乗る
-                        pt_will_cross = pt_in_start + dR * anchor_vec;
-                        return true;
-                    }
-                }
+            bg_linestring anchor_vec;
+            anchor_vec.push_back(to_bg_point(inside_start_pt));
+            anchor_vec.push_back(to_bg_point(outside_goal_pt));
+            bg_multi_point bg_ans_cross_pt;
+            bg::intersection(anchor_vec, to_bg_hull(hull), bg_ans_cross_pt);
+            switch(bg_ans_cross_pt.size()){
+                case 0:
+                    return false;
+                case 1:
+                    ans_cross_pt = to_Vector2(bg_ans_cross_pt[0]);
+                    return true;
+                default:
+                    std::cerr << "Number of the cross point must be 0 or 1 (current = " << bg_ans_cross_pt.size() << ") something wrong!" << std::endl;
+                    return false;
             }
-            return false;
         }
-        double calcNearestPointOnHull(const hrp::Vector2& tgt_pt, const hrp::dmatrix& hull, hrp::Vector2& pt_ans){
+        hrp::Vector2 calcNearestPointOnHull(const hrp::Vector2& tgt_pt, const hrp::dmatrix& hull){
             if(hull.rows() != 2){ std::cerr << "Invalid input for calcNearestPointOnHull" << std::endl; dbgn(hull); }
             double cur_nearest_dist, ans_nearest_dist;
             hrp::Vector2 cur_nearest_pt, ans_nearest_pt;
-            for(int i=0;i<hull.cols();i++){
-                int i_nxt = (i!=hull.cols()-1 ? i+1 : 0);
-                hrp::Vector2 cur_pt = hull.col(i), nxt_pt = hull.col(i_nxt);
-                hrp::Vector2 cur_edge = nxt_pt - cur_pt;
-                hrp::Vector2 tgt_pt_v = tgt_pt - cur_pt;
-                double tgt_pt_projected_length = tgt_pt_v.dot(cur_edge.normalized());
-                if(tgt_pt_projected_length > cur_edge.norm() ){//tgt_pt's nearest point is on the　i+1-th vertex
-                    cur_nearest_pt = nxt_pt;
-                }else if(tgt_pt_projected_length < 0 ){//tgt_pt's nearest point is on the　i-th vertex
-                    cur_nearest_pt = cur_pt;
-                }else{//tgt_pt's nearest point is on the line
-                    cur_nearest_pt = cur_pt + tgt_pt_projected_length * cur_edge.normalized();
-                }
+            for(int i=0; i<hull.cols()-1; i++){// first and end point in hull are same
+                const hrp::Vector2 cur_pt = hull.col(i), nxt_pt = hull.col(i+1);
+                const hrp::Vector2 cur_edge = nxt_pt - cur_pt;
+                const hrp::Vector2 tgt_pt_v = tgt_pt - cur_pt;
+                double cur_pt_to_projected_tgt_pt = tgt_pt_v.dot(cur_edge.normalized()); // Distance from cur_pt to the projected tgt_pt on to cur_edge
+                LIMIT_MINMAX(cur_pt_to_projected_tgt_pt, 0, cur_edge.norm()); // limit the nearest point onto the line segment "cur_edge"
+                cur_nearest_pt = cur_pt + cur_pt_to_projected_tgt_pt * cur_edge.normalized();
                 cur_nearest_dist = (tgt_pt - cur_nearest_pt).norm();
-                if(i==0){//set first candidate as nearest
-                    ans_nearest_dist = cur_nearest_dist;
-                    ans_nearest_pt = cur_nearest_pt;
-                }else if( cur_nearest_dist < ans_nearest_dist ){//update nearest candidate
+                if( cur_nearest_dist < ans_nearest_dist || i==0 ){//update nearest candidate
                     ans_nearest_dist = cur_nearest_dist;
                     ans_nearest_pt = cur_nearest_pt;
                 }
             }
-            pt_ans = ans_nearest_pt;
-            return ans_nearest_dist;
+            return ans_nearest_pt;
         }
         hrp::dmatrix makeConvexHull2D(const hrp::dmatrix& pts_2d){
 //            return makeConvexHull2D_OpenCV(pts_2d);
             return makeConvexHull2D_Boost(pts_2d);
+        }
+        bool isPointInHull2D(const hrp::Vector2& pt, const hrp::dmatrix& hull){
+//            return isPointInHull2D_OpenCV(pt, hull);
+            return isPointInHull2D_Boost(pt, hull);
         }
         hrp::dmatrix makeConvexHull2D_OpenCV(const hrp::dmatrix& pts_2d){
             if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHull2D_OpenCV" << std::endl; dbgn(pts_2d); }
@@ -756,19 +776,15 @@ class WBMSCore{
             bg_multi_point tmp;
             tmp.resize(pts_2d.cols());
             for(int i=0; i<pts_2d.cols(); i++){
-                tmp[i] = bg_point(pts_2d.col(i)(X), pts_2d.col(i)(Y));
+                tmp[i] = to_bg_point(pts_2d.col(i));
             }
             bg_polygon hull_bg;
             bg::convex_hull(tmp, hull_bg);
             hrp::dmatrix hull_2d(2, hull_bg.outer().size());
             for(int i=0; i<hull_bg.outer().size(); i++){
-                hull_2d.col(i) << hull_bg.outer()[i].x(), hull_bg.outer()[i].y();
+                hull_2d.col(i) << to_Vector2(hull_bg.outer()[i]);
             }
             return hull_2d;
-        }
-        bool isPointInHull2D(const hrp::Vector2& pt, const hrp::dmatrix& hull){
-//            return isPointInHull2D_OpenCV(pt, hull);
-            return isPointInHull2D_Boost(pt, hull);
         }
         bool isPointInHull2D_OpenCV(const hrp::Vector2& pt, const hrp::dmatrix& hull){
             if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2dOpenCV" << std::endl; dbgn(hull); }
@@ -780,13 +796,7 @@ class WBMSCore{
         }
         bool isPointInHull2D_Boost(const hrp::Vector2& pt, const hrp::dmatrix& hull){
             if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2D_Boost" << std::endl; dbgn(hull); }
-            const bg_point pt_bg(pt(X), pt(Y));
-            bg_polygon hull_bg;
-            hull_bg.outer().resize(hull.cols());
-            for(int i=0; i<hull.cols(); i++){
-                hull_bg.outer()[i] = bg_point(hull.col(i)(X), hull.col(i)(Y));
-            }
-            return bg::within(pt_bg, hull_bg);
+            return bg::within(to_bg_point(pt), to_bg_hull(hull));
         }
         void applyLPFilter_post(HumanPose& tgt){
             if(is_initial_loop){
@@ -807,92 +817,7 @@ class WBMSCore{
             com_oldold = com_old;
             com_old = comin;
         }
-//        bool isPointInHullBoost(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-//              namespace bg = boost::geometry;
-//              typedef bg::model::d2::point_xy<double> point;
-//              typedef bg::model::polygon<point> polygon;
-//              polygon lr_region,s_region;
-//              const double XUMARGIN = 0.04;//CHIDORI
-//              const double XLMARGIN = -0.02;
-//              const double YUMARGIN = 0.01;
-//              const double YLMARGIN = -0.01;
-//              bg::model::linestring<point> s_line = boost::assign::list_of<point>
-//                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
-//                (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
-//                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
-//                (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
-//                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
-//                (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
-//                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
-//                (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
-//                     ;
-//              bg::convex_hull(s_line, s_region);
-//              point com2d(comin_abs(0),comin_abs(1));
-//              Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
-//              enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
-//              point_state_t pt_state = PT_IN_NO_PATTERN;
-//              if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
-//                pt_state = PT_IN_REGION;
-//              }else{
-//        //        cout<<"COM out of s_region"<<endl;
-//                Eigen::Vector2d check_point(com2d.x(),com2d.y());
-//                int ans_lid=-1;
-//                for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
-//                  Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
-//                  Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
-//                  Eigen::Vector2d edge_v = next_vert - cur_vert;
-//                  Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
-//                  //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
-//                  if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
-//                    ans_lid = i;
-//                    ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
-//                    pt_state = PT_FIX_TO_EDGE;
-//                    break;
-//                  }
-//                }
-//                if(pt_state == PT_FIX_TO_EDGE){
-//                  cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-//                }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
-//                  double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
-//                  int ans_pid = 0;
-//                  for(int i=1;i<s_region.outer().size();i++){
-//                    if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
-//                      cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
-//                      ans_pid = i;
-//                    }
-//                  }
-//                  ans_point(0) = s_region.outer()[ans_pid].x();
-//                  ans_point(1) = s_region.outer()[ans_pid].y();
-//                  cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-//                  pt_state = PT_FIX_TO_VERTEX;
-//                }
-//              }
-//        //      double FNUM_Z = 0.005;
-//              double FNUM_Z = 0.01;
-//              lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
-//              hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
-//        //      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
-//        //      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
-//
-//              if(loop%50==0){
-//                if(pt_state != PT_IN_REGION){
-//                  std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
-//                }
-//                for(int i=0;i<s_region.outer().size();i++){
-//                  fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
-//                }
-//                fprintf(sr_log,"\n");
-//                fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-//                fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
-//                fprintf(cz_log,"\n\n");
-//              }
-//              comin_abs(0) = ans_point(0);
-//              comin_abs(1) = ans_point(1);
-//        //      rp_ref_out.zmp(0) = comin_abs(0);
-//        //      rp_ref_out.zmp(1) = comin_abs(1);
-//              return true;
-//            }
-
 };
+
 
 #endif // WBMS_CORE_H

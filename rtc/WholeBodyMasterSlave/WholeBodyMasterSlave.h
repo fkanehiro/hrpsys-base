@@ -15,6 +15,8 @@
 #include <time.h>
 
 #include "WholeBodyMasterSlaveService_impl.h"
+#include "../Stabilizer/StabilizerService_impl.h"
+#include "../AutoBalancer/AutoBalancerService_impl.h"
 #include "wbms_core.h"
 
 //#define USE_DEBUG_PORT
@@ -149,6 +151,13 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         RTC::CorbaPort m_WholeBodyMasterSlaveServicePort;
 
         WholeBodyMasterSlaveService_impl m_service0;
+
+
+        RTC::CorbaPort m_AutoBalancerServicePort;
+        RTC::CorbaPort m_StabilizerServicePort;
+        RTC::CorbaConsumer<OpenHRP::AutoBalancerService> m_AutoBalancerServiceConsumer;
+        RTC::CorbaConsumer<OpenHRP::StabilizerService> m_StabilizerServiceConsumer;
+
 
     private:
         double m_dt;
