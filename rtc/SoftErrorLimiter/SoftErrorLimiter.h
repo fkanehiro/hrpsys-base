@@ -147,6 +147,7 @@ class SoftErrorLimiter
  private:
   boost::shared_ptr<robot> m_robot;
   std::map<std::string, hrp::JointLimitTable> joint_limit_tables;
+  std::vector<bool> m_joint_mask;
   unsigned int m_debugLevel;
   int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq, debug_print_freq;
   double dt;
