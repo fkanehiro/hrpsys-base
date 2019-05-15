@@ -564,13 +564,12 @@ class WBMSCore{
                 sp2sw_vec = base_rot * sp2sw_vec_baserel;
                 swing_leg.abs.p.head(XY) = sp2sw_vec + support_leg.cnt.p.head(XY);
             }
-            const double base2hand_min = 0.0;
+            const double base2hand_min = 0.4;// for jaxon demo
             for(int i=0, l[2]={rh,lh}; i<2; i++){
                 hrp::Vector2 horizontal_dist = out.tgt[l[i]].abs.p.head(XY) - baselinkpose.p.head(XY);
                 if(horizontal_dist.norm() < base2hand_min){
-                    horizontal_dist = base2hand_min * horizontal_dist.normalized();
+                    out.tgt[l[i]].abs.p.head(XY) = baselinkpose.p.head(XY) + base2hand_min * horizontal_dist.normalized();
                 }
-                out.tgt[l[i]].abs.p.head(XY) = baselinkpose.p.head(XY) + horizontal_dist;
             }
         }
         void setFootContactPoseByGoContact(HumanPose& out){

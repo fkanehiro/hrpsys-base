@@ -163,7 +163,7 @@ class FullbodyInverseKinematicsSolver{
                 if(c_part_selection_mat.rows() != 0 && c_part_selection_mat.cols() != 0 ){
 
 
-                    const double dp_max = 9999990.1;
+                    const double dp_max = 0.1;
 
                     J_all.middleRows                (CURRENT_C_COUNT, c_part_selection_mat.rows()) = c_part_selection_mat * J_part * q_select_mat.transpose();
                     err_all.segment                 (CURRENT_C_COUNT, c_part_selection_mat.rows()) = c_part_selection_mat * dp_part.cwiseMin(hrp::dvector6::Constant(dp_max)).cwiseMax(hrp::dvector6::Constant(-dp_max));
