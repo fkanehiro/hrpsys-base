@@ -8,6 +8,7 @@
  */
 
 #include "ModifiedServo.h"
+// #include <iostream>  // Added by Rafa
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -16,12 +17,11 @@ static const char* modifiedservo_spec[] =
     "implementation_id", "ModifiedServo",
     "type_name",         "ModifiedServo",
     "description",       "ModifiedServo component",
-    "version",           "0.1",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
-    "activity_type",     "SPORADIC",
-    "kind",              "DataFlowComponent",
-    "max_instance",      "1",
+    "activity_type",     "DataFlowComponent",
+    "max_instance",      "10",
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
@@ -109,7 +109,7 @@ RTC::ReturnCode_t ModifiedServo::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())))
       std::cerr << "[" << m_profile.instance_name << "] failed to load model "
-      << "[" << prop["model"] << "]" << std::endl;
+                << "[" << prop["model"] << "]" << std::endl;
   
   return RTC::RTC_OK;
 }
@@ -215,6 +215,10 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * fabs(m_robot->joint(i)->gearRatio);
     
     m_tau.data[i] = std::max(std::min(tau, tau_limit), -tau_limit);
+
+    // if (i == 11 || i == 21)
+    //     std::cout << "Rafa, in ModifiedServo::onExecute, for i = " << i << ", q[i] = " << q << ", qRef[i] = " << qRef
+    //               << ", tau[i] = " << tau << ", tau_limit[i] = " << tau_limit << ", m_tau[i] = " << m_tau.data[i] << std::endl;
   }
 
   step--;
