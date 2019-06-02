@@ -106,10 +106,6 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   InPort<TimedDoubleSeq> m_qIn;
   TimedBooleanSeq m_torqueMode;
   InPort<TimedBooleanSeq> m_torqueModeIn;
-  TimedDoubleSeq m_pgains;
-  InPort<TimedDoubleSeq> m_pgainsIn;
-  TimedDoubleSeq m_dgains;
-  InPort<TimedDoubleSeq> m_dgainsIn;
 
   // </rtc-template>
 
@@ -117,10 +113,6 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_tau;
   OutPort<TimedDoubleSeq> m_tauOut;
-  // Will bind to to m_pgains
-  OutPort<TimedDoubleSeq> m_pgainsOut;
-  // Will bind to m_dgains
-  OutPort<TimedDoubleSeq> m_dgainsOut;
 
   // </rtc-template>
 
@@ -150,16 +142,13 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   double step;    // current interpolation step
   double nstep;   // number of steps to interpolate references
 
-  size_t dof, loop;
-  unsigned int m_debugLevel;
-  int dummy;
+  size_t dof;
 
   std::string gain_fname;
   std::ifstream gain;
 
   hrp::dvector Pgain, Dgain;
   hrp::dvector q_old, qRef_old;
-  hrp::dvector tau_limit_ratio;
 };
 
 
