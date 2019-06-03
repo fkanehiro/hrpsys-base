@@ -1,22 +1,23 @@
-// -*- C++ -*-
+// -*- mode: c++; -*-
 /*!
  * @file  ModifiedServo.h
- * @brief ModifiedServo component
- * @date  $Date$ 
+ * @brief Sample PD component
+ * @date  $Date$
  *
- * $Id$ 
+ * $Id$
  */
 
-#ifndef MODIFIEDSERVO_H
-#define MODIFIEDSERVO_H
+#ifndef ModifiedServo_H
+#define ModifiedServo_H
 
-#include <rtm/idl/BasicDataTypeSkel.h>
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/CorbaNaming.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
+#include <rtm/idl/BasicDataTypeSkel.h>
 
 #include <hrpUtil/EigenTypes.h>
 #include <hrpModel/ModelLoaderUtil.h>
@@ -35,7 +36,8 @@
 
 using namespace RTC;
 
-class ModifiedServo  : public RTC::DataFlowComponentBase
+class ModifiedServo
+  : public RTC::DataFlowComponentBase
 {
  public:
   ModifiedServo(RTC::Manager* manager);
@@ -43,7 +45,7 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry() 
-  virtual RTC::ReturnCode_t onInitialize();
+ virtual RTC::ReturnCode_t onInitialize();
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
@@ -89,7 +91,6 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
@@ -98,72 +99,53 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  TimedDoubleSeq m_tauRef;
-  InPort<TimedDoubleSeq> m_tauRefIn;
-  TimedDoubleSeq m_qRef;
-  InPort<TimedDoubleSeq> m_qRefIn;
-  TimedDoubleSeq m_q;
-  InPort<TimedDoubleSeq> m_qIn;
-  TimedBooleanSeq m_torqueMode;
-  InPort<TimedBooleanSeq> m_torqueModeIn;
-  TimedDoubleSeq m_pgains;
-  InPort<TimedDoubleSeq> m_pgainsIn;
-  TimedDoubleSeq m_dgains;
-  InPort<TimedDoubleSeq> m_dgainsIn;
-
+  TimedDoubleSeq m_angle;
+  InPort<TimedDoubleSeq> m_angleIn;
+  TimedDoubleSeq m_angleRef;
+  InPort<TimedDoubleSeq> m_angleRefIn;
+  
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_tau;
-  OutPort<TimedDoubleSeq> m_tauOut;
-  // Will bind to to m_pgains
-  OutPort<TimedDoubleSeq> m_pgainsOut;
-  // Will bind to m_dgains
-  OutPort<TimedDoubleSeq> m_dgainsOut;
-
+  TimedDoubleSeq m_torque;
+  OutPort<TimedDoubleSeq> m_torqueOut;
+  
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-
+  
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-
+  
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-
+  
   // </rtc-template>
 
  private:
-
   void readGainFile();
-
   hrp::BodyPtr m_robot;
-  
-  double dt;      // sampling time of the controller
-  double ref_dt;  // sampling time of reference angles
-  double step;    // current interpolation step
-  double nstep;   // number of steps to interpolate references
-
-  size_t dof;
-
-  std::string gain_fname;
+  double dt;     // sampling time of pd control
+  double ref_dt; // sampling time of renference angles
+  int step;      // current interpolation step
+  int nstep;     // the number of steps to interpolate references
   std::ifstream gain;
-
-  hrp::dvector Pgain, Dgain;
-  hrp::dvector q_old, qRef_old;
+  std::string gain_fname;
+  hrp::dvector qold, qold_ref, Pgain, Dgain, tlimit_ratio;
+  size_t dof, loop;
+  unsigned int m_debugLevel;
+  int dummy;
 };
-
 
 extern "C"
 {
-  DLL_EXPORT void ModifiedServoInit(RTC::Manager* manager);
+   void ModifiedServoInit(RTC::Manager* manager);
 };
 
-#endif // MODIFIEDSERVO_H
-
+#endif // ModifiedServo_H
