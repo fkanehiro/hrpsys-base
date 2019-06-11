@@ -331,7 +331,10 @@ RTC::ReturnCode_t DataLogger::onExecute(RTC::UniqueId ec_id)
         char basename[30];
         sprintf(basename, "emglog-%s-%02d%02d",
                 date, tm_->tm_hour, tm_->tm_min);
-        std::cout << "received emergency signal. saving log files("
+        std::cout << "[" << m_profile.instance_name << "] "
+                  << "received emergency signal("
+                  << m_emergencySignal.data
+                  << "). saving log files("
                   << basename << ")" << std::endl;
         save(basename);
         while (m_emergencySignalIn.isNew()){
