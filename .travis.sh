@@ -160,6 +160,7 @@ case $TEST_PACKAGE in
                     mkdir -p ~/build_openhrp3
                     cd ~/build_openhrp3
                     git clone http://github.com/fkanehiro/openhrp3
+                    (cd openhrp3; git checkout ${COMMIT_ID})
                     sed -i 's/COLLADA_DOM_FOUND/0/' openhrp3/sample/CMakeLists.txt
                     cd openhrp3 && cmake . ${COMPILE_OPTION} && make && sudo make install
                 fi
