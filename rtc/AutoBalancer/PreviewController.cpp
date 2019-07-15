@@ -64,7 +64,7 @@ void extended_preview_control::calc_f()
   Eigen::Matrix<double, 4, 4> gsi(Eigen::Matrix<double, 4, 4>::Identity());
   Eigen::Matrix<double, 4, 1> qt(riccati.Q * riccati.c.transpose());
   for (size_t i = 0; i < delay; i++) {
-    if ( i == delay - 1 ) qt = riccati.P * qt;
+    if ( i == delay - 1 ) qt = riccati.P * riccati.c.transpose();
     fa = riccati.R_btPb_inv * riccati.b.transpose() * (gsi * qt);
     gsi = riccati.A_minus_bKt * gsi;
     f(i+1) = fa(0,0);
