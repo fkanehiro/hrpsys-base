@@ -684,18 +684,6 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
                 return true;
             }
         }
-        else if (state == ON && mode == JCB_TORQUE){  // Added by Rafa
-            double command_torque, torque_limit;
-            read_command_torque(i, &command_torque);
-            read_torque_limit(i, &torque_limit);
-            if (fabs(command_torque) > torque_limit){
-                std::cerr << time_string()
-                          << ": servo error torque limit over: joint = "
-                          << joint(i)->name
-                          << ", tauRef = " << command_torque << "[Nm], tauMax = "
-                          << torque_limit << "[Nm]" << std::endl;
-            }
-        }
     }
 
     if (m_rLegForceSensorId >= 0){
