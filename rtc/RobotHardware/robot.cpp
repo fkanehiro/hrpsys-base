@@ -665,9 +665,11 @@ bool robot::checkJointCommands(const double *i_commands)
 bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 {
     int state;
+    joint_control_mode mode;  // Added by Rafa
     for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
-        if (state == ON && m_servoErrorLimit[i] != 0){
+        read_control_mode(i, &mode);  // Added by Rafa
+        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCB_TORQUE){  // Modified by Rafa
             double angle, command;
             read_actual_angle(i, &angle);
             read_command_angle(i, &command);
@@ -680,6 +682,18 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
                 o_reason = EMG_SERVO_ERROR;
                 o_id = i;
                 return true;
+            }
+        }
+        else if (state == ON && mode == JCB_TORQUE){  // Added by Rafa
+            double command_torque, torque_limit;
+            read_command_torque(i, &command_torque);
+            read_torque_limit(i, &torque_limit);
+            if (fabs(command_torque) > torque_limit){
+                std::cerr << time_string()
+                          << ": servo error torque limit over: joint = "
+                          << joint(i)->name
+                          << ", tauRef = " << command_torque << "[Nm], tauMax = "
+                          << torque_limit << "[Nm]" << std::endl;
             }
         }
     }
