@@ -65,6 +65,7 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
     // m_count_noNewTauRef(0),
+    allowTorqueControlMode(true),
     dummy(0)
 {
 }
@@ -267,8 +268,10 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   */
 
-  if (!m_isDemoMode && m_robot->checkJointActualValues())
+  if (!m_isDemoMode && m_robot->checkJointActualValues()){
       resetJointControlMode();
+      allowTorqueControlMode = false;
+  }
 
   if (m_qRefIn.isNew()){
       m_qRefIn.read();
@@ -297,15 +300,17 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   if (m_tauRefIn.isNew()){
       m_tauRefIn.read();
-      m_count_noNewTauRef = 0;
+      // m_count_noNewTauRef = 0;
       //std::cout << "RobotHardware: tauRef[21] = " << m_tauRef.data[21] << std::endl;
       // output to iob
       m_robot->writeTorqueCommands(m_tauRef.data.get_buffer());
   }
   if (m_torqueControlModeIn.isNew()){
       m_torqueControlModeIn.read();
-      for (unsigned int i=0; i<m_robot->numJoints(); ++i) {
-          m_robot->setJointControlMode(m_robot->joint(i)->name.c_str(), m_torqueControlMode.data[i] ? JCM_TORQUE : JCM_POSITION);
+      if (allowTorqueControlMode){
+          for (unsigned int i=0; i<m_robot->numJoints(); ++i){
+              m_robot->setJointControlMode(m_robot->joint(i)->name.c_str(), m_torqueControlMode.data[i] ? JCM_TORQUE : JCM_POSITION);
+          }
       }
   }
 
