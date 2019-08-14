@@ -669,7 +669,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
     for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
         read_control_mode(i, &mode);  // Added by Rafa
-        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCB_TORQUE){  // Modified by Rafa
+        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCM_TORQUE){  // Modified by Rafa
             double angle, command;
             read_actual_angle(i, &angle);
             read_command_angle(i, &command);
