@@ -367,6 +367,12 @@ public:
        \return true if at least one joint is in torque control mode, false otherwise
      */
     bool isJointTorqueControlModeUsed();  // Added by Rafa
+
+    /**
+       \brief resets all the torque-controlled joints to position control keeping the actual value
+       \return true if at least one joint has been affected
+     */
+    bool resetJointControlMode();  // Added by Rafa
     
 private:
     /**
