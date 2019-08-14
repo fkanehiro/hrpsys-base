@@ -261,12 +261,17 @@ public:
      */
     bool checkEmergency(emg_reason &o_reason, int &o_id);
 
-
     /**
        \brief check joint commands are valid or not
        \return true if the joint command is invalid, false otherwise
      */
     bool checkJointCommands(const double *i_commands);
+
+    /**
+       \brief check actual joint values to see if they are within the range of the joint limits
+       \return true if the joint values are outside of the safe range, false otherwise
+     */
+    bool checkJointActualValues();
 
     /**
        \brief set the parcentage to the default servo gain
@@ -356,6 +361,13 @@ public:
        \return true if set successfully, false otherwise 
      */
     bool setJointControlMode(const char *i_jname, joint_control_mode mode);
+
+    /**
+       \brief check if any joint is being operated in torque control mode
+       \return true if at least one joint is in torque control mode, false otherwise
+     */
+    bool isJointTorqueControlModeUsed();  // Added by Rafa
+    
 private:
     /**
        \brief calibrate inertia sensor for one sampling period

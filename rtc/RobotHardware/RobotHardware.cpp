@@ -15,6 +15,8 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>
 
+#define MAX_CYCLES_WITHOUT_TAUREF 3  // Added by Rafa
+
 using namespace OpenHRP;
 using namespace hrp;
 
@@ -62,7 +64,8 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
-	dummy(0)
+    m_count_noNewTauRef(0),
+    dummy(0)
 {
 }
 
@@ -253,6 +256,15 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       }
   }    
 
+  if (!m_isDemoMode && m_robot->isJointTorqueControlModeUsed()){  // Added by Rafa
+      if (m_robot->checkJointActualValues() || m_count_noNewTauRef > MAX_CYCLES_WITHOUT_TAUREF){
+          m_robot->servo("all", false);
+          m_emergencySignal.data = robot::EMG_SERVO_ERROR;
+          m_emergencySignalOut.write();
+      }
+      m_count_noNewTauRef++;
+  }
+
   if (m_qRefIn.isNew()){
       m_qRefIn.read();
       //std::cout << "RobotHardware: qRef[21] = " << m_qRef.data[21] << std::endl;
@@ -280,6 +292,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   if (m_tauRefIn.isNew()){
       m_tauRefIn.read();
+      m_count_noNewTauRef = 0;
       //std::cout << "RobotHardware: tauRef[21] = " << m_tauRef.data[21] << std::endl;
       // output to iob
       m_robot->writeTorqueCommands(m_tauRef.data.get_buffer());

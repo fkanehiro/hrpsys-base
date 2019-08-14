@@ -175,6 +175,24 @@ extern "C"{
      */
     int write_angle_offset(int id, double offset);
 
+    /**
+     * @brief read lower joint limit[rad]
+     * @param id	joint id
+     * @param angle	lower joint limit[rad]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_llimit_angle(int id, double *angle);
+
+    /**
+     * @brief read upper joint limit[rad]
+     * @param id	joint id
+     * @param angle	upper joint limit[rad]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_ulimit_angle(int id, double *angle);
+    
     //@}
 
     // @name joint
