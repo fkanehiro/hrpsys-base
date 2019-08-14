@@ -269,7 +269,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   */
 
   if (!m_isDemoMode && m_robot->checkJointActualValues()){
-      resetJointControlMode();
+      m_robot->resetJointControlMode();
       allowTorqueControlMode = false;
   }
 
