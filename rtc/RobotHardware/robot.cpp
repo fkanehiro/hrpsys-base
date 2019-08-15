@@ -1091,17 +1091,6 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
     return true;
 }
 
-bool robot::isJointTorqueControlModeUsed()  // Added by Rafa
-{
-    joint_control_mode mode;
-    for (unsigned int i=0; i<numJoints(); i++){
-        read_control_mode(i, &mode);
-        if (mode == JCM_TORQUE)
-            return true;
-    }
-    return false;
-}
-
 bool robot::resetJointControlMode()  // Added by Rafa
 {
     bool res = false;
@@ -1116,7 +1105,7 @@ bool robot::resetJointControlMode()  // Added by Rafa
             // Ths function below saturates to joint limits
             write_command_angle(i, angle);
             write_control_mode(i, JCM_POSITION);
-            std::cerr << "[RobotHardware] resetJointControlMode to position control for joint " << i << std::endl;
+            std::cerr << "[RobotHardware] reset to position control mode for joint " << i << std::endl;
             res = true;
         }   
     }

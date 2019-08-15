@@ -363,12 +363,6 @@ public:
     bool setJointControlMode(const char *i_jname, joint_control_mode mode);
 
     /**
-       \brief check if any joint is being operated in torque control mode
-       \return true if at least one joint is in torque control mode, false otherwise
-     */
-    bool isJointTorqueControlModeUsed();  // Added by Rafa
-
-    /**
        \brief resets all the torque-controlled joints to position control keeping the actual value
        \return true if at least one joint has been affected
      */
