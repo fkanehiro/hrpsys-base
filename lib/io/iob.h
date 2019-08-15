@@ -179,8 +179,8 @@ extern "C"{
      * @brief read lower joint limit[rad]
      * @param id	joint id
      * @param angle	lower joint limit[rad]
-     * @retval TRUE this function is supported
-     * @retval FALSE otherwise
+     * @retval          TRUE this function is supported
+     * @retval          FALSE otherwise
      */
     int read_llimit_angle(int id, double *angle);
 
@@ -188,10 +188,28 @@ extern "C"{
      * @brief read upper joint limit[rad]
      * @param id	joint id
      * @param angle	upper joint limit[rad]
-     * @retval TRUE this function is supported
-     * @retval FALSE otherwise
+     * @retval          TRUE this function is supported
+     * @retval          FALSE otherwise
      */
     int read_ulimit_angle(int id, double *angle);
+
+    /**
+     * @brief write lower joint limit[rad]
+     * @param id	joint id
+     * @param angle	lower joint limit[rad]
+     * @retval          TRUE this function is supported
+     * @retval          FALSE otherwise
+     */
+    int write_llimit_angle(int id, double angle);
+
+    /**
+     * @brief write upper joint limit[rad]
+     * @param id	joint id
+     * @param angle	upper joint limit[rad]
+     * @retval          TRUE this function is supported
+     * @retval          FALSE otherwise
+     */
+    int write_ulimit_angle(int id, double angle);
     
     //@}
 

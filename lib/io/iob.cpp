@@ -527,18 +527,32 @@ int read_ulimit_angle(int id, double *angle)
 {
   return FALSE;
 }
+
 int read_llimit_angle(int id, double *angle)
 {
   return FALSE;
 }
+
+int write_ulimit_angle(int id, double angle)
+{
+  return FALSE;
+}
+
+int write_llimit_angle(int id, double angle)
+{
+  return FALSE;
+}
+
 int read_encoder_pulse(int id, double *ec)
 {
   return FALSE;
 }
+
 int read_gear_ratio(int id, double *gr)
 {
   return FALSE;
 }
+
 int read_torque_const(int id, double *tc)
 {
   return FALSE;
