@@ -42,9 +42,9 @@ ModifiedServo::ModifiedServo(RTC::Manager* manager)
     m_pgainsOut("pgainsGet", m_pgains),
     m_dgainsOut("dgainsGet", m_dgains),
     // </rtc-template>
-    gain_fname(""),
-    dt(0.005),
-    dof(0)
+    m_gain_fname(""),
+    m_dt(0.005),
+    m_dof(0)
 {
 }
 
@@ -87,10 +87,10 @@ RTC::ReturnCode_t ModifiedServo::onInitialize()
 
   RTC::Properties & prop = getProperties();
 
-  coil::stringTo(dt, prop["dt"].c_str());
-  coil::stringTo(ref_dt, prop["ref_dt"].c_str());
-  nstep = ref_dt/dt;
-  step = nstep;
+  coil::stringTo(m_dt, prop["dt"].c_str());
+  coil::stringTo(m_ref_dt, prop["ref_dt"].c_str());
+  m_nstep = m_ref_dt / m_dt;
+  m_step = m_nstep;
 
   m_robot = hrp::BodyPtr(new hrp::Body());
 
@@ -139,27 +139,30 @@ RTC::ReturnCode_t ModifiedServo::onActivated(RTC::UniqueId ec_id)
 
   if (m_qIn.isNew()) {
     m_qIn.read();
-    if (dof == 0) {
-      dof = m_q.data.length();
+    if (m_dof == 0) {
+      m_dof = m_q.data.length();
       readGainFile();
     }
   }
 
-  q_old.resize(dof);
-  qRef_old.resize(dof);
+  m_q_old.resize(m_dof);
+  m_qRef_old.resize(m_dof);
 
-  m_tauRef.data.length(dof);
-  m_qRef.data.length(dof);
-  m_torqueMode.data.length(dof);
+  m_tauRef.data.length(m_dof);
+  m_qRef.data.length(m_dof);
+  m_torqueMode.data.length(m_dof);
   
-  m_tau.data.length(dof);
+  m_tau.data.length(m_dof);
 
   m_pgains.data.length(dof);
   m_dgains.data.length(dof);
 
   for (size_t i = 0; i < dof; i++) {
+=======
+  for (size_t i = 0; i < m_dof; i++) {
+>>>>>>> Used m_ for the member variables of ModifiedServo
     m_tauRef.data[i] = 0.0;
-    m_qRef.data[i] = qRef_old[i] = q_old[i] = m_q.data[i];
+    m_qRef.data[i] = m_qRef_old[i] = m_q_old[i] = m_q.data[i];
     m_torqueMode.data[i] = false;
     m_pgains.data[i] = Pgain[i];
     m_dgains.data[i] = Dgain[i];
@@ -185,7 +188,7 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
 
   if (m_qRefIn.isNew()) {
     m_qRefIn.read();
-    step = nstep;
+    m_step = m_nstep;
   }
   if(m_pgainsIn.isNew()){
     m_pgainsIn.read();
@@ -202,15 +205,15 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     Dgain[i] = m_dgains.data[i];
     
     double q = m_q.data[i];
-    double qRef = step > 0 ? qRef_old[i] + (m_qRef.data[i] - qRef_old[i]) / step : qRef_old[i];
+    double qRef = m_step > 0 ? m_qRef_old[i] + (m_qRef.data[i] - m_qRef_old[i]) / m_step : m_qRef_old[i];
 
-    double dq = (q - q_old[i]) / dt;
-    double dqRef = (qRef - qRef_old[i]) / dt;
+    double dq = (q - m_q_old[i]) / m_dt;
+    double dqRef = (qRef - m_qRef_old[i]) / m_dt;
 
-    q_old[i] = q;
-    qRef_old[i] = qRef;
+    m_q_old[i] = q;
+    m_qRef_old[i] = qRef;
 
-    double tau = m_torqueMode.data[i] ? m_tauRef.data[i] : Pgain[i] * (qRef - q) + Dgain[i] * (dqRef - dq);
+    double tau = m_torqueMode.data[i] ? m_tauRef.data[i] : m_Pgain[i] * (qRef - q) + m_Dgain[i] * (dqRef - dq);
 
     double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * fabs(m_robot->joint(i)->gearRatio);
     
@@ -221,7 +224,7 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     //               << ", tau[i] = " << tau << ", tau_limit[i] = " << tau_limit << ", m_tau[i] = " << m_tau.data[i] << std::endl;
   }
 
-  step--;
+  m_step--;
 
   m_tau.tm = m_q.tm;
   m_tauOut.write();
@@ -264,39 +267,39 @@ RTC::ReturnCode_t ModifiedServo::onRateChanged(RTC::UniqueId ec_id)
 
 void ModifiedServo::readGainFile()
 {
-  if (gain_fname == "") {
+  if (m_gain_fname == "") {
     RTC::Properties & prop = getProperties();
-    coil::stringTo(gain_fname, prop["pdgains_sim_file_name"].c_str());
+    coil::stringTo(m_gain_fname, prop["pdgains_sim_file_name"].c_str());
   }
 
-  gain.open(gain_fname.c_str());
+  m_gain.open(m_gain_fname.c_str());
 
-  if (gain.is_open()) {
+  if (m_gain.is_open()) {
 
     double val;
 
-    Pgain.resize(dof);
-    Dgain.resize(dof);
+    m_Pgain.resize(m_dof);
+    m_Dgain.resize(m_dof);
     
-    for (unsigned int i = 0; i < dof; i++) {
+    for (unsigned int i = 0; i < m_dof; i++) {
 
-      if (gain >> val)
-        Pgain[i] = val;
+      if (m_gain >> val)
+        m_Pgain[i] = val;
       else
-        std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+        std::cout << "[" << m_profile.instance_name << "] Gain file [" << m_gain_fname << "] is too short" << std::endl;
 
-      if (gain >> val)
-        Dgain[i] = val;
+      if (m_gain >> val)
+        m_Dgain[i] = val;
       else
-        std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+        std::cout << "[" << m_profile.instance_name << "] Gain file [" << m_gain_fname << "] is too short" << std::endl;
     }
 
-    gain.close();
+    m_gain.close();
 
-    std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] successfully read" << std::endl;
+    std::cout << "[" << m_profile.instance_name << "] Gain file [" << m_gain_fname << "] successfully read" << std::endl;
   }
   else
-    std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] could not be opened" << std::endl;
+    std::cout << "[" << m_profile.instance_name << "] Gain file [" << m_gain_fname << "] could not be opened" << std::endl;
 }
 
 extern "C"

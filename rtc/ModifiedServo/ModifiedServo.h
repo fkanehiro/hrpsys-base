@@ -145,18 +145,18 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
 
   hrp::BodyPtr m_robot;
   
-  double dt;      // sampling time of the controller
-  double ref_dt;  // sampling time of reference angles
-  double step;    // current interpolation step
-  double nstep;   // number of steps to interpolate references
+  double m_dt;      // sampling time of the controller
+  double m_ref_dt;  // sampling time of reference angles
+  double m_step;    // current interpolation step
+  double m_nstep;   // number of steps to interpolate references
 
-  size_t dof;
+  size_t m_dof;
 
-  std::string gain_fname;
-  std::ifstream gain;
+  std::string m_gain_fname;
+  std::ifstream m_gain;
 
-  hrp::dvector Pgain, Dgain;
-  hrp::dvector q_old, qRef_old;
+  hrp::dvector m_Pgain, m_Dgain;
+  hrp::dvector m_q_old, m_qRef_old;
 };
 
 
