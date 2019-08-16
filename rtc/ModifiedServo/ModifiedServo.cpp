@@ -205,23 +205,19 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     Dgain[i] = m_dgains.data[i];
     
     double q = m_q.data[i];
-    double qRef = m_step > 0 ? m_qRef_old[i] + (m_qRef.data[i] - m_qRef_old[i]) / m_step : m_qRef_old[i];
+    double qCom = m_step > 0 ? m_qRef_old[i] + (m_qRef.data[i] - m_qRef_old[i]) / m_step : m_qRef_old[i];
 
     double dq = (q - m_q_old[i]) / m_dt;
-    double dqRef = (qRef - m_qRef_old[i]) / m_dt;
+    double dqCom = (qCom - m_qRef_old[i]) / m_dt;
 
     m_q_old[i] = q;
-    m_qRef_old[i] = qRef;
+    m_qRef_old[i] = qCom;
 
-    double tau = m_torqueMode.data[i] ? m_tauRef.data[i] : m_Pgain[i] * (qRef - q) + m_Dgain[i] * (dqRef - dq);
+    double tau = m_torqueMode.data[i] ? m_tauRef.data[i] : m_Pgain[i] * (qCom - q) + m_Dgain[i] * (dqCom - dq);
 
     double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * fabs(m_robot->joint(i)->gearRatio);
     
     m_tau.data[i] = std::max(std::min(tau, tau_limit), -tau_limit);
-
-    // if (i == 11 || i == 21)
-    //     std::cout << "Rafa, in ModifiedServo::onExecute, for i = " << i << ", q[i] = " << q << ", qRef[i] = " << qRef
-    //               << ", tau[i] = " << tau << ", tau_limit[i] = " << tau_limit << ", m_tau[i] = " << m_tau.data[i] << std::endl;
   }
 
   m_step--;
