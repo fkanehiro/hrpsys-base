@@ -1,9 +1,9 @@
 #ifndef WBMS_CORE_H
 #define WBMS_CORE_H
 
-#include "interpolator.h"
 #include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/DistFuncs.h>
+#include "../SequencePlayer/interpolator.h"
 #include "../ImpedanceController/JointPathEx.h"
 #include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 // geometry

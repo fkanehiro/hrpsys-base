@@ -29,17 +29,10 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
         m_basePosOut("basePosOut", m_basePos),
         m_baseRpyOut("baseRpyOut", m_baseRpy),
         m_optionalDataOut("optionalDataOut", m_optionalData),
-        m_htzmpIn("htzmpIn", m_htzmp),// from ros bridge
-        m_htrfwIn("htrfwIn", m_htrfw),
-        m_htlfwIn("htlfwIn", m_htlfw),
-        m_htcomIn("htcomIn", m_htcom),
-        m_htrfIn("htrfIn", m_htrf),
-        m_htlfIn("htlfIn", m_htlf),
-        m_htrhIn("htrhIn", m_htrh),
-        m_htlhIn("htlhIn", m_htlh),
-        m_htheadIn("htheadIn", m_hthead),
         m_actCPIn("actCapturePoint", m_actCP),
         m_actZMPIn("zmp", m_actZMP),
+        m_exDataIn("exData", m_exData),
+        m_exDataIndexIn("exDataIndex", m_exDataIndex),
 #ifdef USE_DEBUG_PORT
         m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),// to ros bridge
         m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
@@ -84,17 +77,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("optionalDataOut", m_optionalDataOut);
-    addInPort("htzmpIn", m_htzmpIn);// from ros bridge
-    addInPort("htrfwIn", m_htrfwIn);
-    addInPort("htlfwIn", m_htlfwIn);
-    addInPort("htcomIn", m_htcomIn);
-    addInPort("htrfIn", m_htrfIn);
-    addInPort("htlfIn", m_htlfIn);
-    addInPort("htrhIn", m_htrhIn);
-    addInPort("htlhIn", m_htlhIn);
-    addInPort("htheadIn", m_htheadIn);
     addInPort("actCapturePoint", m_actCPIn);
     addInPort("zmp", m_actZMPIn);
+    addInPort("exData", m_exDataIn);
+    addInPort("exDataIndex", m_exDataIndexIn);
 #ifdef USE_DEBUG_PORT
     addOutPort("htcom_dbgOut", m_htcom_dbgOut);// to ros bridge
     addOutPort("htrf_dbgOut", m_htrf_dbgOut);
@@ -206,6 +192,23 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     lt.fill(0);
     rt.fill(0);
 
+    for ( int i=0; i<ee_names.size(); i++) {
+        std::string n = "slave_"+ee_names[i]+"_wrench";
+        m_slaveEEWrenchesOut[tgt_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[tgt_names[i]]));
+        registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[tgt_names[i]]);
+        RTCOUT << " registerOutPort " << n << std::endl;
+    }
+
+    tgt_names = ee_names;
+    tgt_names.push_back("com");
+    tgt_names.push_back("head");
+    for ( int i=0; i<tgt_names.size(); i++) {
+        std::string n = "master_"+tgt_names[i]+"_pose";
+        m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
+        registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt_names[i]]);
+        RTCOUT << " registerInPort " << n << std::endl;
+    }
+
     RTCOUT << "onInitialize() OK" << std::endl;
     loop = 0;
     return RTC::RTC_OK;
@@ -213,14 +216,15 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
 
 RTC::ReturnCode_t WholeBodyMasterSlave::setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop){
     coil::vstring ee_conf_all = coil::split(_prop["end_effectors"], ",");
-    size_t prop_num = 10;
+    size_t prop_num = 10; // limbname + linkname + basename + pos(3) + angleaxis(4)
     if (ee_conf_all.size() > 0) {
         size_t ee_num = ee_conf_all.size()/prop_num;
         for (size_t i = 0; i < ee_num; i++) {
             std::string ee_name, target_link_name, base_name; // e.g. rleg, RLEG_JOINT5, WAIST
-            coil::stringTo(ee_name, ee_conf_all[i*prop_num].c_str());
-            coil::stringTo(target_link_name, ee_conf_all[i*prop_num+1].c_str());
-            coil::stringTo(base_name, ee_conf_all[i*prop_num+2].c_str());
+            coil::stringTo(ee_name,             ee_conf_all[i*prop_num].c_str());
+            coil::stringTo(target_link_name,    ee_conf_all[i*prop_num+1].c_str());
+            coil::stringTo(base_name,           ee_conf_all[i*prop_num+2].c_str());
+            ee_names.push_back(ee_name);
             _ee_ikc_map[ee_name].target_link_name = target_link_name;
             for (size_t j = 0; j < XYZ; j++){ coil::stringTo(_ee_ikc_map[ee_name].localPos(j), ee_conf_all[i*prop_num+3+j].c_str()); }
             double tmp_aa[4];
@@ -250,42 +254,52 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
-    if (m_htrfwIn.isNew())  { m_htrfwIn.read(); wbms->hp_wld_raw.tgt[rf].w      = hrp::to_dvector6(m_htrfw.data); }
-    if (m_htlfwIn.isNew())  { m_htlfwIn.read(); wbms->hp_wld_raw.tgt[lf].w      = hrp::to_dvector6(m_htlfw.data); }
+//    if (m_htrfwIn.isNew())  { m_htrfwIn.read(); wbms->hp_wld_raw.tgt[rf].w      = hrp::to_dvector6(m_htrfw.data); }
+//    if (m_htlfwIn.isNew())  { m_htlfwIn.read(); wbms->hp_wld_raw.tgt[lf].w      = hrp::to_dvector6(m_htlfw.data); }
 
     // button func
-    if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_IDLE){
-        std::cerr<<"startWholeBodyMasterSlave() called by button"<<std::endl;
-        startWholeBodyMasterSlave();
-    }else if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_WBMS){
-        std::cerr<<"stopWholeBodyMasterSlave() called by button"<<std::endl;
-        stopWholeBodyMasterSlave();
+    hrp::dvector ex_data;
+    std::vector<std::string> ex_data_index;
+    if(m_exDataIn.isNew()){
+        m_exDataIn.read();
+        ex_data = hrp::to_dvector(m_exData.data);
     }
-    static bool blocking_continuous_hits = false;
-    if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_PAUSE){
-        if(!blocking_continuous_hits){
-            std::cerr<<"resumeWholeBodyMasterSlave() called by button"<<std::endl;
-            resumeWholeBodyMasterSlave();
-            blocking_continuous_hits = true;
-        }
-    }else if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_WBMS){
-        if(!blocking_continuous_hits){
-            std::cerr<<"pauseWholeBodyMasterSlave() called by button"<<std::endl;
-            pauseWholeBodyMasterSlave();
-            blocking_continuous_hits = true;
-        }
-    }else{
-        blocking_continuous_hits = false;
+    if(m_exDataIndexIn.isNew()){
+        m_exDataIndexIn.read();
+        ex_data_index = hrp::to_string_vector(m_exDataIndex.data);
     }
 
+//    if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_IDLE){
+//        std::cerr<<"startWholeBodyMasterSlave() called by button"<<std::endl;
+//        startWholeBodyMasterSlave();
+//    }else if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_WBMS){
+//        std::cerr<<"stopWholeBodyMasterSlave() called by button"<<std::endl;
+//        stopWholeBodyMasterSlave();
+//    }
+//    static bool is_blocking_continuous_hits = false;
+//    if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_PAUSE){
+//        if(!is_blocking_continuous_hits){
+//            std::cerr<<"resumeWholeBodyMasterSlave() called by button"<<std::endl;
+//            resumeWholeBodyMasterSlave();
+//            is_blocking_continuous_hits = true;
+//        }
+//    }else if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_WBMS){
+//        if(!is_blocking_continuous_hits){
+//            std::cerr<<"pauseWholeBodyMasterSlave() called by button"<<std::endl;
+//            pauseWholeBodyMasterSlave();
+//            is_blocking_continuous_hits = true;
+//        }
+//    }else{
+//        is_blocking_continuous_hits = false;
+//    }
+
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
-        if (m_htcomIn.isNew())  { m_htcomIn.read(); wbms->hp_wld_raw.tgt[com].abs   = hrp::to_Pose3(m_htcom.data); }
-        if (m_htrfIn.isNew())   { m_htrfIn.read();  wbms->hp_wld_raw.tgt[rf].abs    = hrp::to_Pose3(m_htrf.data); }
-        if (m_htlfIn.isNew())   { m_htlfIn.read();  wbms->hp_wld_raw.tgt[lf].abs    = hrp::to_Pose3(m_htlf.data); }
-        if (m_htrhIn.isNew())   { m_htrhIn.read();  wbms->hp_wld_raw.tgt[rh].abs    = hrp::to_Pose3(m_htrh.data);}
-        if (m_htlhIn.isNew())   { m_htlhIn.read();  wbms->hp_wld_raw.tgt[lh].abs    = hrp::to_Pose3(m_htlh.data);}
-        if (m_htheadIn.isNew()) { m_htheadIn.read();wbms->hp_wld_raw.tgt[head].abs  = hrp::to_Pose3(m_hthead.data);}
-        if (m_htzmpIn.isNew())  { m_htzmpIn.read(); wbms->hp_wld_raw.tgt[zmp].abs.p = hrp::to_Vector3(m_htzmp.data); }
+        if (m_masterTgtPosesIn["lleg"]->isNew()){ m_masterTgtPosesIn["lleg"]->read(); wbms->hp_wld_raw.tgt[lf].abs   = hrp::to_Pose3(m_masterTgtPoses["lleg"].data); }
+        if (m_masterTgtPosesIn["rleg"]->isNew()){ m_masterTgtPosesIn["rleg"]->read(); wbms->hp_wld_raw.tgt[rf].abs   = hrp::to_Pose3(m_masterTgtPoses["rleg"].data); }
+        if (m_masterTgtPosesIn["larm"]->isNew()){ m_masterTgtPosesIn["larm"]->read(); wbms->hp_wld_raw.tgt[lh].abs   = hrp::to_Pose3(m_masterTgtPoses["larm"].data); }
+        if (m_masterTgtPosesIn["rarm"]->isNew()){ m_masterTgtPosesIn["rarm"]->read(); wbms->hp_wld_raw.tgt[rh].abs   = hrp::to_Pose3(m_masterTgtPoses["rarm"].data);}
+        if (m_masterTgtPosesIn["com" ]->isNew()){ m_masterTgtPosesIn["com" ]->read(); wbms->hp_wld_raw.tgt[com].abs  = hrp::to_Pose3(m_masterTgtPoses["com" ].data);}
+        if (m_masterTgtPosesIn["head"]->isNew()){ m_masterTgtPosesIn["head"]->read(); wbms->hp_wld_raw.tgt[head].abs = hrp::to_Pose3(m_masterTgtPoses["head"].data);}
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
         if (m_actZMPIn.isNew())  { m_actZMPIn.read(); rel_act_zmp = hrp::to_Vector3(m_actZMP.data);}
     }
@@ -439,7 +453,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 void WholeBodyMasterSlave::processTransition(){
     switch(mode.now()){
 
-        case MODE_SYNC_TO_WBMS:
+        case MODE_SYNC_TO_HC:
             if(mode.pre() == MODE_IDLE){ double tmp = 1.0; t_ip->setGoal(&tmp, 3.0, true); }
             if (!t_ip->isEmpty() ){
                 t_ip->get(&output_ratio, true);
@@ -832,7 +846,7 @@ void WholeBodyMasterSlave::smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPt
 bool WholeBodyMasterSlave::startWholeBodyMasterSlave(){
     if(mode.now() == MODE_IDLE){
         RTCOUT << "startWholeBodyMasterSlave" << std::endl;
-        mode.setNextMode(MODE_SYNC_TO_WBMS);
+        mode.setNextMode(MODE_SYNC_TO_HC);
         return true;
     }else{
         RTCOUT << "Invalid context to startWholeBodyMasterSlave" << std::endl;

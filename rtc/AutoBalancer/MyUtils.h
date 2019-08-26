@@ -7,6 +7,8 @@
 #include <hrpUtil/Eigen4d.h>
 #include "../RobotHardware/defs.h"
 
+#include <float.h>
+
 enum { R, L, LR };
 //enum {X, Y, Z}; //already exist in RobotHardware/defs.h
 enum { XY = 2 };
@@ -29,6 +31,7 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
 #define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
+#define LIMIT_NORM(v,max) if(v.norm()>max){ v=v.normalized()*max; }
 
 namespace hrp{
     class Pose3{
@@ -39,7 +42,7 @@ namespace hrp{
             Pose3()                                                                                                             { reset();}
             Pose3(const double& _X, const double& _Y, const double& _Z, const double& _r, const double& _p, const double& _y)   { p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
             Pose3(const hrp::dvector6& _xyz_rpy)                                                                                { p = _xyz_rpy.head(3); R = hrp::rotFromRpy(_xyz_rpy.tail(3)); }
-            Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy)                                                           { p = _xyz; R = hrp::rotFromRpy(_rpy); }
+//            Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy)                                                           { p = _xyz; R = hrp::rotFromRpy(_rpy); }// ambiguous overload...
             Pose3(const hrp::Vector3& _xyz, const hrp::Matrix33& _R)                                                            { p = _xyz; R = _R; }
             void reset()                                                                                                        { p.fill(0); R.setIdentity(); }
             hrp::Vector3 rpy() const                                                                                            { return hrp::rpyFromRot(R); }
@@ -54,15 +57,13 @@ namespace hrp{
     inline hrp::Pose3           to_Pose3        (const RTC::Pose3D& in)         { return hrp::Pose3(in.position.x, in.position.y, in.position.z, in.orientation.r, in.orientation.p, in.orientation.y); }
     inline hrp::dvector6        to_dvector6     (const OpenHRP::Wrench& in)     { return (hrp::dvector6() << in.force.x, in.force.y, in.force.z, in.torque.x, in.torque.y, in.torque.z).finished(); }
     inline hrp::dvector         to_dvector      (const RTC::TimedDoubleSeq::_data_seq& in) { return hrp::dvector::Map(in.get_buffer(), in.length()); }
-    inline std::vector<std::string> to_string_vector (const OpenHRP::WholeBodyMasterSlaveService::StrSequence& in) { std::vector<std::string> ret(in.length()); for(int i=0; i<in.length(); i++){ ret[i] = in[i]; } return ret; }
 
     inline RTC::Point3D         to_Point3D      (const hrp::Vector3& in)        { return (RTC::Point3D){in(X),in(Y),in(Z)}; }
     inline RTC::Orientation3D   to_Orientation3D(const hrp::Vector3& in)        { return (RTC::Orientation3D){in(X),in(Y),in(Z)}; }
     inline RTC::Pose3D          to_Pose3D       (const hrp::dvector6& in)       { return (RTC::Pose3D){in(X),in(Y),in(Z),in(r),in(p),in(y)}; }
     inline RTC::Pose3D          to_Pose3D       (const hrp::Pose3& in)          { return (RTC::Pose3D){in.p(X),in.p(Y),in.p(Z),in.rpy()(r),in.rpy()(p),in.rpy()(y)}; }
     inline OpenHRP::Wrench      to_Wrench       (const hrp::dvector6& in)       { return (OpenHRP::Wrench){in(X),in(Y),in(Z),in(r),in(p),in(y)}; }
-    inline RTC::TimedDoubleSeq::_data_seq                       to_DoubleSeq    (const hrp::dvector& in)            { RTC::TimedDoubleSeq::_data_seq out(in.size()); hrp::dvector::Map(out.get_buffer(), in.size()) = in; return out; }
-    inline OpenHRP::WholeBodyMasterSlaveService::StrSequence    to_StrSequence  (const std::vector<std::string>& in){ OpenHRP::WholeBodyMasterSlaveService::StrSequence ret; ret.length(in.size()); for(int i=0; i<in.size(); i++){ ret[i] = in[i].c_str(); } return ret; }
+    inline RTC::TimedDoubleSeq::_data_seq   to_DoubleSeq    (const hrp::dvector& in)    { RTC::TimedDoubleSeq::_data_seq out; out.length(in.size()); hrp::dvector::Map(out.get_buffer(), in.size()) = in; return out; }
 
     inline hrp::dvector getQAll         (const hrp::BodyPtr _robot){ hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->q; } return tmp; }
     inline void         setQAll         (hrp::BodyPtr       _robot, const hrp::dvector& in){ assert(in.size() <= _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = in(i); } }
@@ -71,6 +72,12 @@ namespace hrp{
     inline void         setRobotStateVec(hrp::BodyPtr       _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Vector3& _brpy){ assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = hrp::rotFromRpy(_brpy); }
     inline void         setRobotStateVec(hrp::BodyPtr       _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Matrix33& _bR){ assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = _bR; }
     inline std::vector<std::string> getJointNameAll (const hrp::BodyPtr _robot){ std::vector<std::string> ret(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ ret[i] = _robot->joint(i)->name; } return ret; }
+    inline hrp::dvector getUAll         (const hrp::BodyPtr _robot){ hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->u; } return tmp; }
+
+
+    inline std::vector<std::string> to_string_vector (const RTC::TimedStringSeq::_data_seq& in) {
+        std::vector<std::string> ret(in.length()); for(int i=0; i<in.length(); i++){ ret[i] = in[i]; } return ret;
+    }
 
     inline hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp
         using ::std::numeric_limits;
@@ -101,6 +108,28 @@ namespace hrp{
         return ret;
     }
 }
+
+
+class BiquadIIRFilterVec2{
+    private:
+        std::vector<IIRFilter> filters;
+        hrp::dvector ans;
+    public:
+        BiquadIIRFilterVec2(){}
+        BiquadIIRFilterVec2(const int len){resize(len);}
+        void resize(const int len){filters.resize(len); ans.resize(len);}
+        ~BiquadIIRFilterVec2(){}
+        void setParameter(const hrp::dvector& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
+        void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
+        hrp::dvector passFilter(const hrp::dvector& input){
+            for(int i=0;i<filters.size();i++){
+                ans(i) = filters[i].passFilter((double)input(i));
+            }
+            return ans;
+        }
+        void reset(const hrp::dvector& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset((double)initial_input(i));} }
+        void reset(const double& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset(initial_input);} }
+};
 
 inline bool has(const std::vector<std::string> v, const std::string& s){ return (std::find(v.begin(), v.end(), s) != v.end());}
 

@@ -272,6 +272,11 @@ class HrpsysConfigurator(object):
     wbms = None
     wbms_svc = None
     wbms_version = None
+    
+    # HapticController
+    hc = None
+    hc_svc = None
+    hc_version = None
 
     # rtm manager
     ms = None
@@ -396,22 +401,21 @@ class HrpsysConfigurator(object):
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
                                      self.rh.ref, "rfsensor") and self.st:
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
-            #### normal
-#            connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
-#            connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
-#            connectPorts(self.sh.port("baseRpyOut"), self.abc.port("baseRpyIn"))
-#            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
-            #### wbms
             if self.wbms:
-                connectPorts(self.wbms.port("q"), self.ic.port("qRef"))
-                connectPorts(self.wbms.port("zmpOut"), self.abc.port("zmpIn"))
-                connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
-                connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
+#                connectPorts(self.wbms.port("q"), self.ic.port("qRef")) // really needed ?
+                connectPorts(self.st.port("actCapturePoint"),   self.wbms.port("actCapturePoint"))
+                connectPorts(self.st.port("zmp"),               self.wbms.port("zmp"))
+                connectPorts(self.wbms.port("zmpOut"),          self.abc.port("zmpIn"))
+                connectPorts(self.wbms.port("basePosOut"),      self.abc.port("basePosIn"))
+                connectPorts(self.wbms.port("baseRpyOut"),      self.abc.port("baseRpyIn"))
                 connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
-                connectPorts(self.st.port("actCapturePoint"), self.wbms.port("actCapturePoint"))
-                connectPorts(self.st.port("zmp"), self.wbms.port("zmp"))
                 connectPorts(self.wbms.port("AutoBalancerService"), self.abc.port("AutoBalancerService"))
-                connectPorts(self.wbms.port("StabilizerService"), self.st.port("StabilizerService"))
+                connectPorts(self.wbms.port("StabilizerService"),   self.st.port("StabilizerService"))
+            else:
+                connectPorts(self.sh.port("zmpOut"),            self.abc.port("zmpIn"))
+                connectPorts(self.sh.port("basePosOut"),        self.abc.port("basePosIn"))
+                connectPorts(self.sh.port("baseRpyOut"),        self.abc.port("baseRpyIn"))
+                connectPorts(self.sh.port("optionalDataOut"),   self.abc.port("optionalData"))
             
             connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))
@@ -436,6 +440,15 @@ class HrpsysConfigurator(object):
                 connectPorts(self.rfu.port("refFootOriginExtMomentIsHoldValue"), self.abc.port("refFootOriginExtMomentIsHoldValue"))
             if self.octd:
                 connectPorts(self.abc.port("contactStates"), self.octd.port("contactStates"))
+                
+        # connection for hc
+        if self.hc:
+            connectPorts(self.sh.port("q"),     self.hc.port("qRef"))
+            connectPorts(self.rh.port("q"),  self.hc.port("qAct"))
+            connectPorts(self.rh.port("dq"), self.hc.port("dqAct"))
+            connectPorts(self.hc.port("tau"), self.rh.port("tauRef"))
+#            connectPorts(self.hc.port("q"), self.rh.port("??????"))
+#            connectPorts(self.hc.port("teleopOdom"), self.rh.port("??????"))
 
         # ref force moment connection
         for sen in self.getForceSensorNames():
@@ -776,6 +789,7 @@ class HrpsysConfigurator(object):
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
             ['wbms', "WholeBodyMasterSlave"],
+            ['hc', "HapticController"],
             ['ic', "ImpedanceController"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],

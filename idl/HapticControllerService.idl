@@ -1,0 +1,31 @@
+/**
+ * @file HapticControllerService.idl
+ * @brief Services for the HapticController interface
+ */
+//#include "OpenHRPCommon.idl"
+module OpenHRP
+{
+  
+  interface HapticControllerService
+  {
+    typedef sequence<double, 3> DblSequence3;
+    //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray3[3];
+    typedef double DblArray4[4];
+    typedef sequence<string> StrSequence;
+
+    struct HapticControllerParam
+    {
+        double gravity_compensation_ratio;
+        double force_feedback_ratio;
+        double dqAct_filter_cutoff_hz;
+        double wrench_filter_cutoff_hz;
+    };
+    boolean startHapticController();
+    boolean stopHapticController();
+    boolean pauseHapticController();
+    boolean resumeHapticController();
+    void setParams(in HapticControllerParam i_param);
+    void getParams(out HapticControllerParam i_param);
+  };
+};

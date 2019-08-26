@@ -30,6 +30,7 @@ set(idl_files
   AccelerationFilterService.idl
   ObjectContactTurnaroundDetectorService.idl
   WholeBodyMasterSlaveService.idl
+  HapticControllerService.idl
   PCDLoaderService.idl
   )
 

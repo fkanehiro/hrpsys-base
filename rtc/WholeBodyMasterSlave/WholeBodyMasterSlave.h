@@ -21,7 +21,7 @@
 
 //#define USE_DEBUG_PORT
 
-enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
+enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_HC, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
 class ControlMode{
     private:
@@ -31,10 +31,10 @@ class ControlMode{
         ~ControlMode(){}
         bool setNextMode(const mode_enum _request){
             switch(_request){
-                case MODE_SYNC_TO_WBMS:
-                    if(current == MODE_IDLE){ next = MODE_SYNC_TO_WBMS; return true; }else{ return false; }
+                case MODE_SYNC_TO_HC:
+                    if(current == MODE_IDLE){ next = MODE_SYNC_TO_HC; return true; }else{ return false; }
                 case MODE_WBMS:
-                    if(current == MODE_SYNC_TO_WBMS || current == MODE_PAUSE ){ next = MODE_WBMS; return true; }else{ return false; }
+                    if(current == MODE_SYNC_TO_HC || current == MODE_PAUSE ){ next = MODE_WBMS; return true; }else{ return false; }
                 case MODE_PAUSE:
                     if(current == MODE_WBMS){ next = MODE_PAUSE; return true; }else{ return false; }
                 case MODE_SYNC_TO_IDLE:
@@ -48,9 +48,18 @@ class ControlMode{
         void update(){ previous = current; current = next; }
         mode_enum now(){ return current; }
         mode_enum pre(){ return previous; }
-        bool isRunning(){ return (current==MODE_SYNC_TO_WBMS) || (current==MODE_WBMS) || (current==MODE_PAUSE) || (current==MODE_SYNC_TO_IDLE) ;}
-        bool isInitialize(){ return (previous==MODE_IDLE) && (current==MODE_SYNC_TO_WBMS) ;}
+        bool isRunning(){ return (current==MODE_SYNC_TO_HC) || (current==MODE_WBMS) || (current==MODE_PAUSE) || (current==MODE_SYNC_TO_IDLE) ;}
+        bool isInitialize(){ return (previous==MODE_IDLE) && (current==MODE_SYNC_TO_HC) ;}
 };
+
+namespace hrp{
+    inline std::vector<std::string> to_string_vector (const OpenHRP::WholeBodyMasterSlaveService::StrSequence& in) {
+        std::vector<std::string> ret(in.length()); for(int i=0; i<in.length(); i++){ ret[i] = in[i]; } return ret;
+    }
+    inline OpenHRP::WholeBodyMasterSlaveService::StrSequence    to_StrSequence  (const std::vector<std::string>& in){
+        OpenHRP::WholeBodyMasterSlaveService::StrSequence ret; ret.length(in.size()); for(int i=0; i<in.size(); i++){ ret[i] = in[i].c_str(); } return ret;
+    }
+}
 
 class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
     public:
@@ -80,24 +89,44 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         RTC::TimedDoubleSeq m_optionalData;
         RTC::InPort<RTC::TimedDoubleSeq> m_optionalDataIn;
 
-        RTC::TimedPose3D m_htcom;
-        RTC::InPort<RTC::TimedPose3D> m_htcomIn;
-        RTC::TimedPose3D m_htrf;
-        RTC::InPort<RTC::TimedPose3D> m_htrfIn;
-        RTC::TimedPose3D m_htlf;
-        RTC::InPort<RTC::TimedPose3D> m_htlfIn;
-        RTC::TimedPose3D m_htrh;
-        RTC::InPort<RTC::TimedPose3D> m_htrhIn;
-        RTC::TimedPose3D m_htlh;
-        RTC::InPort<RTC::TimedPose3D> m_htlhIn;
-        RTC::TimedPose3D m_hthead;
-        RTC::InPort<RTC::TimedPose3D> m_htheadIn;
-        RTC::TimedPoint3D m_htzmp;
-        RTC::InPort<RTC::TimedPoint3D> m_htzmpIn;
-        OpenHRP::TimedWrench m_htrfw;
-        RTC::InPort<OpenHRP::TimedWrench> m_htrfwIn;
-        OpenHRP::TimedWrench m_htlfw;
-        RTC::InPort<OpenHRP::TimedWrench> m_htlfwIn;
+
+
+        std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
+        typedef boost::shared_ptr<RTC::InPort<RTC::TimedPose3D> > ITP3_Ptr;
+        std::map<std::string, ITP3_Ptr> m_masterTgtPosesIn;
+
+        RTC::TimedDoubleSeq m_exData;
+        RTC::InPort<RTC::TimedDoubleSeq> m_exDataIn;
+        RTC::TimedStringSeq m_exDataIndex;
+        RTC::InPort<RTC::TimedStringSeq> m_exDataIndexIn;
+
+        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
+        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
+        std::map<std::string, OTDS_Ptr> m_slaveEEWrenchesOut;
+
+
+//        RTC::TimedPose3D m_htcom;
+//        RTC::InPort<RTC::TimedPose3D> m_htcomIn;
+//        RTC::TimedPose3D m_htrf;
+//        RTC::InPort<RTC::TimedPose3D> m_htrfIn;
+//        RTC::TimedPose3D m_htlf;
+//        RTC::InPort<RTC::TimedPose3D> m_htlfIn;
+//        RTC::TimedPose3D m_htrh;
+//        RTC::InPort<RTC::TimedPose3D> m_htrhIn;
+//        RTC::TimedPose3D m_htlh;
+//        RTC::InPort<RTC::TimedPose3D> m_htlhIn;
+//        RTC::TimedPose3D m_hthead;
+//        RTC::InPort<RTC::TimedPose3D> m_htheadIn;
+//        RTC::TimedPoint3D m_htzmp;
+//        RTC::InPort<RTC::TimedPoint3D> m_htzmpIn;
+//        OpenHRP::TimedWrench m_htrfw;
+//        RTC::InPort<OpenHRP::TimedWrench> m_htrfwIn;
+//        OpenHRP::TimedWrench m_htlfw;
+//        RTC::InPort<OpenHRP::TimedWrench> m_htlfwIn;
+
+
+
+
         RTC::TimedPoint3D m_actCP;
         RTC::InPort<RTC::TimedPoint3D> m_actCPIn;
         RTC::TimedPoint3D m_actZMP;
@@ -195,6 +224,9 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         enum cp_enum{ CP_IDLE, CP_LF, CP_RF, CP_STATIC};
         struct timespec startT, endT;
         std::string time_report_str;
+
+        std::vector<std::string> ee_names;
+        std::vector<std::string> tgt_names;
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
         void solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref);

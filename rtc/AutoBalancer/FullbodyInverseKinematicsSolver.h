@@ -29,8 +29,9 @@ class IKConstraint {
          localR(hrp::Matrix33::Identity()),
          constraint_weight(hrp::dvector6::Ones()),
          pos_precision(1e-4), rot_precision(deg2rad(0.1)){}
-        hrp::Vector3 getCurrentTargetPos(hrp::BodyPtr _robot){ return _robot->link(target_link_name)->p + _robot->link(target_link_name)->R * localPos; }
-        hrp::Matrix33 getCurrentTargetRot(hrp::BodyPtr _robot){ return _robot->link(target_link_name)->R * localR; }
+        hrp::Vector3 getCurrentTargetPos(const hrp::BodyPtr _robot){ return _robot->link(target_link_name)->p + _robot->link(target_link_name)->R * localPos; }
+        hrp::Matrix33 getCurrentTargetRot(const hrp::BodyPtr _robot){ return _robot->link(target_link_name)->R * localR; }
+        hrp::Pose3 getCurrentTargetPose(const hrp::BodyPtr _robot){ return hrp::Pose3(getCurrentTargetPos(_robot), getCurrentTargetRot(_robot)); }
 };
 
 
