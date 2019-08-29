@@ -1,6 +1,8 @@
 # generate .conf and .xml files for two controller period
 set(controller_time_list 0.002 0.005) # [s]
 set(controller_period_list 500 200) # [Hz]
+set(COLLISION_LOOP 1)
+set(L_SHOULDER_R_INITIAL 0.0)
 foreach(_idx 0 1)
   list(GET controller_time_list ${_idx} _tmp_controller_time)
   list(GET controller_period_list ${_idx} _tmp_controller_period)
@@ -19,6 +21,13 @@ endforeach()
 configure_file(SampleRobot.kinematicsonly.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.kinematicsonly.xml)
 configure_file(SampleRobot.carryobject.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.carryobject.xml)
 
+##
+set(CONTROLLER_TIME 0.002)
+set(CONTROLLER_PERIOD 500)
+set(L_SHOULDER_R_INITIAL -0.15) ##
+configure_file(SampleRobot.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500_init_col.xml)
+set(L_SHOULDER_R_INITIAL 0.0)  ## revert initial angle
+
 # for virtual force sensor testing
 set(CONTROLLER_TIME 0.002)
 set(CONTROLLER_PERIOD 500)
@@ -27,6 +36,8 @@ configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.v
 set(VirtualForceSensorSetting "#virtual_force_sensor") # comment out
 set(JointLimitTableSetting "joint_limit_table")
 configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.el.conf)
+set(COLLISION_LOOP 3)
+configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.co_loop.conf)
 
 set(robot_waist_translation "-0.8  0  0" "-4.15  -0.2  0" "-5.83  -0.2  -0.6096")
 set(file_suffix "SlopeUpDown" "StairUp" "StairDown")
@@ -42,6 +53,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.log.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500_init_col.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.500.conf
   # files for 200[Hz]  = 0.005[s]
@@ -55,6 +67,8 @@ install(FILES
   # for SoftErrorLimiter
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.el.conf
   SampleRobot.PDgain.dat
+  # for collision_loop
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.co_loop.conf
   # TerrainFloor
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.SlopeUpDown.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairUp.xml

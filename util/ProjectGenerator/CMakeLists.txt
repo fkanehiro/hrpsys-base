@@ -5,5 +5,5 @@ target_link_libraries(ProjectGenerator ${OPENHRP_LIBRARIES} ${LIBXML2_LIBRARIES}
 set(target ProjectGenerator)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
 )

@@ -10,13 +10,14 @@
 #ifndef SOFT_ERROR_LIMITER_H
 #define SOFT_ERROR_LIMITER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include "JointLimitTable.h"
 
 // Service implementation headers
@@ -146,6 +147,7 @@ class SoftErrorLimiter
  private:
   boost::shared_ptr<robot> m_robot;
   std::map<std::string, hrp::JointLimitTable> joint_limit_tables;
+  std::vector<bool> m_joint_mask;
   unsigned int m_debugLevel;
   int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq, debug_print_freq;
   double dt;

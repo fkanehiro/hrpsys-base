@@ -14,6 +14,6 @@ target_link_libraries(VoxelGridFilterComp ${libs})
 set(target VoxelGridFilter VoxelGridFilterComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

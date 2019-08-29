@@ -149,7 +149,7 @@ RTC::ReturnCode_t AverageFilter::onExecute(RTC::UniqueId ec_id)
     // compute bbox
     float xmin, xmax, ymin, ymax;
     float *src = (float *)m_original.data.get_buffer();
-    int npoint = m_original.data.length()/m_original.point_step;
+    unsigned int npoint = m_original.data.length()/m_original.point_step;
     for (unsigned int i=0; i<npoint; i++){
       if (i==0){
 	xmin = xmax = src[0];

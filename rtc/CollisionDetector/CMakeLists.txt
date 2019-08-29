@@ -1,3 +1,9 @@
+if (APPLE)
+  include_directories(${PCL_INCLUDE_DIRS})
+  link_directories(${PCL_LIBRARY_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+endif()
+
 set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
 if (USE_HRPSYSUTIL)
   set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp GLscene.cpp VclipLinkPair.cpp ../SoftErrorLimiter/beep.cpp)
@@ -45,6 +51,6 @@ else()
 endif()
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

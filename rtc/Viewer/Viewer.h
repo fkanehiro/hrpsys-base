@@ -10,6 +10,8 @@
 #ifndef VIEWER_H
 #define VIEWER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -18,7 +20,6 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include "hrpsys/util/LogManager.h"
 #include "hrpsys/util/SDLUtil.h"
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include "GLscene.h"
 
 class RTCGLbody;

@@ -113,6 +113,7 @@ namespace rats
     };
     // void update_zc(double zc);
     size_t get_delay () { return delay; };
+    double get_preview_f (const size_t idx) { return f(idx); };
     void get_refcog (double* ret)
     {
       ret[0] = x_k(0,0);
@@ -164,6 +165,19 @@ namespace rats
         p.clear();
         pz.clear();
         qdata.clear();
+    };
+    void set_preview_queue(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& q, const size_t idx)
+    {
+      Eigen::Matrix<double, 2, 1> tmpv;
+      tmpv(0,0) = pr(0);
+      tmpv(1,0) = pr(1);
+      p[idx] = tmpv;
+      pz[idx] = pr(2);
+      qdata[idx] = q;
+    };
+    size_t get_preview_queue_size()
+    {
+      return p.size();
     };
     void print_all_queue ()
     {
@@ -263,6 +277,14 @@ namespace rats
     {
       preview_controller.remove_preview_queue();
     };
+    void set_preview_queue(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& qdata, const size_t idx)
+    {
+      preview_controller.set_preview_queue(pr, qdata, idx);
+    }
+    size_t get_preview_queue_size()
+    {
+      return preview_controller.get_preview_queue_size();
+    };
     void print_all_queue ()
     {
       preview_controller.print_all_queue();
@@ -274,6 +296,7 @@ namespace rats
     void get_current_refzmp (double* ret) { preview_controller.get_current_refzmp(ret);}
     //void get_current_qdata (double* ret) { preview_controller.get_current_qdata(ret);}
     size_t get_delay () { return preview_controller.get_delay(); };
+    double get_preview_f (const size_t idx) { return preview_controller.get_preview_f(idx); };
   };
 }
 #endif /*PREVIEW_H_*/

@@ -10,6 +10,6 @@ target_link_libraries(UndistortImageComp ${libs})
 set(target UndistortImage UndistortImageComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

@@ -24,7 +24,7 @@ class ServoSerial {
 public:
   int fd;
 
-  ServoSerial(char *devname)  {
+  ServoSerial(const char *devname)  {
     fd = open(devname, O_RDWR);
     if (fd<0) {
       char *pmesg = strerror(errno);
@@ -329,13 +329,13 @@ public:
     if ( length * count > 0 ) {
       memcpy((void *)(&(packet[7])), (void *)data, length*count);
     }
-    for(unsigned int i = 2; i < 7 + length*count; i++){
+    for(int i = 2; i < 7 + length*count; i++){
       sum ^= packet[i];
     }
     packet[7+length*count] = sum;
 
     fprintf (stderr, "[ServoSerial] sending : ");
-    for(unsigned int i = 0; i < 7 + length*count + 1; i++){
+    for(int i = 0; i < 7 + length*count + 1; i++){
       fprintf(stderr, "%02X ", packet[i]);
     }
     fprintf(stderr, " - ");

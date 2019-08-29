@@ -8,6 +8,6 @@ target_link_libraries(Joystick2Velocity2DComp ${OPENRTM_LIBRARIES})
 set(target Joystick2Velocity2D Joystick2Velocity2DComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#include "Joystick2PanTiltAngles.h"
 #include "hrpsys/util/VectorConvert.h"
+#include "Joystick2PanTiltAngles.h"
 
 // Module specification
 // <rtc-template block="module_spec">

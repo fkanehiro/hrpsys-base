@@ -11,8 +11,16 @@ namespace RTC
 {
     hrpExecutionContext::~hrpExecutionContext()
     {
+        if (m_thread_pending)
+            abort ();
     }
     int hrpExecutionContext::svc(void)
+    {
+        int ret = svc_wrapped ();
+        m_thread_pending = false;
+        return ret;
+    }
+    int hrpExecutionContext::svc_wrapped(void)
     {
         if (open_iob() == FALSE){
             std::cerr << "open_iob: failed to open" << std::endl;
@@ -34,7 +42,7 @@ namespace RTC
 	    int nsubstep = number_of_substeps();
         set_signal_period(period_nsec/nsubstep);
         std::cout << "period = " << get_signal_period()*nsubstep/1e6
-                  << "[ms], priority = " << m_priority << std::endl;
+                  << "[ms], priority = " << m_priority << ", cpu = " << m_cpu << std::endl;
         struct timeval debug_tv1, debug_tv2, debug_tv3, debug_tv4, debug_tv5;
         int loop = 0;
         int debug_count = 5000.0/(get_signal_period()*nsubstep/1e6); // Loop count for debug print. Once per 5000.0 [ms].
@@ -132,7 +140,11 @@ namespace RTC
                 if (processes.size() != rtc_names.size()){
                     rtc_names.clear();
                     for (unsigned int i=0; i< processes.size(); i++){
+#ifndef OPENRTM_VERSION_TRUNK 
                         RTC::RTObject_var rtc = RTC::RTObject::_narrow(m_comps[i]._ref);
+#else
+                        RTC::RTObject_var rtc = list[i];
+#endif
                         rtc_names.push_back(std::string(rtc->get_component_profile()->instance_name));
                     }
                 }
@@ -143,7 +155,8 @@ namespace RTC
 #ifndef OPENRTM_VERSION_TRUNK
             if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) {
               gettimeofday(&debug_tv4, NULL);
-              fprintf(stderr, "[hrpEC] Processing time breakdown : waitForNextPeriod %f[ms], warker (onExecute) %f[ms], ExecutionProfile %f[ms], time from prev cicle %f[ms]\n",
+              fprintf(stderr, "[hrpEC] [%d.%6.6d] Processing time breakdown : waitForNextPeriod %f[ms], warker (onExecute) %f[ms], ExecutionProfile %f[ms], time from prev cicle %f[ms]\n",
+                      tv.tv_sec, tv.tv_usec,
                       DELTA_SEC(debug_tv1, debug_tv2)*1e3,
                       DELTA_SEC(debug_tv2, debug_tv3)*1e3,
                       DELTA_SEC(debug_tv3, debug_tv4)*1e3,
@@ -184,6 +197,12 @@ namespace RTC
             }
         }
         throw OpenHRP::ExecutionProfileService::ExecutionProfileServiceException("no such component");
+    }
+
+    void hrpExecutionContext::activate ()
+    {
+        m_thread_pending = true;
+        PeriodicExecutionContext::activate ();
     }
 
     void hrpExecutionContext::resetProfile()

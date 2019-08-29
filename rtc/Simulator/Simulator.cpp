@@ -278,7 +278,7 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
     for (unsigned int i=0; i<m_bodies.size(); i++) m_bodies[i]->input();
 
     if (m_kinematicsOnly){
-        for(int i=0; i < m_world.numBodies(); ++i){
+        for(unsigned int i=0; i < m_world.numBodies(); ++i){
             m_world.body(i)->calcForwardKinematics();
         }
         m_world.setCurrentTime(m_world.currentTime() + m_world.timeStep());

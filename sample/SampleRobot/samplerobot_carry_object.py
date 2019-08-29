@@ -51,6 +51,15 @@ def demoSetParameter():
     stp_org.is_ik_enable=[True]*4
     hcf.st_svc.setParameter(stp_org)
 
+def defJointGroups ():
+    rleg_6dof_group = ['rleg', ['RLEG_HIP_R', 'RLEG_HIP_P', 'RLEG_HIP_Y', 'RLEG_KNEE', 'RLEG_ANKLE_P', 'RLEG_ANKLE_R']]
+    lleg_6dof_group = ['lleg', ['LLEG_HIP_R', 'LLEG_HIP_P', 'LLEG_HIP_Y', 'LLEG_KNEE', 'LLEG_ANKLE_P', 'LLEG_ANKLE_R']]
+    torso_group = ['torso', ['WAIST_P', 'WAIST_R', 'CHEST']]
+    head_group = ['head', []]
+    rarm_group = ['rarm', ['RARM_SHOULDER_P', 'RARM_SHOULDER_R', 'RARM_SHOULDER_Y', 'RARM_ELBOW', 'RARM_WRIST_Y', 'RARM_WRIST_P', 'RARM_WRIST_R']]
+    larm_group = ['larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R']]
+    return [rleg_6dof_group, lleg_6dof_group, torso_group, head_group, rarm_group, larm_group]
+
 def init ():
     global hcf, initial_pose, dualarm_via_pose, dualarm_reach_pose, dualarm_liftup_pose, singlearm_via_pose, singlearm_reach_pose, singlearm_liftup_pose, dualarm_push_pose
     hcf = HrpsysConfigurator()
@@ -80,6 +89,7 @@ def init ():
     icp.D_r = 1e5
     hcf.ic_svc.setImpedanceControllerParam("rarm", icp)
     hcf.ic_svc.setImpedanceControllerParam("larm", icp)
+    hcf.Groups = defJointGroups()
     hcf.startDefaultUnstableControllers(['rarm', 'larm'], ["rleg", "lleg", "rarm", "larm"])
     HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
     hcf.rmfo_svc.loadForceMomentOffsetParams(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/ForceSensorOffset_SampleRobot.txt')
@@ -147,30 +157,32 @@ def demoSinglearmCarryup (is_walk=True, auto_detecion = True):
     hcf.waitInterpolation()
 
 def objectTurnaroundDetection(max_time = 4.0, max_ref_force = 9.8*6.0, limbs=["rarm", "larm"], axis=[0,0,-1]):
-    otdp=hcf.ic_svc.getObjectTurnaroundDetectorParam()[1]
-    otdp.detect_time_thre=0.3
-    otdp.start_time_thre=0.3
-    otdp.axis=axis
-    hcf.ic_svc.setObjectTurnaroundDetectorParam(otdp)
+    octdp=hcf.octd_svc.getObjectContactTurnaroundDetectorParam()[1]
+    octdp.detect_time_thre=0.3
+    octdp.start_time_thre=0.3
+    octdp.axis=axis
+    hcf.octd_svc.setObjectContactTurnaroundDetectorParam(octdp)
     if limbs==['rarm']:
         force = [axis[0]*max_ref_force, axis[1]*max_ref_force, axis[2]*max_ref_force]
         hcf.seq_svc.setWrenches([0]*18+force+[0,0,0], max_time)
     else:
         force = [axis[0]*max_ref_force*0.5, axis[1]*max_ref_force*0.5, axis[2]*max_ref_force*0.5]
         hcf.seq_svc.setWrenches([0]*12+force+[0]*3+force+[0]*3, max_time)
-    hcf.ic_svc.startObjectTurnaroundDetection(max_ref_force, max_time+2.0, limbs)
+    hcf.octd_svc.startObjectContactTurnaroundDetection(max_ref_force, max_time+2.0, limbs)
     flg = True
     while flg:
-        tmpflg = hcf.ic_svc.checkObjectTurnaroundDetection()
+        tmpflg = hcf.octd_svc.checkObjectContactTurnaroundDetection()
         #print rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data, rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data
-        print "  flag = ", tmpflg, ", forces = ", hcf.ic_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.ic_svc.getObjectForcesMoments()[2][0]
-        flg = (tmpflg == OpenHRP.ImpedanceControllerService.MODE_DETECTOR_IDLE) or (tmpflg == OpenHRP.ImpedanceControllerService.MODE_STARTED)
+        [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
+        print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
+        flg = (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_DETECTOR_IDLE) or (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_STARTED)
         time.sleep(0.5)
-    print "  flag = ", tmpflg, ", forces = ", hcf.ic_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.ic_svc.getObjectForcesMoments()[2][0]
+    [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
+    print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
     if limbs==['rarm']:
-        hcf.seq_svc.setWrenches([0]*18+hcf.ic_svc.getObjectForcesMoments()[1][0]+hcf.ic_svc.getObjectForcesMoments()[2][0], 2.0)
+        hcf.seq_svc.setWrenches([0]*18+fv[0]+mv[0], 2.0)
     else:
-        hcf.seq_svc.setWrenches([0]*12+hcf.ic_svc.getObjectForcesMoments()[1][0]+hcf.ic_svc.getObjectForcesMoments()[2][0]+hcf.ic_svc.getObjectForcesMoments()[1][1]+hcf.ic_svc.getObjectForcesMoments()[2][1], 2.0)
+        hcf.seq_svc.setWrenches([0]*12+fv[1]+mv[1]+fv[0]+mv[0], 2.0)
     hcf.waitInterpolation()
 
 def demoWalk ():

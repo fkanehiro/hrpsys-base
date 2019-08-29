@@ -7,7 +7,10 @@ set_target_properties(DataLogger PROPERTIES PREFIX "")
 add_executable(DataLoggerComp DataLoggerComp.cpp ${comp_sources})
 target_link_libraries(DataLoggerComp ${libs})
 
-find_package(VTK)
+add_executable(logSplitter logSplitter.cpp)
+target_link_libraries(logSplitter ${libs})
+
+find_package(VTK 5.8 EXACT)
 if (NOT "${VTK_LIBRARIES}" STREQUAL "")
   list(REMOVE_ITEM VTK_LIBRARIES "vtkproj4")
 endif()
@@ -24,7 +27,7 @@ else()
 endif()
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 

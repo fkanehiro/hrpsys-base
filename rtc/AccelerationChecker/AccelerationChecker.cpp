@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <stdio.h>
 #include "AccelerationChecker.h"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -38,6 +39,7 @@ AccelerationChecker::AccelerationChecker(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_qIn("qIn", m_q),
+    m_servoStateIn("servoState", m_servoState),
     m_qOut("qOut", m_q),
     // </rtc-template>
     dummy(0)
@@ -64,6 +66,7 @@ RTC::ReturnCode_t AccelerationChecker::onInitialize()
   // <rtc-template block="registration">
   // Set InPort buffers
   addInPort("qIn", m_qIn);
+  addInPort("servoState", m_servoStateIn);
 
   // Set OutPort buffer
   addOutPort("qOut", m_qOut);
@@ -129,6 +132,7 @@ RTC::ReturnCode_t AccelerationChecker::onExecute(RTC::UniqueId ec_id)
 
   if (m_qIn.isNew()){
     m_qIn.read();
+    while(m_servoStateIn.isNew()) m_servoStateIn.read();
     if (!m_dq.data.length()){ // first time
         m_qOld.data.length(m_q.data.length());
         m_qOld = m_q;
@@ -143,10 +147,18 @@ RTC::ReturnCode_t AccelerationChecker::onExecute(RTC::UniqueId ec_id)
     for (unsigned int i=0; i<m_q.data.length(); i++){
         m_dq.data[i] = (m_q.data[i] - m_qOld.data[i])/m_dt;
         double ddq = (m_dq.data[i] - m_dqOld.data[i])/m_dt;
+        bool servo = true;
+        if (m_servoState.data.length()==m_q.data.length()){
+            servo = m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK;
+        }
         if (fabs(ddq) > m_ddqMax.data[i]) m_ddqMax.data[i] = fabs(ddq);
-        if (fabs(ddq) > m_thd){
-            std::cout << std::fixed << std::setprecision(3) << "[" 
-                      << (double)coil::gettimeofday() 
+        if (servo && fabs(ddq) > m_thd){
+            time_t now = time(NULL);
+            struct tm *tm_now = localtime(&now);
+            char *datetime = asctime(tm_now);
+            datetime[strlen(datetime)-1] = '\0'; 
+            std::cout << "[" 
+                      << datetime
                       << "] Warning: too big joint acceleration for "
                       << i << "th joint(" << ddq << "[rad/m^2])" << std::endl;
         }

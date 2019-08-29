@@ -2,6 +2,9 @@
  * @file RobotHardwareService.idl
  * @brief Services for the robot hardware interface
  */
+
+#include "BasicDataType.idl"
+
 module OpenHRP
 {
   interface RobotHardwareService
@@ -204,6 +207,60 @@ module OpenHRP
      * @param rs status of the robot
      */
     void getStatus2(out RobotState2 rs);
+
+    /**
+     * @brief RobotState2 with timestamp
+     */
+    struct TimedRobotState2
+    {
+      RTC::Time tm;
+      RobotState2 data;
+    };
+
+    /**
+     * @brief set joint inertia
+     * @param name joint name
+     * @param mn joint inertia
+     * @return true if set successfully, false otherwise
+     */
+    boolean setJointInertia(in string name, in double mn);
+
+    /**
+     * @brief set joint inertias
+     * @param mns array of joint inertia
+     */
+    void setJointInertias(in DblSequence mns);
+
+    /**
+     * @brief enable disturbance observer
+     */
+    void enableDisturbanceObserver();
+
+    /**
+     * @brief disable disturbance observer
+     */
+    void disableDisturbanceObserver();
+
+    /**
+     * @brief set disturbance observer gain
+     * @param gain disturbance observer gain
+     */
+    void setDisturbanceObserverGain(in double gain);
+
+    /**
+     * @brief set the parcentage to the default servo gain
+     * @param name joint name, part name or "all"
+     * @param percentage to joint servo gain[0-100]
+     */
+    void setServoTorqueGainPercentage(in string name, in double percentage);
+
+    enum JointControlMode {FREE, POSITION, TORQUE, VELOCITY, POSITION_TORQUE};
+    /**
+     * @brief set joint control mode
+     * @param jname joint name, part name or "all"
+     * @param jcm   joint control mode
+     */
+    void setJointControlMode(in string jname, in JointControlMode jcm);
 
   };
 };

@@ -58,7 +58,11 @@ using namespace Vclip;
 
 #if QHULL
 extern "C" {
+#if (defined __APPLE__)
+#include <pcl/surface/qhull.h>
+#else
 #include "qhull/qhull_a.h"
+#endif
 }
 //char qh_version[] = "vclip 1.0";
 #endif
@@ -94,7 +98,7 @@ ostream& Plane::print(ostream &os) const
   oldFlags = os.setf(ios::showpos);
   os << normal_.x << " x " << normal_.y << " y  "
      << normal_.z << " z " << offset_ << " >= 0";
-  os.flags((std::_Ios_Fmtflags)oldFlags);
+  os.flags((std::ios_base::fmtflags)oldFlags);
   return os;
 }
 
@@ -617,7 +621,7 @@ int Polyhedron::buildHull()
   npts = verts_.size();
 
 
-  if (npts > hullVerts.capacity()) {
+  if (npts > (int)hullVerts.capacity()) {
     array.reserve(3 * npts);
     hullVerts.reserve(npts);
     vertUsed.reserve(npts);
@@ -970,7 +974,7 @@ const PolyTree *PolyTreeLibrary::lookup(int i) const
 {
   list< Handle<PolyTree> >::const_iterator libi;
 
-  if (i < 0 || i >= lib.size()) return NULL;
+  if (i < 0 || i >= (int)lib.size()) return NULL;
   for (libi = lib.begin(); i-- > 0; ++libi);
   return &**libi;
 }

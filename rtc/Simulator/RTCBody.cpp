@@ -23,7 +23,7 @@ RTCBody::~RTCBody()
 void RTCBody::createPorts(RTC::DataFlowComponentBase *comp)
 {
     // input ports
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         Link *l = joint(i);
         if (l){
             if (l->isHighGainMode){
@@ -88,7 +88,7 @@ void RTCBody::input()
             do {
                 m_qCmdIn.read();
             }while (m_qCmdIn.isNew());
-            for (int i=0; i<numJoints(); i++){
+            for (unsigned int i=0; i<numJoints(); i++){
                 Link *l = joint(i);
                 if (l){
                     l->q = m_qCmd.data[l->jointId];
@@ -99,7 +99,7 @@ void RTCBody::input()
             do {
                 m_dqCmdIn.read();
             }while (m_dqCmdIn.isNew());
-            for (int i=0; i<numJoints(); i++){
+            for (unsigned int i=0; i<numJoints(); i++){
                 Link *l = joint(i);
                 if (l){
                     l->dq = m_dqCmd.data[l->jointId];
@@ -110,7 +110,7 @@ void RTCBody::input()
             do {
                 m_ddqCmdIn.read();
             }while (m_ddqCmdIn.isNew());
-            for (int i=0; i<numJoints(); i++){
+            for (unsigned int i=0; i<numJoints(); i++){
                 Link *l = joint(i);
                 if (l){
                     l->ddq = m_ddqCmd.data[l->jointId];
@@ -122,7 +122,7 @@ void RTCBody::input()
             do {
                 m_tauIn.read();
             }while (m_tauIn.isNew());
-            for (int i=0; i<numJoints(); i++){
+            for (unsigned int i=0; i<numJoints(); i++){
                 Link *l = joint(i);
                 if (l){
                     l->u = m_tau.data[l->jointId];
@@ -135,7 +135,7 @@ void RTCBody::input()
 void RTCBody::output(OpenHRP::RobotState& state)
 {
     if (numJoints() > 0){
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             Link *l = joint(i);
             if (l){
                 m_q.data[l->jointId] = l->q;

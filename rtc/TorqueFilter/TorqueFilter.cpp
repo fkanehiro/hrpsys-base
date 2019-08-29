@@ -125,7 +125,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   m_torque_offset.resize(m_robot->numJoints());
   coil::vstring torque_offset = coil::split(prop["torque_offset"], ",");
   if ( m_torque_offset.size() == torque_offset.size() && m_debugLevel > 0) {
-    for(int i = 0; i < m_robot->numJoints(); i++){
+    for(unsigned int i = 0; i < m_robot->numJoints(); i++){
         coil::stringTo(m_torque_offset[i], torque_offset[i].c_str());
         std::cerr << "[" <<  m_profile.instance_name << "]" << "offset[" << m_robot->joint(i)->name << "]: " << m_torque_offset[i] << std::endl;
     }
@@ -156,7 +156,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
       std::cerr<< "[" <<  m_profile.instance_name << "]" << "There is no torque_filter_params. Use default values." << std::endl;
     }
   }
-  if (!use_default_flag && ((filter_dim + 1) * 2 + 1 != torque_filter_params.size()) ) {
+  if (!use_default_flag && ((filter_dim + 1) * 2 + 1 != (int)torque_filter_params.size()) ) {
     if (m_debugLevel > 0) {
       std::cerr<< "[" <<  m_profile.instance_name << "]" << "Size of torque_filter_params is not correct. Use default values." << std::endl;
     }
@@ -198,7 +198,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   }
   
   // make filter instance
-  for(int i = 0; i < m_robot->numJoints(); i++){
+  for(unsigned int i = 0; i < m_robot->numJoints(); i++){
     m_filters.push_back(IIRFilter(filter_dim, fb_coeffs, ff_coeffs, std::string(m_profile.instance_name)));
   }
   
@@ -265,7 +265,7 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
 
     if (m_qCurrent.data.length() ==  m_robot->numJoints()) {
       // reference robot model
-      for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
         m_robot->joint(i)->q = m_qCurrent.data[i];
       }
       m_robot->calcForwardKinematics();

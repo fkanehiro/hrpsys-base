@@ -1,3 +1,9 @@
+if (APPLE)
+  include_directories(${PCL_INCLUDE_DIRS})
+  link_directories(${PCL_LIBRARY_DIRS})
+  add_definitions(${PCL_DEFINITIONS})
+endif()
+
 set(sources
   Project.cpp
   ProjectUtil.cpp
@@ -57,15 +63,15 @@ target_link_libraries(hrpsysUtil
   ${GLUT_LIBRARIES} 
   ${QHULL_LIBRARIES}
   GLEW
-  boost_thread
+  ${Boost_THREAD_LIBRARY}
   boost_system
   )
 
 set(target hrpsysUtil)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 
 install(FILES ${headers} DESTINATION include/hrpsys/util)

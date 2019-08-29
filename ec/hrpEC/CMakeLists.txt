@@ -17,8 +17,8 @@ endif()
 set_target_properties(hrpEC PROPERTIES PREFIX "")
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 
 

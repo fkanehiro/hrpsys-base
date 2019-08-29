@@ -9,7 +9,8 @@ namespace RTC
 {
     hrpExecutionContext::hrpExecutionContext()
         : PeriodicExecutionContext(), 
-          m_priority(ART_PRIO_MAX-1)
+          m_priority(ART_PRIO_MAX-1),
+          m_thread_pending (false)
     {
         resetProfile();
         rtclog.setName("hrpEC");

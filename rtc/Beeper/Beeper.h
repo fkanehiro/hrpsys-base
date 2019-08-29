@@ -10,6 +10,7 @@
 #ifndef BEEPER_H
 #define BEEPER_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -129,7 +130,6 @@ class Beeper
   // </rtc-template>
 
  private:
-  double m_dt;
   long long m_loop;
   unsigned int m_debugLevel;
   pthread_t beep_thread;

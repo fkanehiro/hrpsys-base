@@ -85,7 +85,6 @@ const char *getServiceIOR(RTC::RTObject_var rtc,
                     connProfile.connector_id = "";
                     connProfile.ports.length(1);
                     connProfile.ports[0] = port;
-                    connProfile.properties = NULL;
                     port->connect(connProfile);
 
                     connProfile.properties[0].value >>= ior;

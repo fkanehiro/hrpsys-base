@@ -15,7 +15,7 @@ typedef double Mat44[4][4];
 enum ColorFormat
 {
   CF_UNKNOWN, CF_GRAY, CF_RGB,
-  CF_GRAY_JPEG, CF_RGB_JPEG // local extension
+  CF_GRAY_JPEG, CF_RGB_JPEG, CF_DEPTH // local extension
 };
 
 struct ImageData

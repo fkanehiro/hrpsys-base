@@ -22,6 +22,7 @@ public:
     CORBA::Boolean power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     CORBA::Boolean servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     void setServoGainPercentage(const char *jname, double limit);
+    void setServoTorqueGainPercentage(const char *jname, double limit);
     void setServoErrorLimit(const char *jname, double limit);
     void calibrateInertiaSensor();
     void removeForceSensorOffset();
@@ -33,6 +34,12 @@ public:
     CORBA::Boolean writeDigitalOutputWithMask(const ::OpenHRP::RobotHardwareService::OctSequence& dout, const ::OpenHRP::RobotHardwareService::OctSequence& mask);
     CORBA::Long lengthDigitalOutput();
     CORBA::Boolean readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout);
+    CORBA::Boolean setJointInertia(const char* name, ::CORBA::Double mn);
+    void setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns);
+    void enableDisturbanceObserver();
+    void disableDisturbanceObserver();
+    void setDisturbanceObserverGain(::CORBA::Double gain);
+    void setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm);
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:

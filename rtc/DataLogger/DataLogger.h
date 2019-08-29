@@ -13,6 +13,9 @@
 #include <deque>
 #include <iomanip>
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -20,7 +23,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -43,7 +45,7 @@ public:
     LoggerPortBase() : m_maxLength(DEFAULT_MAX_LOG_LENGTH) {}
     virtual const char *name() = 0;
     virtual void clear() = 0;
-    virtual void dumpLog(std::ostream& os) = 0;
+    virtual void dumpLog(std::ostream& os, unsigned int precision = 0) = 0;
     virtual void log() = 0;
     void maxLength(unsigned int len) { m_maxLength = len; }
 protected:
@@ -162,6 +164,7 @@ class DataLogger
  private:
   bool m_suspendFlag;
   coil::Mutex m_suspendFlagMutex;
+  unsigned int m_log_precision;
   int dummy;
 };
 

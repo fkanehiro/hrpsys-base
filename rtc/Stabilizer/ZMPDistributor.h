@@ -39,13 +39,15 @@ public:
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { vs = foot_vertices; };
     void print_vertices (const std::string& str)
     {
+        std::cerr << "[" << str << "]     ";
         for (size_t i = 0; i < foot_vertices.size(); i++) {
-            std::cerr << "[" << str << "]   vs = ";
+            std::cerr << "vs = ";
             for (size_t j = 0; j < foot_vertices[i].size(); j++) {
                 std::cerr << "[" << foot_vertices[i][j](0) << " " << foot_vertices[i][j](1) << "] ";
             }
-            std::cerr << "[m]" << std::endl;;
+            std::cerr << ((i==foot_vertices.size()-1)?"[m]":"[m], ");
         }
+        std::cerr << std::endl;;
     }
 };
 
@@ -53,9 +55,11 @@ public:
 
 class SimpleZMPDistributor
 {
-    FootSupportPolygon fs;
+    FootSupportPolygon fs, fs_mgn;
     double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > alpha_filter;
+    std::vector<Eigen::Vector2d> convex_hull;
+    enum projected_point_region {LEFT, MIDDLE, RIGHT};
 public:
     enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};
     SimpleZMPDistributor (const double _dt) : wrench_alpha_blending (0.5)
@@ -76,60 +80,34 @@ public:
     {
         return leg_pos(0) <= (-1 * leg_rear_margin + margin);
     };
-    inline bool is_cp_inside_foot (const hrp::Vector3& cp, const leg_type support_leg, const double margin = 0.0, const double offset = 0.0)
+    inline bool is_inside_support_polygon (Eigen::Vector2d& p, const hrp::Vector3& offset = hrp::Vector3::Zero(), const bool& truncate_p = false, const std::string& str = "")
     {
-        if (support_leg == RLEG) return (cp(1) <= (leg_inside_margin - margin)) && (cp(1) >= (-1 * leg_outside_margin + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else if (support_leg == LLEG) return (cp(1) >= (-1 * leg_inside_margin + margin)) && (cp(1) <= (leg_outside_margin - margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else if (support_leg == BOTH) return (cp(1) <= (leg_outside_margin + offset - margin)) && (cp(1) >= (-1 * (leg_outside_margin + offset) + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else return true;
-    };
-    inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>(), const hrp::Vector3& offset = hrp::Vector3(0.0, 0.0, 0.0))
-    {
-      if (ee_pos.size() == 0 || ee_rot.size() == 0 || ee_name.size() == 0 ) return true;
-      size_t l_idx, r_idx;
-      for (size_t i = 0; i < ee_name.size(); i++) {
-        if (ee_name[i]=="rleg") r_idx = i;
-        else if (ee_name[i]=="lleg") l_idx = i;
+      // set any inner point(ip) and binary search two vertices(convex_hull[v_a], convex_hull[v_b]) between which p is.
+      p -= offset.head(2);
+      size_t n_ch = convex_hull.size();
+      Eigen::Vector2d ip = (convex_hull[0] + convex_hull[n_ch/3] + convex_hull[2*n_ch/3]) / 3.0;
+      size_t v_a = 0, v_b = n_ch;
+      while (v_a + 1 < v_b) {
+        size_t v_c = (v_a + v_b) / 2;
+        if (calcCrossProduct(convex_hull[v_a], convex_hull[v_c], ip) > 0) {
+          if (calcCrossProduct(convex_hull[v_a], p, ip) > 0 && calcCrossProduct(convex_hull[v_c], p, ip) < 0) v_b = v_c;
+          else v_a = v_c;
+        } else {
+          if (calcCrossProduct(convex_hull[v_a], p, ip) < 0 && calcCrossProduct(convex_hull[v_c], p, ip) > 0) v_a = v_c;
+          else v_b = v_c;
+        }
       }
-      std::vector<Eigen::Vector2d> rleg_vertices;
-      std::vector<Eigen::Vector2d> lleg_vertices;
-      std::vector<Eigen::Vector2d> convex_vertices;
-
-      // assume that each foot vertices has four vertices
-      std::vector<double> margin(4, 0.0);
-      for (size_t i = 0; i < tmp_margin.size(); i++) {
-        margin[i] = tmp_margin[i];
+      v_b %= n_ch;
+      if (calcCrossProduct(convex_hull[v_a], convex_hull[v_b], p) >= 0) {
+        p += offset.head(2);
+        return true;
+      } else {
+        if (truncate_p) {
+          if (!calc_closest_boundary_point(p, v_a, v_b)) std::cerr << "[" << str << "]   Cannot calculate closest boundary point on the convex hull" << std::endl;
+        }
+        p += offset.head(2);
+        return false;
       }
-      // RLEG
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
-      // LLEG
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
-
-      if (support_leg == BOTH) {
-        // sort vertices in clockwise order
-        convex_vertices.push_back(lleg_vertices[0]);
-        convex_vertices.push_back(lleg_vertices[1]);
-        std::copy(rleg_vertices.begin(),rleg_vertices.end(),std::back_inserter(convex_vertices));
-        convex_vertices.push_back(lleg_vertices[2]);
-        convex_vertices.push_back(lleg_vertices[3]);
-        convex_vertices = calcConvexHull(convex_vertices);
-      } else if (support_leg == RLEG) {
-        convex_vertices = rleg_vertices;
-      } else if (support_leg == LLEG) {
-        convex_vertices = lleg_vertices;
-      }
-      // check whether p is inside support polygon
-      for (size_t i = 0; i < convex_vertices.size() - 1; i++) {
-        if (calcCrossProduct(p, convex_vertices[i + 1], convex_vertices[i]) < 0) return false;
-      }
-      if (calcCrossProduct(p, convex_vertices.front(), convex_vertices.back()) < 0) return false;
-      return true;
     };
     void print_params (const std::string& str)
     {
@@ -140,6 +118,64 @@ public:
     {
         fs.print_vertices(str);
     };
+    // Compare Vector2d for sorting lexicographically
+    static bool compare_eigen2d(const Eigen::Vector2d& lv, const Eigen::Vector2d& rv)
+    {
+      return lv(0) < rv(0) || (lv(0) == rv(0) && lv(1) < rv(1));
+    };
+    // Calculate 2D convex hull based on Andrew's algorithm
+    // Assume that the order of vs, ee, and cs is the same
+    void calc_convex_hull (const std::vector<std::vector<Eigen::Vector2d> >& vs, const std::vector<bool>& cs, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot)
+    {
+      // transform coordinate
+      std::vector<Eigen::Vector2d>  tvs;
+      hrp::Vector3 tpos;
+      tvs.reserve(cs.size()*vs[0].size());
+      for (size_t i = 0; i < cs.size(); i++) {
+        if (cs[i]) {
+          for (size_t j = 0; j < vs[i].size(); j++) {
+            tpos = ee_pos[i] + ee_rot[i] * hrp::Vector3(vs[i][j](0), vs[i][j](1), 0.0);
+            tvs.push_back(tpos.head(2));
+          }
+        }
+      }
+      // calculate convex hull
+      int n_tvs = tvs.size(), n_ch = 0;
+      convex_hull.resize(2*n_tvs);
+      std::sort(tvs.begin(), tvs.end(), compare_eigen2d);
+      for (int i = 0; i < n_tvs; convex_hull[n_ch++] = tvs[i++])
+        while (n_ch >= 2 && calcCrossProduct(convex_hull[n_ch-1], tvs[i], convex_hull[n_ch-2]) <= 0) n_ch--;
+      for (int i = n_tvs-2, j = n_ch+1; i >= 0; convex_hull[n_ch++] = tvs[i--])
+        while (n_ch >= j && calcCrossProduct(convex_hull[n_ch-1], tvs[i], convex_hull[n_ch-2]) <= 0) n_ch--;
+      convex_hull.resize(n_ch-1);
+    };
+    // Calculate closest boundary point on the convex hull
+    bool calc_closest_boundary_point (Eigen::Vector2d& p, size_t& right_idx, size_t& left_idx) {
+      size_t n_ch = convex_hull.size();
+      Eigen::Vector2d cur_closest_point;
+      for (size_t i; i < n_ch; i++) {
+        switch(calcProjectedPoint(cur_closest_point, p, convex_hull[left_idx], convex_hull[right_idx])) {
+        case MIDDLE:
+          p = cur_closest_point;
+          return true;
+        case LEFT:
+          right_idx = left_idx;
+          left_idx = (left_idx + 1) % n_ch;
+          if ((p - convex_hull[right_idx]).dot(convex_hull[left_idx] - convex_hull[right_idx]) <= 0) {
+            p = cur_closest_point;
+            return true;
+          }
+        case RIGHT:
+          left_idx = right_idx;
+          right_idx = (right_idx - 1) % n_ch;
+          if ((p - convex_hull[left_idx]).dot(convex_hull[right_idx] - convex_hull[left_idx]) <= 0) {
+            p = cur_closest_point;
+            return true;
+          }
+        }
+      }
+      return false;
+    }
     // setter
     void set_wrench_alpha_blending (const double a) { wrench_alpha_blending = a; };
     void set_leg_front_margin (const double a) { leg_front_margin = a; };
@@ -193,6 +229,30 @@ public:
         // }
         set_vertices(vec);
     };
+    // Set vertices only for cp_check_margin for now
+    void set_vertices_from_margin_params (const std::vector<double>& margin)
+    {
+      std::vector<std::vector<Eigen::Vector2d> > vec;
+      // RLEG
+      {
+        std::vector<Eigen::Vector2d> tvec;
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], leg_inside_margin - margin[2]));
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], -1*(leg_outside_margin - margin[3])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), -1*(leg_outside_margin - margin[3])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), leg_inside_margin - margin[2]));
+        vec.push_back(tvec);
+      }
+      // LLEG
+      {
+        std::vector<Eigen::Vector2d> tvec;
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], leg_inside_margin - margin[3]));
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], -1*(leg_outside_margin - margin[2])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), -1*(leg_outside_margin - margin[2])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), leg_inside_margin - margin[3]));
+        vec.push_back(tvec);
+      }
+      fs_mgn.set_vertices(vec);
+    };
     // getter
     double get_wrench_alpha_blending () { return wrench_alpha_blending; };
     double get_leg_front_margin () { return leg_front_margin; };
@@ -201,6 +261,7 @@ public:
     double get_leg_outside_margin () { return leg_outside_margin; };
     double get_alpha_cutoff_freq () { return alpha_filter->getCutOffFreq(); };
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs.get_vertices(vs); };
+    void get_margined_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs_mgn.get_vertices(vs); };
     //
     double calcAlpha (const hrp::Vector3& tmprefzmp,
                       const std::vector<hrp::Vector3>& ee_pos,
@@ -351,6 +412,7 @@ public:
                                       const std::vector<hrp::Matrix33>& ee_rot,
                                       const std::vector<std::string>& ee_name,
                                       const std::vector<double>& limb_gains,
+                                      const std::vector<double>& toeheel_ratio,
                                       const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                       const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
@@ -564,6 +626,7 @@ public:
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
                                         const std::vector<double>& limb_gains,
+                                        const std::vector<double>& toeheel_ratio,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
@@ -682,12 +745,13 @@ public:
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
                                         const std::vector<double>& limb_gains,
+                                        const std::vector<double>& toeheel_ratio,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                    ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                    ee_pos, cop_pos, ee_rot, ee_name, limb_gains, toeheel_ratio,
                                     new_refzmp, ref_zmp,
                                     total_fz, dt, printp, print_str);
     };
@@ -712,9 +776,10 @@ public:
                                                    const std::vector<hrp::Matrix33>& ee_rot,
                                                    const std::vector<std::string>& ee_name,
                                                    const std::vector<double>& limb_gains,
+                                                   const std::vector<double>& toeheel_ratio,
                                                    const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                                    const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
-                                                   const bool use_cop_distribution = true)
+                                                   const bool use_cop_distribution = true, const std::vector<bool> is_contact_list = std::vector<bool>())
     {
         size_t ee_num = ee_name.size();
         std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
@@ -728,7 +793,9 @@ public:
         double norm_moment_weight = 1e2;
         size_t total_wrench_dim = 5;
         size_t state_dim = 6*ee_num;
-        { // Temp
+
+        // Temporarily set ref_foot_force and ref_foot_moment based on reference values
+        {
             size_t total_wrench_dim = 5;
             //size_t total_wrench_dim = 3;
             hrp::dmatrix Wmat = hrp::dmatrix::Identity(state_dim/2, state_dim/2);
@@ -786,12 +853,14 @@ public:
         if (printp) {
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
 
+        // Calculate force/moment distribution matrix and vector
+        //   We assume F = G f, calculate F and G. f is absolute here.
+        //   1. Calculate F (total_wrench)
         hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
         hrp::Vector3 ref_total_force = hrp::Vector3::Zero();
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
@@ -807,8 +876,7 @@ public:
         }
         total_wrench(3) -= -(ref_zmp(2) - new_refzmp(2)) * ref_total_force(1) + (ref_zmp(1) - new_refzmp(1)) * ref_total_force(2);
         total_wrench(4) -= (ref_zmp(2) - new_refzmp(2)) * ref_total_force(0) - (ref_zmp(0) - new_refzmp(0)) * ref_total_force(2);
-
-        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
+        //   2. Calculate G (Gmat)
         hrp::dmatrix Gmat = hrp::dmatrix::Zero(total_wrench_dim, state_dim);
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t k = 0; k < total_wrench_dim; k++) Gmat(k,6*j+k) = 1.0;
@@ -824,10 +892,49 @@ public:
                 }
             }
         }
+        // Calc rotation matrix to introduce local frame
+        //   G = [tmpsubG_0, tmpsubG_1, ...]
+        //   R = diag[tmpR_0,    tmpR_1,    ...]
+        //   f = R f_l
+        //   f : absolute, f_l : local
+        //   G f = G R f_l
+        //   G R = [tmpsubG_0 tmpR_0, tmpsubG_1 tmpR_1, ...] -> inserted to Gmat
+        hrp::dmatrix tmpsubG = hrp::dmatrix::Zero(total_wrench_dim, 6);
+        hrp::dmatrix tmpR = hrp::dmatrix::Zero(6,6);
+        for (size_t ei = 0; ei < ee_num; ei++) {
+            for (size_t i = 0; i < total_wrench_dim; i++) {
+                for (size_t j = 0; j < 6; j++) {
+                    tmpsubG(i,j) = Gmat(i,6*ei+j);
+                }
+            }
+            for (size_t i = 0; i < 3; i++) {
+                for (size_t j = 0; j < 3; j++) {
+                    tmpR(i,j) = tmpR(i+3,j+3) = ee_rot[ei](i,j);
+                }
+            }
+            tmpsubG = tmpsubG * tmpR;
+            for (size_t i = 0; i < total_wrench_dim; i++) {
+                for (size_t j = 0; j < 6; j++) {
+                    Gmat(i,6*ei+j) = tmpsubG(i,j);
+                }
+            }
+        }
+
+        // Calc weighting matrix
+        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t i = 0; i < 3; i++) {
                 Wmat(i+j*6, i+j*6) = fz_alpha_vector[j] * limb_gains[j];
                 Wmat(i+j*6+3, i+j*6+3) = (1.0/norm_moment_weight) * fz_alpha_vector[j] * limb_gains[j];
+                // Set local Y moment
+                //   If toeheel_ratio is 0, toe and heel contact and local Y moment should be 0.
+                if (i == 1) {
+                    Wmat(i+j*6+3, i+j*6+3) = toeheel_ratio[j] * Wmat(i+j*6+3, i+j*6+3);
+                }
+                // In actual swing phase, X/Y momoment should be 0.
+                if (!is_contact_list.empty()) {
+                  if (!is_contact_list[j]) Wmat(i+j*6+3, i+j*6+3) = 0;
+                }
             }
         }
         if (printp) {
@@ -846,40 +953,198 @@ public:
         // std::cerr << "Wmat" << std::endl;
         // std::cerr << Wmat << std::endl;
 
+        // Solve
         hrp::dvector ret(state_dim);
         calcWeightedLinearEquation(ret, Gmat, Wmat, total_wrench);
 
+        // Extract force and moment with converting local frame -> absolute frame (ret is local frame)
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
-            ref_foot_force[fidx] += hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
-            ref_foot_moment[fidx] += hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+            ref_foot_force[fidx] += ee_rot[fidx] * hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] += ee_rot[fidx] * hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
         }
         if (printp) {
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
     };
 
-  double calcCrossProduct(Eigen::Vector2d& a, Eigen::Vector2d& b, Eigen::Vector2d& o)
+    void distributeZMPToForceMomentsPseudoInverse2 (std::vector<hrp::Vector3>& ref_foot_force, std::vector<hrp::Vector3>& ref_foot_moment,
+                                                   const std::vector<hrp::Vector3>& ee_pos,
+                                                   const std::vector<hrp::Vector3>& cop_pos,
+                                                   const std::vector<hrp::Matrix33>& ee_rot,
+                                                   const std::vector<std::string>& ee_name,
+                                                   const std::vector<double>& limb_gains,
+                                                   const std::vector<double>& toeheel_ratio,
+                                                   const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                                   const hrp::Vector3& total_force, const hrp::Vector3& total_moment,
+                                                   const std::vector<hrp::dvector6>& ee_forcemoment_distribution_weight,
+                                                   const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    {
+#define FORCE_MOMENT_DIFF_CONTROL
+
+        size_t ee_num = ee_name.size();
+        std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
+        calcAlphaVectorFromCOPDistance(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
+        if (printp) {
+            std::cerr << "[" << print_str << "] force moment distribution (Pinv2) ";
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+            std::cerr << "(FORCE_MOMENT_DIFF_CONTROL)" << std::endl;
+#else
+            std::cerr << "(NOT FORCE_MOMENT_DIFF_CONTROL)" << std::endl;
+#endif
+        }
+        // ref_foot_force and ref_foot_moment should be set
+        size_t state_dim = 6*ee_num;
+        if (printp) {
+            std::cerr << "[" << print_str << "]   fz_alpha_vector [";
+            for (size_t j = 0; j < ee_num; j++) {
+                std::cerr << fz_alpha_vector[j] << " ";
+            }
+            std::cerr << std::endl;
+        }
+
+        hrp::dvector total_wrench = hrp::dvector::Zero(6);
+#ifndef FORCE_MOMENT_DIFF_CONTROL
+        total_wrench(0) = total_force(0);
+        total_wrench(1) = total_force(1);
+        total_wrench(2) = total_force(2);
+#endif
+        total_wrench(3) = total_moment(0);
+        total_wrench(4) = total_moment(1);
+        total_wrench(5) = total_moment(2);
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+            double tmp_tau_x = -(cop_pos[fidx](2)-new_refzmp(2)) * ref_foot_force[fidx](1) + (cop_pos[fidx](1)-new_refzmp(1)) * ref_foot_force[fidx](2);
+            total_wrench(3) -= tmp_tau_x;
+            double tmp_tau_y = (cop_pos[fidx](2)-new_refzmp(2)) * ref_foot_force[fidx](0) - (cop_pos[fidx](0)-new_refzmp(0)) * ref_foot_force[fidx](2);
+            total_wrench(4) -= tmp_tau_y;
+        }
+#endif
+
+        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
+        hrp::dmatrix Gmat = hrp::dmatrix::Zero(6, state_dim);
+        for (size_t j = 0; j < ee_num; j++) {
+            for (size_t k = 0; k < 6; k++) Gmat(k,6*j+k) = 1.0;
+        }
+        for (size_t i = 0; i < 6; i++) {
+            for (size_t j = 0; j < ee_num; j++) {
+                if ( i == 3 ) { // Nx
+                    Gmat(i,6*j+1) = -(cop_pos[j](2) - new_refzmp(2));
+                    Gmat(i,6*j+2) = (cop_pos[j](1) - new_refzmp(1));
+                } else if ( i == 4 ) { // Ny
+                    Gmat(i,6*j) = (cop_pos[j](2) - new_refzmp(2));
+                    Gmat(i,6*j+2) = -(cop_pos[j](0) - new_refzmp(0));
+                }
+            }
+        }
+        for (size_t j = 0; j < ee_num; j++) {
+            for (size_t i = 0; i < 3; i++) {
+                Wmat(i+j*6, i+j*6) = ee_forcemoment_distribution_weight[j][i] * fz_alpha_vector[j] * limb_gains[j];
+                //double norm_moment_weight = 1e2;
+                //Wmat(i+j*6+3, i+j*6+3) = ee_forcemoment_distribution_weight[j][i+3] * (1.0/norm_moment_weight) * fz_alpha_vector[j] * limb_gains[j];
+                Wmat(i+j*6+3, i+j*6+3) = ee_forcemoment_distribution_weight[j][i+3] * fz_alpha_vector[j] * limb_gains[j];
+            }
+        }
+        if (printp) {
+            std::cerr << "[" << print_str << "]   newWmat(diag) = [";
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < 6; i++) {
+                    std::cerr << Wmat(i+j*6, i+j*6) << " ";
+                }
+            }
+            std::cerr << std::endl;
+            // std::cerr << "[" << print_str << "]   Gmat";
+            // std::cerr << Gmat << std::endl;
+            // std::cerr << "Wmat" << std::endl;
+            // std::cerr << Wmat << std::endl;
+        }
+
+        hrp::dvector ret(state_dim);
+        // Consider 6DOF total wrench (Fx, Fy, Fz, Mx, My, Mz)
+        hrp::dmatrix selection_matrix = hrp::dmatrix::Identity(6,6);
+        // Consdier 3DOF total wrench (Fz, Mx, My)
+//         hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(3,6);
+//         selection_matrix(0,2) = 1.0;
+//         selection_matrix(1,3) = 1.0;
+//         selection_matrix(2,4) = 1.0;
+        {
+            hrp::dvector selected_total_wrench = hrp::dvector::Zero(selection_matrix.rows());
+            hrp::dmatrix selected_Gmat = hrp::dmatrix::Zero(selection_matrix.rows(), Gmat.cols());
+            selected_total_wrench = selection_matrix * total_wrench;
+            selected_Gmat = selection_matrix * Gmat;
+            calcWeightedLinearEquation(ret, selected_Gmat, Wmat, selected_total_wrench);
+        }
+
+        if (printp) {
+            hrp::dvector tmpretv(total_wrench.size());
+            tmpretv = Gmat * ret - total_wrench;
+            std::cerr << "[" << print_str << "]   "
+                      << "test_diff " << tmpretv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N][Nm]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "total_wrench " << total_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N][Nm]" << std::endl;
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
+                          << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
+            for (size_t i = 0; i < ee_num; i++) {
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
+                          << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+#else
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))-ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
+                          << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))-ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+#endif
+            }
+        }
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+            ref_foot_force[fidx] += hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] += hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+#else
+            ref_foot_force[fidx] = hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] = hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+#endif
+        }
+        if (printp){
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
+                          << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
+        }
+    };
+
+  double calcCrossProduct(const Eigen::Vector2d& a, const Eigen::Vector2d& b, const Eigen::Vector2d& o)
   {
     return (a(0) - o(0)) * (b(1) - o(1)) - (a(1) - o(1)) * (b(0) - o(0));
   };
 
-  // assume that vertices are listed in clockwise order
-  std::vector<Eigen::Vector2d> calcConvexHull(std::vector<Eigen::Vector2d> vertices)
-  {
-    std::vector<Eigen::Vector2d> convex_vertices;
-
-    convex_vertices.push_back(vertices.front());
-    for (size_t i = 1; i < vertices.size() - 1; i++) {
-      if (calcCrossProduct(vertices[i + 1], vertices[i - 1], vertices[i]) < 0) convex_vertices.push_back(vertices[i]);
+  projected_point_region calcProjectedPoint(Eigen::Vector2d& ret, const Eigen::Vector2d& target, const Eigen::Vector2d& a, const Eigen::Vector2d& b){
+    Eigen::Vector2d v1 = target - b;
+    Eigen::Vector2d v2 = a - b;
+    double v2_norm = v2.norm();
+    if ( v2_norm == 0 ) {
+        ret = a;
+        return LEFT;
+    } else {
+        double ratio = v1.dot(v2) / (v2_norm * v2_norm);
+        if (ratio < 0){
+            ret = b;
+            return RIGHT;
+        } else if (ratio > 1){
+            ret = a;
+            return LEFT;
+        } else {
+            ret = b + ratio * v2;
+            return MIDDLE;
+        }
     }
-    convex_vertices.push_back(vertices.back());
-
-    return convex_vertices;
   };
 };
 

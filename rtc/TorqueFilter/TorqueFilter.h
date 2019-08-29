@@ -10,6 +10,7 @@
 #ifndef TORQUE_FILTER_H
 #define TORQUE_FILTER_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

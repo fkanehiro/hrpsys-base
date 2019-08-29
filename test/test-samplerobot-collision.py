@@ -9,9 +9,14 @@ sys.path.append(os.path.join(check_output(['pkg-config', 'hrpsys-base', '--varia
 import samplerobot_collision_detector
 import unittest, rostest
 
-class TestSampleRobotCollisionDetector(unittest.TestCase):
-    def test_demo (self):
-        samplerobot_collision_detector.demo()
+if [s for s in sys.argv if '__name:=samplerobot_co_loop' in s]:
+    class TestSampleRobotCollisionDetector(unittest.TestCase):
+        def test_demo (self):
+            samplerobot_collision_detector.demo_co_loop()
+else:
+    class TestSampleRobotCollisionDetector(unittest.TestCase):
+        def test_demo (self):
+            samplerobot_collision_detector.demo()
 
 ## IGNORE ME: this code used for rostest
 if [s for s in sys.argv if "--gtest_output=xml:" in s] :

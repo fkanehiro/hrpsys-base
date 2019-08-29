@@ -35,6 +35,7 @@
               -o "example.ImpedanceController.config_file:$(arg CONF_FILE)"
               -o "example.AutoBalancer.config_file:$(arg CONF_FILE)"
               -o "example.StateHolder.config_file:$(arg CONF_FILE)"
+              -o "example.DataLogger.config_file:$(arg CONF_FILE)"
               -o "example.TorqueFilter.config_file:$(arg CONF_FILE)"
               -o "example.TorqueController.config_file:$(arg CONF_FILE)"
               -o "example.ThermoEstimator.config_file:$(arg CONF_FILE)"
@@ -44,8 +45,11 @@
               -o "example.RemoveForceSensorLinkOffset.config_file:$(arg CONF_FILE)"
               -o "example.KalmanFilter.config_file:$(arg CONF_FILE)"
               -o "example.Stabilizer.config_file:$(arg CONF_FILE)"
+              -o "example.EmergencyStopper.config_file:$(arg CONF_FILE)"
               -o "example.CollisionDetector.config_file:$(arg CONF_FILE)"
               -o "example.SoftErrorLimiter.config_file:$(arg CONF_FILE)"
+              -o "example.ReferenceForceUpdater.config_file:$(arg CONF_FILE)"
+              -o "example.ObjectContactTurnaroundDetector.config_file:$(arg CONF_FILE)"
               -o "corba.nameservers:localhost:$(arg corbaport)"
               $(arg hrpsys_gui_args)'
         output="screen"  cwd="node" />

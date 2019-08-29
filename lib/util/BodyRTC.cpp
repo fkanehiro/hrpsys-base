@@ -73,12 +73,13 @@ RTC::ReturnCode_t BodyRTC::setup(){
     servo_status.resize(numJoints());
     power_status.resize(numJoints());
     m_servoErrorLimit.resize(numJoints());
-    for(int i = 0; i < numJoints(); i++) {
+    for(unsigned int i = 0; i < numJoints(); i++) {
         calib_status[i] = servo_status[i] = power_status[i] = OpenHRP::RobotHardwareService::SWITCH_ON;
         m_servoErrorLimit[i] = DEFAULT_ANGLE_ERROR_LIMIT;
     }
     m_emergencyReason = EMG_NONE; // clear
     m_emergencyId = -1;
+    return RTC::RTC_OK;
 }
 
 void parsePortConfig(const std::string &config, 
@@ -118,7 +119,7 @@ bool getJointList(hrp::Body *body, const std::vector<std::string> &elements,
                   std::vector<hrp::Link *> &joints)
 {
     if (elements.size() == 0){
-        for (int i=0; i<body->numJoints(); i++){
+        for (unsigned int i=0; i<body->numJoints(); i++){
             joints.push_back(body->joint(i));
         }
     }else{
@@ -462,7 +463,7 @@ bool BodyRTC::setServoErrorLimit(const char *i_jname, double i_limit)
 {
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             m_servoErrorLimit[i] = i_limit;
         }
     }else if ((l = link(i_jname))){
@@ -496,7 +497,7 @@ bool BodyRTC::checkEmergency(emg_reason &o_reason, int &o_id) {
     o_reason = EMG_NONE; // clear
     o_id = -1;
 
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         state = readServoState(i);
         if (state == ON && m_servoErrorLimit[i] != 0){
             double angle, command;
@@ -524,7 +525,7 @@ bool BodyRTC::preOneStep() {
     rootLink()->calcSubMassCM();
     bool all_servo_off = true;
     bool emulate_highgain_servo_off_mode = (numJoints() > 0); // If no joints, do not use servo off emulation
-    for(int i = 0; i < numJoints(); ++i){
+    for(unsigned int i = 0; i < numJoints(); ++i){
         Link *j = joint(i);
         commands[i] = j->q;
         int p = readPowerState(i);
@@ -562,26 +563,27 @@ bool BodyRTC::preOneStep() {
             m_lastServoOn_R = rootLink()->attitude();
         }
     }
+    return true;
 }
 
 bool BodyRTC::postOneStep() {
 
-    for(int i = 0; i < numJoints(); ++i){
+    for(unsigned int i = 0; i < numJoints(); ++i){
         angles[i] = joint(i)->q;
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::ACCELERATION); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::ACCELERATION); i++ ){
         hrp::AccelSensor *s = sensor<AccelSensor>(i);
         accels[i][0] =  s->dv[0];
         accels[i][1] =  s->dv[1];
         accels[i][2] =  s->dv[2];
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::RATE_GYRO); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::RATE_GYRO); i++ ){
         hrp::RateGyroSensor *s = sensor<RateGyroSensor>(i);
         gyros[i][0] =  s->w[0];
         gyros[i][1] =  s->w[1];
         gyros[i][2] =  s->w[2];
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::FORCE); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::FORCE); i++ ){
         hrp::ForceSensor *s = sensor<ForceSensor>(i);
         forces[i][0] =  s->f[0];
         forces[i][1] =  s->f[1];
@@ -605,7 +607,7 @@ bool BodyRTC::servo(const char *jname, bool turnon)
     Link *l = NULL;
     if (strcmp(jname, "all") == 0 || strcmp(jname, "ALL") == 0){
         bool ret = true;
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             ret = ret && servo(i, turnon);
         }
         return ret;
@@ -654,16 +656,20 @@ void RobotHardwareServicePort::getStatus2(OpenHRP::RobotHardwareService::RobotSt
 }
 
 CORBA::Boolean RobotHardwareServicePort::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 
 CORBA::Boolean RobotHardwareServicePort::servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 void RobotHardwareServicePort::setServoGainPercentage(const char *jname, double limit) {
 }
+void RobotHardwareServicePort::setServoTorqueGainPercentage(const char *jname, double limit) {
+}
 void RobotHardwareServicePort::setServoErrorLimit(const char *jname, double limit) {
     m_robot->setServoErrorLimit(jname, limit);
+}
+void RobotHardwareServicePort::setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm){
 }
 void RobotHardwareServicePort::calibrateInertiaSensor() {
 }
@@ -702,6 +708,18 @@ CORBA::Long RobotHardwareServicePort::lengthDigitalOutput() {
 CORBA::Boolean RobotHardwareServicePort::readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout) {
     return false;
 }
+
+CORBA::Boolean RobotHardwareServicePort::setJointInertia(const char* name, ::CORBA::Double mn)
+{
+    return true;
+}
+
+void RobotHardwareServicePort::setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns)
+{
+}
+void RobotHardwareServicePort::enableDisturbanceObserver(){}
+void RobotHardwareServicePort::disableDisturbanceObserver(){}
+void RobotHardwareServicePort::setDisturbanceObserverGain(::CORBA::Double gain){}
 //
 void RobotHardwareServicePort::setRobot(BodyRTC *i_robot) { m_robot = i_robot; }
 

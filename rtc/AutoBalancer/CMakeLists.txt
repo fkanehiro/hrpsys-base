@@ -1,4 +1,4 @@
-set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp)
+set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp SimpleFullbodyInverseKinematicsSolver.h ../TorqueFilter/IIRFilter.cpp)
 set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(AutoBalancer SHARED ${comp_sources})
 target_link_libraries(AutoBalancer ${libs})
@@ -9,6 +9,7 @@ target_link_libraries(testPreviewController ${libs})
 
 add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp GaitGenerator.cpp ../SequencePlayer/interpolator.cpp)
 target_link_libraries(testGaitGenerator ${libs})
+set_target_properties(testGaitGenerator PROPERTIES COMPILE_DEFINITIONS "FOR_TESTGAITGENERATOR=1")
 
 add_executable(AutoBalancerComp AutoBalancerComp.cpp ${comp_sources})
 target_link_libraries(AutoBalancerComp ${libs})
@@ -24,16 +25,22 @@ add_test(testGaitGeneratorTest2 testGaitGenerator --test2 --use-gnuplot false)
 add_test(testGaitGeneratorTest3 testGaitGenerator --test3 --use-gnuplot false)
 add_test(testGaitGeneratorTest4 testGaitGenerator --test4 --use-gnuplot false)
 add_test(testGaitGeneratorTest5 testGaitGenerator --test5 --use-gnuplot false)
-#add_test(testGaitGeneratorTest6 testGaitGenerator --test6 --use-gnuplot false)
+add_test(testGaitGeneratorTest6 testGaitGenerator --test6 --use-gnuplot false)
 add_test(testGaitGeneratorTest7 testGaitGenerator --test7 --use-gnuplot false)
 add_test(testGaitGeneratorTest8 testGaitGenerator --test8 --use-gnuplot false)
 add_test(testGaitGeneratorTest9 testGaitGenerator --test9 --use-gnuplot false)
 add_test(testGaitGeneratorTest10 testGaitGenerator --test10 --use-gnuplot false)
 add_test(testGaitGeneratorTest11 testGaitGenerator --test11 --use-gnuplot false)
 add_test(testGaitGeneratorTest12 testGaitGenerator --test12 --use-gnuplot false)
+add_test(testGaitGeneratorTest13 testGaitGenerator --test13 --use-gnuplot false)
+add_test(testGaitGeneratorTest14 testGaitGenerator --test14 --use-gnuplot false)
+add_test(testGaitGeneratorTest15 testGaitGenerator --test15 --use-gnuplot false)
+add_test(testGaitGeneratorTest16 testGaitGenerator --test16 --use-gnuplot false)
+add_test(testGaitGeneratorTest17 testGaitGenerator --test17 --use-gnuplot false)
+add_test(testGaitGeneratorTest18 testGaitGenerator --test18 --use-gnuplot false)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 

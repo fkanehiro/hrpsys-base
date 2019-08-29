@@ -12,6 +12,7 @@ from waitInput import waitInputConfirm
 import socket
 import time
 import subprocess
+from distutils.version import StrictVersion
 
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
@@ -157,7 +158,7 @@ def euler_from_matrix(matrix, axes='sxyz'):
 
 # class for configure hrpsys RTCs and ports
 #   In order to specify robot-dependent code, please inherit this HrpsysConfigurator
-class HrpsysConfigurator:
+class HrpsysConfigurator(object):
 
     # RobotHardware
     rh = None
@@ -257,6 +258,16 @@ class HrpsysConfigurator:
     rfu_svc = None
     rfu_version = None
 
+    # Acceleration Filter
+    acf = None
+    acf_svc = None
+    acf_version = None
+
+    # ObjectContactTurnaroundDetector
+    octd = None
+    octd_svc = None
+    octd_version = None
+
     # rtm manager
     ms = None
 
@@ -355,14 +366,14 @@ class HrpsysConfigurator:
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
-        if self.seq_version >= '315.2.6':
+        if StrictVersion(self.seq_version) >= StrictVersion('315.2.6'):
             connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
-        if self.seq_version >= '315.2.0':
+        if StrictVersion(self.seq_version) >= StrictVersion('315.2.0'):
             connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in self.getForceSensorNames():
             connectPorts(self.seq.port(sen + "Ref"),
@@ -386,9 +397,18 @@ class HrpsysConfigurator:
             connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
             connectPorts(self.abc.port("walkingStates"), self.st.port("walkingStates"))
             connectPorts(self.abc.port("sbpCogOffset"), self.st.port("sbpCogOffset"))
+            connectPorts(self.abc.port("toeheelRatio"), self.st.port("toeheelRatio"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
+            connectPorts(self.st.port("diffCapturePoint"), self.abc.port("diffCapturePoint"))
+            connectPorts(self.st.port("actContactStates"), self.abc.port("actContactStates"))
+            if self.rfu:
+                connectPorts(self.st.port("diffFootOriginExtMoment"), self.rfu.port("diffFootOriginExtMoment"))
+                connectPorts(self.rfu.port("refFootOriginExtMoment"), self.abc.port("refFootOriginExtMoment"))
+                connectPorts(self.rfu.port("refFootOriginExtMomentIsHoldValue"), self.abc.port("refFootOriginExtMomentIsHoldValue"))
+            if self.octd:
+                connectPorts(self.abc.port("contactStates"), self.octd.port("contactStates"))
 
         # ref force moment connection
         for sen in self.getForceSensorNames():
@@ -445,14 +465,14 @@ class HrpsysConfigurator:
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
-            if self.seq_version >= '315.3.0':
+            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for rfu
         if self.rfu:
             if self.es:
                 connectPorts(self.es.port("q"), self.rfu.port("qRef"))
-            if self.seq_version >= '315.3.0':
+            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.rfu.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.rfu.port("baseRpyIn"))
         # connection for tf
@@ -474,7 +494,14 @@ class HrpsysConfigurator:
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
             connectPorts(self.rh.port("servoState"), self.co.port("servoStateIn"))
-
+        # connection for octd
+        if self.octd:
+            connectPorts(self.rh.port("q"), self.octd.port("qCurrent"))
+            if self.kf:
+                connectPorts(self.kf.port("rpy"), self.octd.port("rpy"))
+            if self.rmfo:
+                for sen in filter(lambda x: x.type == "Force", self.sensors):
+                    connectPorts(self.rmfo.port("off_" + sen.name), self.octd.port(sen.name))
 
         # connection for gc
         if self.gc:
@@ -517,10 +544,11 @@ class HrpsysConfigurator:
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
 
-        # connection for co
+        # connection for es
         if self.es:
             connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
 
+        # connection for bp
         if self.bp:
             if self.tl:
                 connectPorts(self.tl.port("beepCommand"), self.bp.port("beepCommand"))
@@ -530,6 +558,20 @@ class HrpsysConfigurator:
                 connectPorts(self.el.port("beepCommand"), self.bp.port("beepCommand"))
             if self.co:
                 connectPorts(self.co.port("beepCommand"), self.bp.port("beepCommand"))
+
+        # connection for acf
+        if self.acf:
+            #   currently use first acc and rate sensors for acf
+            s_acc = filter(lambda s: s.type == 'Acceleration', self.sensors)
+            if (len(s_acc) > 0) and self.rh.port(s_acc[0].name) != None:
+                connectPorts(self.rh.port(s_acc[0].name), self.acf.port('accIn'))
+            s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
+            if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:
+                connectPorts(self.rh.port(s_rate[0].name), self.acf.port("rateIn"))
+            if self.kf:
+                connectPorts(self.kf.port("rpy"), self.acf.port("rpyIn"))
+            if self.abc:
+                connectPorts(self.abc.port("basePosOut"), self.acf.port("posIn"))
 
     def activateComps(self):
         '''!@brief
@@ -704,6 +746,7 @@ class HrpsysConfigurator:
             ['kf', "KalmanFilter"],
             ['vs', "VirtualForceSensor"],
             ['rmfo', "RemoveForceSensorLinkOffset"],
+            ['octd', "ObjectContactTurnaroundDetector"],
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
             ['ic', "ImpedanceController"],
@@ -716,6 +759,7 @@ class HrpsysConfigurator:
             ['el', "SoftErrorLimiter"],
             ['tl', "ThermoLimiter"],
             ['bp', "Beeper"],
+            ['acf', "AccelerationFilter"],
             ['log', "DataLogger"]
             ]
 
@@ -874,6 +918,11 @@ class HrpsysConfigurator:
         if self.rmfo != None:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 self.connectLoggerPort(self.rmfo, "off_"+sen.name)
+        if self.rfu != None:
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                self.connectLoggerPort(self.rfu, "ref_"+sen.name+"Out")
+        if self.octd != None:
+            self.connectLoggerPort(self.octd, "octdData")
         self.log_svc.clear()
         ## parallel running log process (outside from rtcd) for saving logs by emergency signal
         if self.log and (self.log_use_owned_ec or not isinstance(self.log.owned_ecs[0], OpenRTM._objref_ExtTrigExecutionContextService)):
@@ -921,7 +970,7 @@ class HrpsysConfigurator:
             print(self.configurator_name + "Exitting.... " + robotname)
             exit(1)
 
-        print(self.configurator_name + "findComps -> RobotHardware : %s isActive? = %s " % (self.rh,  self.rh.isActive()))
+        print(self.configurator_name + "findComps -> %s : %s isActive? = %s " % (self.rh.name(), self.rh,  self.rh.isActive()))
 
     def checkSimulationMode(self):
         '''!@brief
@@ -943,9 +992,9 @@ class HrpsysConfigurator:
         print(self.configurator_name + "simulation_mode : %s" % self.simulation_mode)
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        print("\033[93m%s waitForRTCManagerAndRoboHardware has renamed to \
-        waitForRTCManagerAndRoboHardware: Please update your code\033[0m" % self.configurator_name)
-        return self.waitForRTCManagerAndRobotHardware(robotname=robotname, managerhost=nshost)
+        print("\033[93m%s waitForRTCManagerAndRoboHardware has renamed to " % self.configurator_name + \
+              "waitForRTCManagerAndRoboHardware: Please update your code\033[0m")
+        return self.waitForRTCManagerAndRobotHardware(robotname=robotname, managerhost=managerhost)
 
     def waitForRTCManagerAndRobotHardware(self, robotname="Robot", managerhost=nshost):
         '''!@brief
@@ -1011,6 +1060,8 @@ class HrpsysConfigurator:
         @param jname str: name of joint
         @param angle float: In degree.
         @param tm float: Time to complete.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         radangle = angle / 180.0 * math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
@@ -1026,6 +1077,8 @@ class HrpsysConfigurator:
         \endverbatim
         @param angles list of float: In degree.
         @param tm float: Time to complete.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         ret = []
         for angle in angles:
@@ -1049,6 +1102,8 @@ class HrpsysConfigurator:
         @param tm float: Time to complete.
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         angles = [x / 180.0 * math.pi for x in pose]
         ret = self.seq_svc.setJointAnglesOfGroup(gname, angles, tm)
@@ -1058,15 +1113,17 @@ class HrpsysConfigurator:
 
     def setJointAnglesSequence(self, angless, tms):
         '''!@brief
-        Set all joint angles.
+        Set all joint angles. len(angless) should be equal to len(tms).
         \verbatim
         NOTE: While this method does not check angle value range,
               any joints could emit position limit over error, which has not yet
               been thrown by hrpsys so that there's no way to catch on this python client. 
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
-        @param sequence angles list of float: In degree.
-        @param tm sequence of float: Time to complete, In Second
+        @param sequential list of angles in float: In rad
+        @param tm sequential list of time in float: Time to complete, In Second
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1083,8 +1140,10 @@ class HrpsysConfigurator:
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
         @param gname str: Name of the joint group.
-        @param sequence angles list of float: In degree.
-        @param tm sequence of float: Time to complete, In Second
+        @param sequential list of angles in float: In rad
+        @param tm sequential list of time in float: Time to complete, In Second
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1135,6 +1194,14 @@ class HrpsysConfigurator:
         '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
+    def setInterpolationMode(self, mode):
+        '''!@brief
+        Set interpolation mode. You may need to import OpenHRP in order to pass an argument. For more info See https://github.com/fkanehiro/hrpsys-base/pull/1012#issue-160802911. 
+        @param mode new interpolation mode. Either { OpenHRP.SequencePlayerService.LINEAR, OpenHRP.SequencePlayerService.HOFFARBIB }.
+        @return true if set successfully, false otherwise
+        '''
+        return self.seq_svc.setInterpolationMode(mode)
+
     def getJointAngles(self):
         '''!@brief
         Returns the commanded joint angle values.
@@ -1151,7 +1218,7 @@ class HrpsysConfigurator:
 
     def getCurrentPose(self, lname=None, frame_name=None):
         '''!@brief
-        Returns the current physical pose of the specified joint.
+        Returns the current physical pose of the specified joint in the joint space.
         cf. getReferencePose that returns commanded value.
 
         eg.
@@ -1195,7 +1262,7 @@ class HrpsysConfigurator:
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if self.fk_version < '315.2.5' and ':' in lname:
+        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
@@ -1204,7 +1271,7 @@ class HrpsysConfigurator:
 
     def getCurrentPosition(self, lname=None, frame_name=None):
         '''!@brief
-        Returns the current physical position of the specified joint.
+        Returns the current physical position of the specified joint in Cartesian space.
         cf. getReferencePosition that returns commanded value.
 
         eg.
@@ -1272,7 +1339,7 @@ class HrpsysConfigurator:
 
     def getReferencePose(self, lname, frame_name=None):
         '''!@brief
-        Returns the current commanded pose of the specified joint.
+        Returns the current commanded pose of the specified joint in the joint space.
         cf. getCurrentPose that returns physical pose.
 
         @type lname: str
@@ -1295,7 +1362,7 @@ class HrpsysConfigurator:
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if self.fk_version < '315.2.5' and ':' in lname:
+        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
@@ -1304,7 +1371,7 @@ class HrpsysConfigurator:
 
     def getReferencePosition(self, lname, frame_name=None):
         '''!@brief
-        Returns the current commanded position of the specified joint.
+        Returns the current commanded position of the specified joint in Cartesian space.
         cf. getCurrentPosition that returns physical value.
 
         @type lname: str
@@ -1373,7 +1440,8 @@ class HrpsysConfigurator:
         @param gname str: Name of the joint group.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param frame_name str: Name of the frame that this particular command
                            references to.
         @return bool: False if unreachable.
@@ -1394,6 +1462,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''!@brief
         Move the end-effector's location relative to its current pose.
 
+        Note that because of "relative" nature, the method waits for the commands
+        run previously to finish. Do not get confused with the "wait" argument,
+        which regulates all subsequent commands, not previous ones.
+
         For d*, distance arguments are in meter while rotations are in degree.
 
         Example usage: The following moves RARM_JOINT5 joint 0.1mm forward
@@ -1409,7 +1481,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param dr float: In radian.
         @param dp float: In radian.
         @param dw float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
         @return bool: False if unreachable.
@@ -1623,7 +1696,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Get actual states of the robot that includes current reference joint angles and joint torques.
         @return: This returns actual states of the robot, which is defined in
         RobotHardware.idl
-        (https://github.com/fkanehiro/hrpsys-base/blob/master/idl/RobotHardwareService.idl#L33)
+        (found at https://github.com/fkanehiro/hrpsys-base/blob/3fd7671de5129101a4ade3f98e2eac39fd6b26c0/idl/RobotHardwareService.idl#L32_L57 as of version 315.11.0)
         \verbatim
             /**
              * @brief status of the robot
@@ -1875,33 +1948,46 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Play motion pattern using a given trajectory that is represented by 
         a list of joint angles, rpy, zmp and time.
 
-        @param jointangles list of list of float: 
-                           The whole list represents a trajectory. Each element
-                           of the 1st degree in the list consists of the joint
-                           angles.
+        @type jointangles: [[float]]
+        @param jointangles: Sequence of the sets of joint angles in radian.
+                            The whole list represents a trajectory. Each element
+                            of the 1st degree in the list consists of the joint angles.
         @param rpy list of float: Orientation in rpy.
         @param zmp list of float: TODO: description
-        @param tm float: Time to complete the task.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @return bool:
         '''
         return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
 
     def playPatternOfGroup(self, gname, jointangles, tm):
         '''!@brief
-        Play motion pattern using a given trajectory that is represented by 
-        a list of joint angles.
+        Play motion pattern using a set of given trajectories that are represented by 
+        lists of joint angles. Each trajectory aims to run within the specified time (tm),
+        and there's no slow down between trajectories unless the next one is the last.
+
+        Example:
+            self.playPatternOfGroup('larm',
+                                    [[0.0, 0.0, -2.2689280275926285, 0.0, 0.0, 0.0],
+                                     [0.0, 0.0, -1.9198621771937625, 0.0, 0.0, 0.0],
+                                     [0.0, 0.0, -1.5707963, 0.0, 0.0, 0.0]],
+                                    [3, 3, 10])
 
         @param gname str: Name of the joint group.
-        @param jointangles list of list of float: 
-                           The whole list represents a trajectory. Each element
-                           of the 1st degree in the list consists of the joint
-                           angles. To illustrate:
+        @type jointangles: [[float]]
+        @param jointangles: Sequence of the sets of joint angles in radian.
+                            The whole list represents a trajectory. Each element
+                            of the 1st degree in the list consists of the joint
+                            angles. To illustrate:
 
-                           [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
-                            [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
-                            :
-                            [am-0, am-1,...,am-n]]  # mth path in the trajectory
-        @param tm float: Time to complete the task.
+                            [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
+                             [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
+                             :
+                             [am-0, am-1,...,am-n]]  # mth path in the trajectory
+        @type tm: [float]
+        @param tm float: Sequence of the time values to complete the task,
+                         each element of which corresponds to a set of jointangles
+                         in the same order.
         @return bool:
         '''
         return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
@@ -1994,6 +2080,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         start impedance mode
 
         @type arm: str name of artm to be controlled, this must be initialized using setSelfGroups()
+        @param force_gain, moment_gain: multipliers to the eef offset position vel_p and orientation vel_r.
+                                        3-dimensional vector (then converted internally into a diagonal matrix).
         '''
         r, p = self.ic_svc.getImpedanceControllerParam(arm)
         if not r:
@@ -2023,45 +2111,108 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         return self.ic_svc.stopImpedanceController(arm)
 
     def startImpedance(self, arm, **kwargs):
-        if self.hrpsys_version and self.hrpsys_version < '315.2.0':
+        '''!@brief
+        Enable the ImpedanceController RT component. 
+        This method internally calls startImpedance-*, hrpsys version-specific method.
+
+        @requires: hrpsys version greather than 315.2.0.
+        @requires: ImpedanceController RTC to be activated on the robot's controller.
+        @change: From 315.2.0 onward, following arguments are dropped and can be set by
+                 self.seq_svc.setWrenches instead of this method.
+                 See an example at https://github.com/fkanehiro/hrpsys-base/pull/434/files#diff-6204f002204dd9ae80f203901f155fa9R44:
+
+                 - ref_force[fx, fy, fz] (unit: N) and ref_moment[tx, ty, tz] (unit: Nm) can be set via self.seq_svc.setWrenches. For example:
+
+                   self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
+                                             fx, fy, fz, tx, ty, tz,
+                                             0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,])
+
+                   setWrenches takes 6 values per sensor, so the robot in the example above has 4 sensors where each line represents a sensor.
+                   See this link (https://github.com/fkanehiro/hrpsys-base/pull/434/files) for a concrete example.
+
+        @param arm: Name of the kinematic group (i.e. self.Groups[n][0]).
+        @param kwargs: This varies depending on the version of hrpsys your robot's controller runs on
+                       (which you can find by "self.hrpsys_version" command). For instance, if your
+                       hrpsys is 315.10.1, refer to "startImpedance_315_4" method.
+        '''
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstartImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.startImpedance_315_4(arm, **kwargs)
 
     def stopImpedance(self, arm):
-        if self.hrpsys_version and self.hrpsys_version < '315.2.0':
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstopImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.stopImpedance_315_4(arm)
 
-    def startDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"], abc_limbs=None):
+    def startDefaultUnstableControllers (self, ic_limbs=[], abc_limbs=[]):
         '''!@brief
         Start default unstable RTCs controller mode.
-        Currently Stabilzier, AutoBalancer, and ImpedanceController are started.
+        Currently Stabilzier, AutoBalancer, and ImpedanceController are started based on "Groups" setting.
+        If ic_limbs or abc_limbs is not specified, default setting is set according to "Groups".
+        By default,
+          If the robot has an arm, start impedance for the arm.
+          If the robot has a leg, start st and autobalancer.
+          autobalancer's fixed limbs are all existing arms and legs.
+        Use cases:
+          Biped robot (leg only) : no impedance, start st, start autobalancer with ["rleg", "lleg"].
+          Dual-arm robot (arm only) : start impedance ["rarm", "larm"], no st, no autobalancer.
+          Dual-arm+biped robot (=humanoid robot) : start impedance ["rarm", "larm"], start st, start autobalancer with ["rleg", "lleg", "rarm", "larm"].
+          Quadruped robot : same as "humanoid robot" by default.
         '''
+        print(self.configurator_name + "Start Default Unstable Controllers")
+        # Check robot setting
+        is_legged_robot = map(lambda x: x[0], filter(lambda x : re.match(".*leg", x[0]), self.Groups))
+        # Select all arms in "Groups" for impedance as a default setting
+        if not ic_limbs:
+            ic_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(arm)", x[0]), self.Groups))
+        # Select all arms/legs in "Groups" for autobalancer as a default setting
+        if not abc_limbs:
+            abc_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(leg|arm)", x[0]), self.Groups))
+        # Start controllers
         for limb in ic_limbs:
             self.ic_svc.startImpedanceControllerNoWait(limb)
-        if abc_limbs==None:
-            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
-                abc_limbs=["rleg", "lleg", "rarm", "larm"]
-            else:
-                abc_limbs=["rleg", "lleg"]
-        self.startAutoBalancer(abc_limbs)
-        self.startStabilizer()
+        if is_legged_robot:
+            self.startAutoBalancer(abc_limbs)
+            self.startStabilizer()
         for limb in ic_limbs:
             self.ic_svc.waitImpedanceControllerTransition(limb)
+        # Print
+        if is_legged_robot:
+            print(self.configurator_name + "  Start AutoBalancer = "+str(abc_limbs))
+            print(self.configurator_name + "  Start Stabilizer")
+        if len(ic_limbs) != 0:
+            print(self.configurator_name + "  Start ImpedanceController = "+str(ic_limbs))
 
-    def stopDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"]):
+    def stopDefaultUnstableControllers (self, ic_limbs=[]):
         '''!@brief
         Stop default unstable RTCs controller mode.
-        Currently Stabilzier, AutoBalancer, and ImpedanceController are stopped.
+        Currently Stabilzier, AutoBalancer, and ImpedanceController are stopped based on "Groups" setting.
+        Please see documentation of startDefaultUnstableControllers().
         '''
-        self.stopStabilizer()
+        print(self.configurator_name + "Stop Default Unstable Controllers")
+        # Check robot setting
+        is_legged_robot = map(lambda x: x[0], filter(lambda x : re.match(".*leg", x[0]), self.Groups))
+        # Select all arms in "Groups" for impedance as a default setting
+        if not ic_limbs:
+            ic_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(arm)", x[0]), self.Groups))
+        # Stop controllers
+        if is_legged_robot:
+            self.stopStabilizer()
         for limb in ic_limbs:
             self.ic_svc.stopImpedanceControllerNoWait(limb)
-        self.stopAutoBalancer()
+        if is_legged_robot:
+            self.stopAutoBalancer()
         for limb in ic_limbs:
             self.ic_svc.waitImpedanceControllerTransition(limb)
+        # Print
+        if is_legged_robot:
+            print(self.configurator_name + "  Stop AutoBalancer")
+            print(self.configurator_name + "  Stop Stabilizer")
+        if len(ic_limbs) != 0:
+            print(self.configurator_name + "  Stop ImpedanceController = "+str(ic_limbs))
 
     def setFootSteps(self, footstep, overwrite_fs_idx = 0):
         '''!@brief
@@ -2079,6 +2230,32 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param overwrite_fs_idx : Index to be overwritten. overwrite_fs_idx is used only in walking.
         '''
         self.abc_svc.setFootStepsWithParam(footstep, stepparams, overwrite_fs_idx)
+
+    def clearJointAngles(self):
+        '''!@brief
+        Cancels the commanded sequence of joint angle, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAngles()
+
+    def clearJointAnglesOfGroup(self, gname):
+        '''!@brief
+        Cancels the commanded sequence of joint angle for the specified joint group, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @param gname: Name of the joint group.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAnglesOfGroup(gname)
+
+    def removeForceSensorOffsetRMFO(self, sensor_names=[], tm=8.0):
+        '''!@brief
+        remove force sensor offset by RemoveForceSensorOffset (RMFO) RTC.
+        @param sensor_names : list of sensor names to be calibrated. If not specified, all sensors are calibrated by default.
+        @param tm : calibration time[s]. 8.0[s] by default.
+        @return bool : true if set successfully, false otherwise
+        '''
+        return self.rmfo_svc.removeForceSensorOffset(sensor_names, tm)
 
     # ##
     # ## initialize

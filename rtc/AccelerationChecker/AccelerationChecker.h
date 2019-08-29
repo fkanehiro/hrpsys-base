@@ -10,9 +10,11 @@
 #ifndef ACCELERATION_CHECKER_H
 #define ACCELERATION_CHECKER_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
+#include <hrpsys/idl/HRPDataTypes.hh>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
@@ -102,10 +104,12 @@ class AccelerationChecker
   // </rtc-template>
 
   TimedDoubleSeq m_q;
+  OpenHRP::TimedLongSeqSeq m_servoState;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qIn;
+  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
   
   // </rtc-template>
 

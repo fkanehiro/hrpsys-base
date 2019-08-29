@@ -106,7 +106,11 @@ double interpolator::calc_interpolation_time(const double *newg)
   }
   remain_t_ = max_diff/default_avg_vel;
 #define MIN_INTERPOLATION_TIME	(1.0)
-  if (remain_t_ < MIN_INTERPOLATION_TIME) remain_t_ = MIN_INTERPOLATION_TIME;
+  if (remain_t_ < MIN_INTERPOLATION_TIME) {
+      std::cerr << "[interpolator][" << name << "] MIN_INTERPOLATION_TIME violated!! Limit remain_t (" << remain_t << ") by MIN_INTERPOLATION_TIME (" << MIN_INTERPOLATION_TIME << ")."
+                << "(max_diff = " << max_diff << ", default_avg_vel = " << default_avg_vel << ")" << std::endl;;
+      remain_t_ = MIN_INTERPOLATION_TIME;
+  }
   return remain_t_;
 }
 
@@ -163,7 +167,7 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
         a1[i]=v[i];
         a2[i]=(-3*x[i] + 3*gx[i] - 2*v[i]*target_t - gv[i]*target_t) / (target_t*target_t);
         a3[i]=( 2*x[i] - 2*gx[i] +   v[i]*target_t + gv[i]*target_t) / (target_t*target_t*target_t);
-        a4[i]=a[5]=0;
+        a4[i]=a5[i]=0;
         break;
         }
     }
@@ -231,13 +235,13 @@ void interpolator::load(const char *fname, double time_to_start, double scale,
   vs = new double[dim];
   strm >> time;
   while(strm.eof()==0){
-    for (int i=0; i<offset1; i++){
+    for (size_t i=0; i<offset1; i++){
       strm >> tmp;
     }
     for (int i=0; i<dim; i++){
       strm >> vs[i];
     }
-    for (int i=0; i<offset2; i++){
+    for (size_t i=0; i<offset2; i++){
       strm >> tmp;
     }
     if (ptime <0){

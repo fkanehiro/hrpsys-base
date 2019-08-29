@@ -4,8 +4,17 @@
 #include <ostream>
 #include <vector>
 #include <string>
-#include <coil/stringutil.h>
 #include <hrpUtil/EigenTypes.h>
+
+// Clang (and apparently ISO C++) doesn't like it when functions are not
+// declared before use, *even when the use occurs in templates*.
+
+template<typename T>
+std::istream& operator>>(std::istream& is, std::vector<T>& v);
+std::istream& operator>>(std::istream& is, hrp::dvector& v);
+std::istream& operator>>(std::istream& is, hrp::Vector3& v);
+
+#include <coil/stringutil.h>
 
 template<typename T>
 std::istream& operator>>(std::istream& is, std::vector<T>& v)

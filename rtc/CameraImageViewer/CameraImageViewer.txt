@@ -36,7 +36,10 @@ N/A
 
 \section configuration Configuration Variables
 
-N/A
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>depthBits</td><td>int</td><td>[bit]</td><td>11</td><td>resolution of depth image</td></tr>
+</table>
 
 \section conf Configuration File
 

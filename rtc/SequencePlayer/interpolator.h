@@ -61,7 +61,7 @@ public:
   // Interpolate previous value and without pushing to queue
   void interpolate_prev_value();
   double deltaT() const { return dt; }
-  double dimension() const { return dim; }
+  int dimension() const { return dim; }
   void setName (const std::string& _name) { name = _name; };
 private:
   // Current interpolation mode

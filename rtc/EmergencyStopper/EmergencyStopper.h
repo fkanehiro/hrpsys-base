@@ -10,6 +10,9 @@
 #ifndef EMERGENCY_STOPPER_H
 #define EMERGENCY_STOPPER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -19,7 +22,6 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "interpolator.h"
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include <queue>
 
 // Service implementation headers
@@ -157,7 +159,7 @@ protected:
 
 private:
     void get_wrenches_array_from_data(const std::vector<TimedDoubleSeq> &wrenches_data, double *wrenches_array) {
-        for ( int i= 0; i < wrenches_data.size(); i++ ) {
+        for ( unsigned int i= 0; i < wrenches_data.size(); i++ ) {
             for (int j = 0; j < 6; j++ ) {
                 wrenches_array[i*6+j] = wrenches_data[i].data[j];
             }
@@ -165,7 +167,7 @@ private:
     }
 
     void set_wrenches_data_from_array(std::vector<TimedDoubleSeq> &wrenches_data, const double *wrenches_array) {
-        for ( int i= 0; i < wrenches_data.size(); i++ ) {
+        for ( unsigned int i= 0; i < wrenches_data.size(); i++ ) {
             for (int j = 0; j < 6; j++ ) {
                 wrenches_data[i].data[j] = wrenches_array[i*6+j];
             }
@@ -175,7 +177,7 @@ private:
     hrp::BodyPtr m_robot;
     double m_dt;
     unsigned int m_debugLevel;
-    int dummy, loop;
+    int loop;
     bool is_stop_mode, prev_is_stop_mode;
     bool is_initialized;
     int recover_time, retrieve_time;
@@ -191,6 +193,7 @@ private:
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
     coil::Mutex m_mutex;
     BeepClient bc;
+    int dummy;
 };
 
 

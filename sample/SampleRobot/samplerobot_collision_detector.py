@@ -13,20 +13,36 @@ except:
     import socket
     import time
 
+def vector_equal_eps (vec1, vec2, eps=1e-5):
+    if len(vec1) == len(vec2):
+        for e1, e2 in zip(vec1, vec2):
+            if abs(e1 - e2) > eps:
+                return False
+        return True
+    else:
+        return False
+
 def init ():
-    global hcf, init_pose, col_safe_pose, col_fail_pose
+    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     init_pose = [0]*29
     col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
     col_fail_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.845363,0.03992,0.250074,-1.32816,0.167513,0.016204,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
+    hrpsys_version = hcf.co.ref.get_component_profile().version
+    print >> sys.stderr, "hrpsys_version = %s"%hrpsys_version
 
 # demo functions
 def demoCollisionCheckSafe ():
     print >> sys.stderr, "1. CollisionCheck in safe pose"
-    hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+    hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
+    counter = 0
+    while (counter < 20) and (not vector_equal_eps([x / 180 * math.pi  for x in hcf.getJointAngles()], col_safe_pose)):
+        time.sleep(0.2)
+        counter = counter + 1
+    assert(counter != 20)
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
         print >> sys.stderr, "  => Safe pose"
@@ -34,7 +50,7 @@ def demoCollisionCheckSafe ():
 
 def demoCollisionCheckFail ():
     print >> sys.stderr, "2. CollisionCheck in fail pose"
-    hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
+    hcf.seq_svc.setJointAngles(col_fail_pose, 3.0);
     hcf.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
@@ -128,6 +144,15 @@ def demo():
     demoCollisionCheckFailWithSetTolerance()
     demoCollisionDisableEnable()
     #demoCollisionMask()
+
+def demo_co_loop():
+    init()
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.10.0'):
+        demoCollisionCheckSafe()
+        demoCollisionCheckFail()
+        demoCollisionCheckFailWithSetTolerance()
+        demoCollisionDisableEnable()
 
 if __name__ == '__main__':
     demo()

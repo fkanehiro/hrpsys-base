@@ -80,7 +80,7 @@ public:
     };
     void parse_params ()
     {
-      for (int i = 0; i < arg_strs.size(); ++ i) {
+      for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
           if ( arg_strs[i]== "--use-gnuplot" ) {
               if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
           }

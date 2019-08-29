@@ -7,7 +7,7 @@ void SceneState::set(hrp::WorldBase& i_world, OpenHRP::CollisionSequence& i_coll
 {
     time = i_world.currentTime();
     bodyStates.resize(i_world.numBodies());
-    for (int i=0; i<i_world.numBodies(); i++){
+    for (unsigned int i=0; i<i_world.numBodies(); i++){
         BodyPtr body = i_world.body(i);
         bodyStates[i].set(body);
     }

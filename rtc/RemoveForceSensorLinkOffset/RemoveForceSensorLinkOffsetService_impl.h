@@ -20,6 +20,7 @@ public:
   CORBA::Boolean getForceMomentOffsetParam(const char *i_name_, OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam_out i_param_);
   CORBA::Boolean loadForceMomentOffsetParams(const char *fiename);
   CORBA::Boolean dumpForceMomentOffsetParams(const char *fiename);
+  CORBA::Boolean removeForceSensorOffset(const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, CORBA::Double tm);
   //
   void rmfsoff(RemoveForceSensorLinkOffset *i_rmfsoff);
 private:

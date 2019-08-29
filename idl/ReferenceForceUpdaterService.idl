@@ -7,6 +7,7 @@ module OpenHRP
   interface ReferenceForceUpdaterService
   {
       typedef sequence<double, 3> DblSequence3;
+      typedef sequence<string> StrSequence;
 
       /**
        * @struct ReferenceForceUpdaterParam
@@ -16,8 +17,9 @@ module OpenHRP
       {
           /// Motion direction to update reference force
           DblSequence3 motion_dir;
-          /// Name of used arm
-          string arm;
+          /// frame of motion_dir ("local" or "world").
+          /// "local" is coordinate at end effector, and "world" is the coordinate between the feet.
+          string frame;
           /// Update frequency [Hz]
           double update_freq;
           /// Update time ratio \in [0,1]
@@ -28,6 +30,12 @@ module OpenHRP
           double d_gain;
           /// I gain
           double i_gain;
+          /// Hold current value or not. If is_hold_value is true, do not update value, otherwise, update value.
+          boolean is_hold_value;
+          /// Transition time[s]
+          double transition_time;
+          /// Cutoff frequency for actual force value [Hz]
+          double cutoff_freq;
       };
 
       /**
@@ -35,25 +43,49 @@ module OpenHRP
        * @param i_param is input parameter
        * @return true if set successfully, false otherwise
        */
-      boolean setReferenceForceUpdaterParam(in ReferenceForceUpdaterParam i_param);
+      boolean setReferenceForceUpdaterParam(in string name, in ReferenceForceUpdaterParam i_param);
 
       /**
        * @brief Get ReferenceForceUpdater parameters
        * @param i_param is input parameter
        * @return true if set successfully, false otherwise
        */
-      boolean getReferenceForceUpdaterParam(out ReferenceForceUpdaterParam i_param);
+      boolean getReferenceForceUpdaterParam(in string name, out ReferenceForceUpdaterParam i_param);
 
       /**
        * @brief Start ReferenceForceUpdater
        * @return true if set successfully, false otherwise
        */
-      boolean startReferenceForceUpdater();
+      boolean startReferenceForceUpdater(in string name);
 
       /**
        * @brief Stop ReferenceForceUpdater
        * @return true if set successfully, false otherwise
        */
-      boolean stopReferenceForceUpdater();
+      boolean stopReferenceForceUpdater(in string name);
+
+      /**
+       * @brief Start ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean startReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Stop ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean stopReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Wait for ReferenceForceUpdater mode transition.
+       */
+      void waitReferenceForceUpdaterTransition(in string name);
+
+      /**
+       * @brief Get supported name sequence of ReferenceForceUpdater
+       * @param o_param is supported name sequence
+       * @return true if set successfully, false otherwise
+       */
+      boolean getSupportedReferenceForceUpdaterNameSequence(out StrSequence o_names);
   };
 };

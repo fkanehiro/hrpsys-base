@@ -46,11 +46,14 @@ To use python scripts to create RT components, connect ports and get/set propert
   <ul>
     <li>\ref AccelerationChecker</li>
     <li>\ref AutoBalancer</li>
+    <li>\ref ApproximateVoxelGridFilter</li>
     <li>\ref AverageFilter</li>
     <li>\ref Beeper</li>
     <li>\ref CameraImageViewer</li>
+    <li>\ref CameraImageSaver</li>
     <li>\ref CaptureController</li>
     <li>\ref CollisionDetector</li>
+    <li>\ref ColorExtractor</li>
     <li>\ref DataLogger</li>
     <li>\ref ExtractCameraImage</li>
     <li>\ref ForwardKinematics</li>
@@ -68,11 +71,14 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref MLSFilter</li>
     <li>\ref NullComponent</li>
     <li>\ref EmergencyStopper</li>
-    <li>\ref OGMap3DViewer</li>
+    <li>\ref ObjectContactTurnaroundDetector</li>
     <li>\ref OccupancyGridMap3D</li>
+    <li>\ref OGMap3DViewer</li>
+    <li>\ref OpenNIGrabber</li>
     <li>\ref PCDLoader</li>
     <li>\ref PDcontroller</li>
     <li>\ref PlaneRemover</li>
+    <li>\ref PointCloudViewer</li>
     <li>\ref RGB2Gray</li>
     <li>\ref Range2PointCloud</li>
     <li>\ref RangeDataViewer</li>

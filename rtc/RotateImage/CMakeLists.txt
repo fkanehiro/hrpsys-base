@@ -10,6 +10,6 @@ target_link_libraries(RotateImageComp ${libs})
 set(target RotateImage RotateImageComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

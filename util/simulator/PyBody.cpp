@@ -45,7 +45,7 @@ void PyBody::setRotation(PyObject *v)
 void PyBody::setPosture(PyObject *v)
 {
     if (PySequence_Size(v) != numJoints()) return;
-    for (int i=0; i<numJoints(); i++) {
+    for (unsigned int i=0; i<numJoints(); i++) {
         hrp::Link *j = joint(i);
         if (j) j->q = boost::python::extract<double>(PySequence_GetItem(v, i));
     }
@@ -65,7 +65,7 @@ PyObject *PyBody::getRotation()
 PyObject *PyBody::getPosture()
 {
     boost::python::list retval;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         hrp::Link *j = joint(i);
         double q = j ? j->q : 0;
         retval.append(boost::python::object(q));
@@ -91,7 +91,7 @@ PyLink *PyBody::link(std::string name)
 PyObject *PyBody::links()
 {
     boost::python::list retval;
-    for (int i=0; i<numLinks(); i++){
+    for (unsigned int i=0; i<numLinks(); i++){
         PyLink *l = (PyLink *)Body::link(i);
         retval.append(boost::python::ptr(l));
     }
@@ -105,7 +105,7 @@ PyLink *PyBody::joint(int i)
 PyObject *PyBody::joints()
 {
     boost::python::list retval;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         PyLink *l = (PyLink *)Body::joint(i);
         retval.append(boost::python::ptr(l));
     }

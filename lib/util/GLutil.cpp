@@ -109,7 +109,7 @@ void shapeLoader::loadShape(GLshape *shape,
                                   (int *)ai.textureCoordIndices.get_buffer());
     shape->setColors(ai.colors.length()/3, ai.colors.get_buffer());
     if (ai.textureIndex >=0){
-        if (txs->length() <= ai.textureIndex){
+        if (txs->length() <= (unsigned int)ai.textureIndex){
             std::cerr << "invalid texture index(" << ai.textureIndex << ")"
                       << std::endl;
         }else{

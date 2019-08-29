@@ -253,6 +253,7 @@ void SequencePlayerService_impl::clear()
 CORBA::Boolean  SequencePlayerService_impl::clearOfGroup(const char *gname, CORBA::Double i_limitation)
 {
     m_player->player()->clearOfGroup(gname, i_limitation);
+    return true;
 }
 
 void SequencePlayerService_impl::clearNoWait()

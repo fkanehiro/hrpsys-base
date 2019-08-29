@@ -1,6 +1,10 @@
 #include <iostream>
 extern "C" {
+#if (defined __APPLE__)
+#include <pcl/surface/qhull.h>
+#else
 #include <qhull/qhull_a.h>
+#endif
 }
 #include <hrpModel/Link.h>
 #include "BVutil.h"
@@ -9,7 +13,7 @@ using namespace hrp;
 
 void convertToAABB(hrp::BodyPtr i_body)
 {
-    for (int i=0; i<i_body->numLinks(); i++) convertToAABB(i_body->link(i));
+    for (unsigned int i=0; i<i_body->numLinks(); i++) convertToAABB(i_body->link(i));
 }
 
 void convertToAABB(hrp::Link *i_link)
@@ -74,7 +78,7 @@ void convertToAABB(hrp::Link *i_link)
 
 void convertToConvexHull(hrp::BodyPtr i_body)
 {
-    for (int i=0; i<i_body->numLinks(); i++){
+    for (unsigned int i=0; i<i_body->numLinks(); i++){
         convertToConvexHull(i_body->link(i));
     }
 }

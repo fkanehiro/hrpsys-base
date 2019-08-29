@@ -126,6 +126,11 @@ void RobotHardwareService_impl::setServoGainPercentage(const char *jname, double
     m_robot->setServoGainPercentage(jname, percentage);
 }
 
+void RobotHardwareService_impl::setServoTorqueGainPercentage(const char *jname, double percentage)
+{
+    m_robot->setServoTorqueGainPercentage(jname, percentage);
+}
+
 void RobotHardwareService_impl::setServoErrorLimit(const char *jname, double limit)
 {
     m_robot->setServoErrorLimit(jname, limit);
@@ -173,4 +178,57 @@ CORBA::Boolean RobotHardwareService_impl::readDigitalOutput(::OpenHRP::RobotHard
     dout = new ::OpenHRP::RobotHardwareService::OctSequence();
     dout->length(lengthDigitalOutput());
     return m_robot->readDigitalOutput((char *)(dout->get_buffer()));
+}
+
+CORBA::Boolean RobotHardwareService_impl::setJointInertia(const char* name, ::CORBA::Double mn)
+{
+    m_robot->setJointInertia(name, mn);
+}
+
+void RobotHardwareService_impl::setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns)
+{
+    m_robot->setJointInertias(mns.get_buffer());
+}
+
+
+void RobotHardwareService_impl::enableDisturbanceObserver()
+{
+    m_robot->enableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::disableDisturbanceObserver()
+{
+    m_robot->disableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::setDisturbanceObserverGain(::CORBA::Double gain)
+{
+    m_robot->setDisturbanceObserverGain(gain);
+}
+
+void RobotHardwareService_impl::setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm)
+{
+    joint_control_mode mode;
+    switch(jcm){
+    case OpenHRP::RobotHardwareService::FREE:
+        mode = JCM_FREE;
+        break;
+    case OpenHRP::RobotHardwareService::POSITION:
+        mode = JCM_POSITION;
+        break;
+    case OpenHRP::RobotHardwareService::TORQUE:
+        mode = JCM_TORQUE;
+        break;
+    case OpenHRP::RobotHardwareService::VELOCITY:
+        mode = JCM_VELOCITY;
+        break;
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+    case OpenHRP::RobotHardwareService::POSITION_TORQUE:
+        mode = JCM_POSITION_TORQUE;
+        break;
+#endif
+    default:
+        return;
+    }
+    m_robot->setJointControlMode(jname, mode);
 }

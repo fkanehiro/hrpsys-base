@@ -10,13 +10,14 @@
 #ifndef VIDEO_CAPTURE_H
 #define VIDEO_CAPTURE_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/Img.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/Img.hh"
 #include "camera.h"
 
 // Service implementation headers
@@ -97,7 +98,7 @@ class VideoCapture
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-    void capture();
+  bool capture();
   void take_one_frame();
   void start_continuous();
   void stop_continuous();
@@ -147,6 +148,7 @@ class VideoCapture
   std::vector < v4l_capture * > m_cameras;
   int m_width, m_height, m_frameRate;
   double m_tOld;
+  bool m_needToReactivate;
 };
 
 

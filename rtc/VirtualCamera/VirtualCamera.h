@@ -10,22 +10,23 @@
 #ifndef VIRTUAL_CAMERA_H
 #define VIRTUAL_CAMERA_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/InterfaceDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
+#include "hrpsys/idl/Img.hh"
+#include "hrpsys/idl/pointcloud.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <rtm/idl/InterfaceDataTypes.hh>
 //Open CV headder
 #include <cv.h>
 #include <highgui.h>
 //
 #include "hrpsys/util/LogManager.h"
 #include "hrpsys/util/SDLUtil.h"
-#include "hrpsys/idl/Img.hh"
-#include "hrpsys/idl/HRPDataTypes.hh"
-#include "hrpsys/idl/pointcloud.hh"
 #include "GLscene.h"
 class GLcamera;
 class RTCGLbody;

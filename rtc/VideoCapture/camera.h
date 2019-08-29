@@ -20,15 +20,15 @@ class v4l_capture
   buffer *buffers;
   unsigned int n_buffers;
   bool open_device();
-  void init_device();
-  void init_mmap();
+  bool init_device();
+  bool init_mmap();
   bool start_capturing();
-  void stop_capturing();
+  bool stop_capturing();
   void uninit_device();
-  void uninit_mmap();
-  void close_device();
-  void read_frame(void);
-  void write_img(uchar * ret);
+  bool uninit_mmap();
+  bool close_device();
+  bool read_frame(void);
+  bool write_img(uchar * ret);
   bool init_all(size_t _width, size_t _height, unsigned int _devId);
  public:
   v4l_capture();

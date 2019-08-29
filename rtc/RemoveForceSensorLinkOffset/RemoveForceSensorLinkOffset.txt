@@ -22,6 +22,11 @@ Note that "off_xx" values from this component are same as "xx" values from Robot
 This means, if zero force-moment offset and zero mass offset are specified,
 "off_xx" values equal to "xx".
 
+\subsection offsettype Offset type
+Two types of offsets are considered.
+1. Sensor offset (drift, ...etc) : In idl, force_offset and moment_offset
+2. Link offset (hands and feets mass properties) : In idl, link_offset_centroid and link_offset_mass
+
 \subsection frame Frame
 
 This component requires robot's attitude sensing to know the direction

@@ -63,6 +63,9 @@ extern "C"{
         JCM_POSITION, 	///< position control
         JCM_TORQUE,	///< torque control
         JCM_VELOCITY,   ///< velocity control
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+        JCM_POSITION_TORQUE,  ///< position and torque control
+#endif
         JCM_NUM 
     } joint_control_mode;
 
@@ -225,7 +228,7 @@ extern "C"{
      * @retval FALSE otherwise
      */
     int read_servo_alarm(int id, int *a);
-    
+
     /**
      * @brief read joint control mode
      * @param id 	joint id
@@ -578,6 +581,9 @@ extern "C"{
     //@}
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    /**
+     * @name IOB VERSION 2
+     */
     //@{
     /**
      * @brief get the number of batteries
@@ -600,6 +606,107 @@ extern "C"{
      * @return the number of thermometers
      */
     int number_of_thermometers();
+
+    //@}
+#endif
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
+    /**
+     * @name IOB VERSION 3
+     */
+    //@{
+    /**
+     * @brief write command angular acceleration[rad/s^2]
+     * @param id	joint id
+     * @param acc	angular acceleration [rad/s^2]
+     * @return		TRUE or E_ID
+     */
+    int write_command_acceleration(int id, double acc);
+
+    /**
+     * @brief write command angular accelerations[rad/s^2]
+     * @param accs	array of angular acceleration [rad/s^2]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_command_accelerations(const double *accs);
+
+    /**
+     * @brief write joint inertia
+     * @param id	joint id
+     * @param mn	joint inertia
+     * @return		TRUE or E_ID
+     */
+    int write_joint_inertia(int id, double mn);
+
+    /**
+     * @brief write joint inertias
+     * @param mns	array of joint inertia
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_joint_inertias(const double *mns);
+
+    /**
+     * @brief read pd controller torques [Nm]
+     * @param torques array of pd controller torque [Nm]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_pd_controller_torques(double *torques);
+
+    /**
+     * @brief turn on/off disturbance observer
+     * @param com 	ON/OFF
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer(int com);
+
+    /**
+     * @brief write disturbance observer gain
+     * @param gain	disturbance observer gain
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer_gain(double gain);
+    //@}
+#endif
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+    /**
+     * @name IOB VERSION 4
+     */
+    //@{
+    /**
+     * @brief read P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
+     */
+    int read_torque_pgain(int id, double *gain);
+
+    /**
+     * @brief write P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
+     */
+    int write_torque_pgain(int id, double gain);
+
+    /**
+     * @brief read D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
+     */
+    int read_torque_dgain(int id, double *gain);
+
+    /**
+     * @brief write D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
+     */
+    int write_torque_dgain(int id, double gain);
 
     //@}
 #endif

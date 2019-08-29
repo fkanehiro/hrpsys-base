@@ -10,6 +10,10 @@
 #ifndef ROBOT_HARDWARE_H
 #define ROBOT_HARDWARE_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -17,7 +21,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 #include <hrpModel/Body.h>
 
@@ -101,6 +104,11 @@ class RobotHardware
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+  virtual inline void getTimeNow(Time &tm) {
+      coil::TimeValue coiltm(coil::gettimeofday());
+      tm.sec  = coiltm.sec();
+      tm.nsec = coiltm.usec() * 1000;
+  };
 
  protected:
   // Configuration variable declaration
@@ -122,6 +130,11 @@ class RobotHardware
   */
   TimedDoubleSeq m_dqRef;
   InPort<TimedDoubleSeq> m_dqRefIn;
+  /**
+     \brief array of reference accelerations of joint with jointId
+  */
+  TimedDoubleSeq m_ddqRef;
+  InPort<TimedDoubleSeq> m_ddqRefIn;
   /**
      \brief array of reference torques of joint with jointId
   */
@@ -147,6 +160,10 @@ class RobotHardware
   */
   TimedDoubleSeq m_ctau;
   /**
+     \brief array of PD controller torques of joint with jointId
+  */
+  TimedDoubleSeq m_pdtau;
+  /**
      \brief vector of actual acceleration (vector length = number of acceleration sensors)
   */
   std::vector<TimedAcceleration3D> m_acc;
@@ -161,6 +178,7 @@ class RobotHardware
   std::vector<TimedDoubleSeq> m_force;
   OpenHRP::TimedLongSeqSeq m_servoState;
   TimedLong m_emergencySignal;
+  OpenHRP::RobotHardwareService::TimedRobotState2 m_rstate2;
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
@@ -168,11 +186,13 @@ class RobotHardware
   OutPort<TimedDoubleSeq> m_dqOut;
   OutPort<TimedDoubleSeq> m_tauOut;
   OutPort<TimedDoubleSeq> m_ctauOut;
+  OutPort<TimedDoubleSeq> m_pdtauOut;
   std::vector<OutPort<TimedAcceleration3D> *> m_accOut;
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
   OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
   OutPort<TimedLong> m_emergencySignalOut;
+  OutPort<OpenHRP::RobotHardwareService::TimedRobotState2> m_rstate2Out;
 
   // </rtc-template>
 
@@ -193,7 +213,10 @@ class RobotHardware
   
   // </rtc-template>
 
+  robot *robot_ptr(void) { return m_robot.get(); };
  private:
+  void getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2);
+
   int dummy;
   boost::shared_ptr<robot> m_robot;
 };

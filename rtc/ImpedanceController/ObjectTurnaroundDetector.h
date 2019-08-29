@@ -18,7 +18,7 @@ class ObjectTurnaroundDetector
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
     hrp::Vector3 axis, moment_center;
     double prev_wrench, dt;
-    double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
+    double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time, current_wrench;
     size_t count;
     // detect_count_thre*dt and start_ratio_thre*dt are threshould for time.
     //   detect_count_thre*dt : Threshould for time [s] after the first object turnaround detection (Wait detect_time_thre [s] after first object turnaround detection).
@@ -83,6 +83,7 @@ class ObjectTurnaroundDetector
           dwrench_filter->reset(0);
           is_dwr_changed = false;
         }
+        current_wrench = wrench_value;
         double tmp_wr = wrench_filter->passFilter(wrench_value);
         double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
         prev_wrench = tmp_wr;
@@ -163,5 +164,6 @@ class ObjectTurnaroundDetector
     detector_total_wrench getDetectorTotalWrench () const { return dtw; };
     double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
+    double getRawWrench () const { return current_wrench; };
 };
 #endif // OBJECTTURNAROUNDDETECTOR_H

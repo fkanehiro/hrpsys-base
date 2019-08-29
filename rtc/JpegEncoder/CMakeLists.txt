@@ -10,6 +10,6 @@ target_link_libraries(JpegEncoderComp ${libs})
 set(target JpegEncoder JpegEncoderComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

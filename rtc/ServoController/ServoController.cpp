@@ -92,12 +92,12 @@ RTC::ReturnCode_t ServoController::onInitialize()
       return RTC::RTC_ERROR;
   }
   servo_id.resize(servo_ids.size());
-  for(int i = 0; i < servo_ids.size(); i++) {
+  for(unsigned int i = 0; i < servo_ids.size(); i++) {
       coil::stringTo(servo_id[i], servo_ids[i].c_str());
   }
 
   std::cout << m_profile.instance_name << ": servo_id : ";
-  for(int i = 0; i < servo_id.size(); i++) {
+  for(unsigned int i = 0; i < servo_id.size(); i++) {
       std::cerr << servo_id[i] << " ";
   }
   std::cerr << std::endl;
@@ -113,12 +113,12 @@ RTC::ReturnCode_t ServoController::onInitialize()
       std::cerr << "\e[1;31m[ERROR] " <<  m_profile.instance_name << ": servo.id and servo.offset property must have same length\e[0m" << std::endl;
       return RTC::RTC_ERROR;
   }
-  for(int i = 0; i < servo_offsets.size(); i++) {
+  for(unsigned int i = 0; i < servo_offsets.size(); i++) {
       coil::stringTo(servo_offset[i], servo_offsets[i].c_str());
   }
 
   std::cout << m_profile.instance_name << ": servo_offset : ";
-  for(int i = 0; i < servo_offset.size(); i++) {
+  for(unsigned int i = 0; i < servo_offset.size(); i++) {
       std::cerr << servo_offset[i] << " ";
   }
   std::cerr << std::endl;
@@ -134,12 +134,12 @@ RTC::ReturnCode_t ServoController::onInitialize()
       std::cerr << "\e[1;31m[ERROR] " <<  m_profile.instance_name << ": servo.id and servo.dir property must have same length\e[0m" << std::endl;
       return RTC::RTC_ERROR;
   }
-  for(int i = 0; i < servo_dirs.size(); i++) {
+  for(unsigned int i = 0; i < servo_dirs.size(); i++) {
       coil::stringTo(servo_dir[i], servo_dirs[i].c_str());
   }
 
   std::cout << m_profile.instance_name << ": servo_dir : ";
-  for(int i = 0; i < servo_dir.size(); i++) {
+  for(unsigned int i = 0; i < servo_dir.size(); i++) {
       std::cerr << servo_dir[i] << " ";
   }
   std::cerr << std::endl;
@@ -231,7 +231,7 @@ bool ServoController::setJointAngle(short id, double angle, double tm)
 {
     if ( ! serial ) return true;
     double rad = angle * M_PI / 180;
-    for(int i=0; i<servo_id.size(); i++){
+    for(unsigned int i=0; i<servo_id.size(); i++){
       if(servo_id[i]==id) serial->setPosition(id,rad+servo_offset[i], tm);
     }
     return true;
@@ -244,7 +244,7 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
     int id[servo_id.size()];
     double tms[servo_id.size()];
     double rad[servo_id.size()];
-    for( int i = 0; i < servo_id.size(); i++ ) {
+    for( unsigned int i = 0; i < servo_id.size(); i++ ) {
         id[i] = servo_id[i];
         tms[i] = tm;
         rad[i] = (angles.get_buffer()[i]*servo_dir[i]+servo_offset[i]);
@@ -262,7 +262,7 @@ bool ServoController::getJointAngle(short id, double &angle)
     if ( ! serial ) return true;
 
     int ret = serial->getPosition(id, &angle);
-    for(int i=0; i<servo_id.size(); i++){
+    for(unsigned int i=0; i<servo_id.size(); i++){
       if(servo_id[i]==id){
         double servo_offset_angle = servo_offset[i] * 180 / M_PI;
         angle -= servo_offset_angle;
@@ -281,7 +281,7 @@ bool ServoController::getJointAngles(OpenHRP::ServoControllerService::dSequence_
 
     angles = new OpenHRP::ServoControllerService::dSequence();
     angles->length(servo_id.size());
-    for(int i=0; i < servo_id.size(); i++){
+    for(unsigned int i=0; i < servo_id.size(); i++){
         ret = serial->getPosition(servo_id[i], &(angles->get_buffer()[i]));
         if (ret < 0) return false;
     }
@@ -313,7 +313,7 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
     if ( ! serial ) return true;
 
     if ( joint_groups.find(gname) != joint_groups.end()) {
-        int len = joint_groups[gname].size();
+        unsigned int len = joint_groups[gname].size();
         if ( angles.length() != len ) {
             std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << len << std::endl;
             return false;
@@ -321,11 +321,11 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
         int id[len];
         double tms[len];
         double rad[len];
-        for( int i = 0; i < len; i++ ) {
+        for( unsigned int i = 0; i < len; i++ ) {
             id[i] = joint_groups[gname][i];
             tms[i] = tm;
             double offset, dir;
-            for( int j = 0; j < servo_id.size(); j++ ) {
+            for( unsigned int j = 0; j < servo_id.size(); j++ ) {
                 if ( servo_id[j] == id[i]) {
                     offset = servo_offset[j];
                     dir = servo_dir[j];

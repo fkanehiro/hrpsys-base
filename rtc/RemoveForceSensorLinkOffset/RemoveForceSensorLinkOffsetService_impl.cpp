@@ -35,6 +35,11 @@ CORBA::Boolean RemoveForceSensorLinkOffsetService_impl::dumpForceMomentOffsetPar
 	return m_rmfsoff->dumpForceMomentOffsetParams(std::string(filename));
 };
 
+CORBA::Boolean RemoveForceSensorLinkOffsetService_impl::removeForceSensorOffset(const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, CORBA::Double tm)
+{
+	return m_rmfsoff->removeForceSensorOffset(names, tm);
+}
+
 void RemoveForceSensorLinkOffsetService_impl::rmfsoff(RemoveForceSensorLinkOffset *i_rmfsoff)
 {
 	m_rmfsoff = i_rmfsoff;

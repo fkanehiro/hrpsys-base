@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     int wsize=0;
     double maxEdgeLen=0.0;
     bool useDefaultLights=true;
-    float bgColor[3];
+    float bgColor[3]={0,0,0};
     
     for (int i=1; i<argc; i++){
         if (strcmp(argv[i], "-size")==0){

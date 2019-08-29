@@ -10,6 +10,7 @@
 #ifndef HG_CONTROLLER_H
 #define HG_CONTROLLER_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

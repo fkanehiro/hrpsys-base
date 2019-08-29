@@ -18,6 +18,8 @@ import re
 rootnc = None
 nshost = None
 nsport = None
+mgrhost = None
+mgrport = None
 
 ##
 # \brief wrapper class of RT component
@@ -79,6 +81,13 @@ class RTcomponent:
         return self.setConfiguration([[name, value]])
 
     ##
+    # \brief get name-value list of the default configuration set
+    # \param self this object
+    # \return name-value list of the default configuration set
+    def getProperties(self):
+        return getConfiguration(self.ref)
+
+    ##
     # \brief get value of the property in the default configuration set
     # \param self this object
     # \param name name of the property
@@ -105,13 +114,21 @@ class RTcomponent:
         if ec == None:
             ec = self.ec
         if ec != None:
-            ec.activate_component(self.ref)
+            if self.isActive(ec):
+                return True
+            ret = ec.activate_component(self.ref)
+            if  ret != RTC.RTC_OK:
+                print ('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
+                       (self.name(), ret))
+                return False
             tm = 0 
             while tm < timeout:
                 if self.isActive(ec):
                     return True
                 time.sleep(0.01)
                 tm += 0.01
+        print ('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
+               self.name())
         return False
 
     ##
@@ -124,15 +141,34 @@ class RTcomponent:
         if ec == None:
             ec = self.ec
         if ec != None:
-            ec.deactivate_component(self.ref)
+            if self.isInactive(ec):
+                return True
+            ret = ec.deactivate_component(self.ref)
+            if  ret != RTC.RTC_OK:
+                print ('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
+                       (self.name(), ret))
+                return False
             tm = 0
             while tm < timeout:
                 if self.isInactive(ec):
                     return True
                 time.sleep(0.01)
                 tm += 0.01
+        print ('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
+               self.name())
         return False
 
+    ##
+    # \brief reset this component
+    # \param self this object
+    # \param ec execution context used to reset this component
+    # \return True if reseted successfully, False otherwise
+    def reset(self, ec=None, timeout=3.0):
+        if self.getLifeCycleState(ec) != RTC.ERROR_STATE:
+            return True
+        if ec == None:
+            ec = self.ec
+        return ec.reset_component(self.ref) == RTC.RTC_OK
     ##
     # \brief get life cycle state of the main execution context
     # \param self this object
@@ -277,7 +313,7 @@ def unbindObject(name, kind):
 # \brief initialize ORB 
 #
 def initCORBA():
-    global rootnc, orb, nshost, nsport
+    global rootnc, orb, nshost, nsport, mgrhost, mgrport
 
     # from omniorb's document
     # When CORBA::ORB_init() is called, the value for each configuration
@@ -286,17 +322,55 @@ def initCORBA():
     #  Environment variables
     # so init_CORBA will follow this order
     # first check command line argument
-    try:
-        n = sys.argv.index('-ORBInitRef')
-        (nshost, nsport) = re.match(
-            'NameService=corbaloc:iiop:(\w+):(\d+)/NameService', sys.argv[n + 1]).group(1, 2)
-    except:
-        if not nshost:
-            nshost = socket.gethostname()
-        if not nsport:
-            nsport = 15005
 
-    print("configuration ORB with %s:%s"%(nshost, nsport))
+    rtm_argv = [sys.argv[0]]    # extract rtm related args only
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '-o':
+            rtm_argv.extend(['-o', sys.argv[i+1]])
+
+    mc = OpenRTM_aist.ManagerConfig();
+    mc.parseArgs(rtm_argv)
+
+    if nshost != None: # these values can be set via other script like "import rtm; rtm.nshost=XXX"
+        print("\033[34m[rtm.py] nshost already set as " + str(nshost) + "\033[0m")
+    else:
+        try:
+            nshost = mc._argprop.getProperty("corba.nameservers").split(":")[0]
+            if not nshost:
+                raise
+        except:
+            nshost = socket.gethostname() # default
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nshost) + " as nshost \033[0m")
+
+    if nsport != None:
+        print("\033[34m[rtm.py] nsport already set as " + str(nsport) + "\033[0m")
+    else:
+        try:
+            nsport = int(mc._argprop.getProperty("corba.nameservers").split(":")[1])
+            if not nsport:
+                raise
+        except:
+            nsport = 15005  # default
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nsport) + " as nsport \033[0m")
+
+    if mgrhost != None: 
+        print("\033[34m[rtm.py] mgrhost already set as " + str(mgrhost) + "\033[0m")
+    else:
+        mgrhost = nshost
+
+    if mgrport != None: 
+        print("\033[34m[rtm.py] mgrport already set as " + str(mgrport) + "\033[0m")
+    else:
+        try:
+            mgrport = int(mc._argprop.getProperty("corba.master_manager").split(":")[1])
+            if not mgrport:
+                raise
+        except:
+            mgrport = 2810  # default
+            print("\033[34m[rtm.py] Failed to parse corba.master_manager, use " + str(mgrport) + "\033[0m")
+
+    print("\033[34m[rtm.py] configuration ORB with %s:%s\033[0m"%(nshost, nsport))
+    print("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(mgrhost, mgrport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
@@ -309,9 +383,13 @@ def initCORBA():
         sys.exit('[ERROR] Invalide Name (hostname=%s).\n' % (nshost) +
                  'Make sure the hostname is correct.\n' + str(e))
     except omniORB.CORBA.TRANSIENT:
-        _, e, _ = sys.exc_info()
-        sys.exit('[ERROR] Connection Failed with the Nameserver (hostname=%s port=%s).\n' % (nshost, nsport) +
-                 'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
+        try:
+            nameserver = orb.string_to_object('corbaloc:iiop:%s:%s/NameService'%(nshost, nsport))
+            rootnc = nameserver._narrow(CosNaming.NamingContext)
+        except:
+            _, e, _ = sys.exc_info()
+            sys.exit('[ERROR] Connection Failed with the Nameserver (hostname=%s port=%s).\n' % (nshost, nsport) +
+                     'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
     except Exception:
         _, e, _ = sys.exc_info()
         print(str(e))
@@ -382,8 +460,9 @@ def findRTCmanager(hostname=None, rnc=None):
         return mgr
 
     def getManagerDirectly(hostname, mgr=None):
-        global orb
-        corbaloc = "corbaloc:iiop:" + hostname + ":2810/manager"
+        global orb, mgrport
+        corbaloc = "corbaloc:iiop:" + hostname + ":" + str(mgrport) + "/manager"
+        print("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m")
         try:
             obj = orb.string_to_object(corbaloc)
             mgr = RTCmanager(obj._narrow(RTM.Manager))
@@ -526,7 +605,7 @@ def dataTypeOfPort(port):
 # \param bufferlength length of data buffer
 # \param rate communication rate for periodic mode[Hz]
 #
-def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000, pushpolicy="new"):
+def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000, pushpolicy="new", interfaceType="corba_cdr"):
     if not isinstance(inPs, list):
         inPs = [inPs]
     if not outP:
@@ -546,7 +625,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
             print('[rtm.py] \033[31m     %s and %s have different data types\033[0m' % \
                   (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
-        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any(interfaceType))
         nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any(dataflow))
         nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any(subscription))
         nv4 = SDOPackage.NameValue("dataport.buffer.length", any.to_any(str(bufferlength)))
@@ -580,11 +659,18 @@ def data2cdr(data):
 #
 def classFromString(fullname):
     component_path = fullname.split('.')
-    package_path = component_path[:-1]
-    package_name = ".".join(package_path)
-    class_name = component_path[-1]
-    __import__(str(package_name))
-    return getattr(sys.modules[package_name], class_name)
+    package_name = component_path[0]
+    component_path = component_path[1:]
+    attr = None
+    while component_path:
+        class_name = component_path[0]
+        component_path = component_path[1:]
+        if attr:
+            attr = getattr(attr, class_name)
+        else:
+            __import__(str(package_name))
+            attr = getattr(sys.modules[package_name], class_name)
+    return attr
 
 ##
 # \brief convert data from CDR format
@@ -594,6 +680,10 @@ def classFromString(fullname):
 #
 def cdr2data(cdr, classname):
     return cdrUnmarshal(any.to_any(classFromString(classname)).typecode(), cdr, True)
+
+
+
+connector_list = []
 
 ##
 # \brief write data to a data port	
@@ -605,14 +695,38 @@ def cdr2data(cdr, classname):
 # the connection must be disconnected by a user
 #
 def writeDataPort(port, data, tm=1.0, disconnect=True):
-    nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
-    nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Push"))
-    nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
-    con_prof = RTC.ConnectorProfile("connector0", "", [port], [nv1, nv2, nv3])
-    ret, prof = port.connect(con_prof)
-    if ret != RTC.RTC_OK:
-        print("failed to connect")
-        return None
+    global connector_list, orb
+    
+    connector_name = "writeDataPort"
+    
+    
+    
+    prof = None
+    
+    for p in connector_list:
+        if p["port"]._is_equivalent(port):
+            if port.get_connector_profile(p["prof"].connector_id).name == connector_name:
+                prof = p["prof"]
+            else:
+                connector_list.remove(p)
+                
+            
+
+
+    if prof is None:      
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
+        nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Push"))
+        nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
+        con_prof = RTC.ConnectorProfile(connector_name, "", [port], [nv1, nv2, nv3])
+        
+        ret, prof = port.connect(con_prof)
+        
+        if ret != RTC.RTC_OK:
+            print("failed to connect")
+            return None
+        connector_list.append({"port":port,"prof":prof})
+        
+        
     for p in prof.properties:
         if p.name == 'dataport.corba_cdr.inport_ior':
             ior = any.from_any(p.value)
@@ -624,9 +738,14 @@ def writeDataPort(port, data, tm=1.0, disconnect=True):
             if disconnect:
                 time.sleep(tm)
                 port.disconnect(prof.connector_id)
+                for p in connector_list:
+                    if prof.connector_id == p["prof"].connector_id:
+                        connector_list.remove(p)
             else:
                 return prof.connector_id
     return None
+
+
 
 ##
 # \brief read data from a data port	
@@ -634,22 +753,45 @@ def writeDataPort(port, data, tm=1.0, disconnect=True):
 # \param timeout timeout[s] 
 # \return data
 #
-def readDataPort(port, timeout=1.0):
+def readDataPort(port, timeout=1.0, disconnect=True):
+    global connector_list, orb
+
+    
+    connector_name = "readDataPort"
+    prof = None
+    for p in connector_list:
+        if p["port"]._is_equivalent(port):
+            if port.get_connector_profile(p["prof"].connector_id).name == connector_name:
+                prof = p["prof"]
+            else:
+                connector_list.remove(p)
+                
+            
+
+    
+    
+
     pprof = port.get_port_profile()
     for prop in pprof.properties:
         if prop.name == "dataport.data_type":
             classname = any.from_any(prop.value)
-            break
-    nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
-    nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
-    nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
-    con_prof = RTC.ConnectorProfile("connector0", "", [port], [nv1, nv2, nv3])
-    ret, prof = port.connect(con_prof)
-    if ret != RTC.RTC_OK:
-        print("failed to connect")
-        return None
+    
+    if prof is None:     
+        
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
+        nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
+        nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
+        con_prof = RTC.ConnectorProfile(connector_name, "", [port], [nv1, nv2, nv3])
+        
+        ret, prof = port.connect(con_prof)
+        
+        if ret != RTC.RTC_OK:
+            print("failed to connect")
+            return None
+        
+        connector_list.append({"port":port,"prof":prof})
+    
     for p in prof.properties:
-        # print(p.name)
         if p.name == 'dataport.corba_cdr.outport_ior':
             ior = any.from_any(p.value)
             obj = orb.string_to_object(ior)
@@ -659,7 +801,12 @@ def readDataPort(port, timeout=1.0):
                 try:
                     ret, data = outport.get()
                     if ret == OpenRTM.PORT_OK:
-                        port.disconnect(prof.connector_id)
+                        if disconnect:
+                            port.disconnect(prof.connector_id)
+                            for p in connector_list:
+                                if prof.connector_id == p["prof"].connector_id:
+                                    connector_list.remove(p)
+                        
                         tokens = classname.split(':')
                         if len(tokens) == 3:  # for 1.1?
                             classname = tokens[1].replace('/', '.')
@@ -668,10 +815,19 @@ def readDataPort(port, timeout=1.0):
                     pass
                 time.sleep(0.1)
                 tm = tm + 0.1
+                
 
-    port.disconnect(prof.connector_id)
+        
     return None
 
+##
+# \brief 
+#
+def deleteAllConnector():
+    global connector_list
+    for port in connector_list:
+        port["port"].disconnect(port["prof"].connector_id)
+    del connector_list[:]
 
 ##
 # \brief get a service of RT component
@@ -740,6 +896,23 @@ def setConfiguration(rtc, nvlist):
             ret = False
     cfg.activate_configuration_set('default')
     return ret
+
+##
+# \brief get default configuration set
+# \param rtc IOR of RT component
+# \return default configuration set
+#
+def getConfiguration(rtc):
+    cfg = rtc.get_configuration()
+    cfgsets = cfg.get_configuration_sets()
+    if len(cfgsets) == 0:
+        print("configuration set is not found")
+        return None
+    ret = {}
+    for nv in cfgsets[0].configuration_data:
+        ret[nv.name] = any.from_any(nv.value)
+    return ret
+    
 
 ##
 # \brief narrow ior

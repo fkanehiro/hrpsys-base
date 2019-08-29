@@ -118,13 +118,25 @@ def demoDumpLoadForceMomentOffsetParams():
         print >> sys.stderr, "    loadForceMomentOffsetParams => OK"
     assert((ret and vcheck))
 
+def demoRemoveForceSensorOffsetRMFO():
+    print >> sys.stderr, "4. remove force sensor offset"
+    print >> sys.stderr, "  Test valid calibration"
+    ret = hcf.removeForceSensorOffsetRMFO(tm=1.0) # all sensors by default
+    print >> sys.stderr, "  Test invalid calibration"
+    ret = ret and not hcf.removeForceSensorOffsetRMFO(["testtest"], 1.0) # invalid sensor name
+    if ret:
+        print >> sys.stderr, "    removeforcesensorlinkoffset => OK"
+    assert(ret)
+
 def demo():
     import numpy
     init()
-    if hrpsys_version >= '315.5.0':
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoGetForceMomentOffsetParam()
         demoSetForceMomentOffsetParam()
         demoDumpLoadForceMomentOffsetParams()
+        demoRemoveForceSensorOffsetRMFO()
 
 if __name__ == '__main__':
     demo()

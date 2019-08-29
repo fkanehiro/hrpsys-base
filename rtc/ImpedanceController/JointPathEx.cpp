@@ -20,6 +20,7 @@ std::ostream& operator<<(std::ostream& out, hrp::dmatrix &a) {
         }
         out << std::endl;
     }
+    return out;
 }
 
 std::ostream& operator<<(std::ostream& out, hrp::dvector &a) {
@@ -29,6 +30,7 @@ std::ostream& operator<<(std::ostream& out, hrp::dvector &a) {
         out << std::setw(7) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << a(i) << " ";
     }
     out << std::endl;
+    return out;
 }
 
 //#define DEBUG true
@@ -59,6 +61,7 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
 
     _a_sr  = _w * at * a1;
     //if (DEBUG) { dmatrix ii = _a * _a_sr; std::cerr << "    i :" << std::endl << ii; }
+    return 0;
 }
 
 // overwrite hrplib/hrpUtil/Eigen3d.cpp
@@ -87,16 +90,16 @@ Vector3 omegaFromRotEx(const Matrix33& r)
 }
 
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval, const std::string& _debug_print_prefix)
-    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), interlocking_joint_pair_indices(), dt(control_cycle),
+    : JointPath(base, end), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), interlocking_joint_pair_indices(), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), dt(control_cycle),
       debug_print_prefix(_debug_print_prefix+",JointPathEx"), joint_limit_debug_print_counts(numJoints(), 0),
       debug_print_freq_count(static_cast<size_t>(0.25/dt)), // once per 0.25[s]
       use_inside_joint_weight_retrieval(_use_inside_joint_weight_retrieval) {
-  for (int i = 0 ; i < numJoints(); i++ ) {
+  for (unsigned int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
   avoid_weight_gain.resize(numJoints());
   optional_weight_vector.resize(numJoints());
-  for (int i = 0 ; i < numJoints(); i++ ) {
+  for (unsigned int i = 0 ; i < numJoints(); i++ ) {
       optional_weight_vector[i] = 1.0;
   }
 }
@@ -188,7 +191,7 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         } else {
             r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
                       (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
-            if (isnan(r)) r = 0;
+            if (std::isnan(r)) r = 0;
         }
 
         // If use_inside_joint_weight_retrieval = true (true by default), use T. F. Chang and R.-V. Dubeby weight retrieval inward.
@@ -316,7 +319,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       //
       // qref - qcurr
       hrp::dvector u(n);
-      for ( int j = 0; j < numJoints(); j++ ) {
+      for ( unsigned int j = 0; j < numJoints(); j++ ) {
         u[j] = optional_weight_vector[j] * reference_gain * ( (*reference_q)[joint(j)->jointId] - joint(j)->q );
       }
       if ( DEBUG ) {
@@ -370,7 +373,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     // check nan / inf
     bool solve_linear_equation = true;
     for(int j=0; j < n; ++j){
-      if ( isnan(dq(j)) || isinf(dq(j)) ) {
+      if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
         solve_linear_equation = false;
         break;
       }
@@ -571,7 +574,7 @@ void hrp::readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::
                                                      const std::string& instance_name)
 {
     coil::vstring virtual_force_sensor = coil::split(prop_string, ",");
-    int nvforce = virtual_force_sensor.size()/10;
+    unsigned int nvforce = virtual_force_sensor.size()/10;
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
         hrp::dvector tr(7);
@@ -612,4 +615,48 @@ void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*
             pairs.push_back(pair);
         };
     }
+};
+
+void hrp::calcAccelerationsForInverseDynamics(const hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb){
+  for(int i=0;i<_m_robot->numJoints();i++)_idsb.q(i) = _m_robot->joint(i)->q;
+  _idsb.dq = (_idsb.q - _idsb.q_old) / _idsb.DT;
+  _idsb.ddq = (_idsb.q - 2 * _idsb.q_old + _idsb.q_oldold) / (_idsb.DT * _idsb.DT);
+  const hrp::Vector3 g(0, 0, 9.80665);
+  _idsb.base_p = _m_robot->rootLink()->p;
+  _idsb.base_v = (_idsb.base_p - _idsb.base_p_old) / _idsb.DT;
+  _idsb.base_dv = g + (_idsb.base_p - 2 * _idsb.base_p_old + _idsb.base_p_oldold) / (_idsb.DT * _idsb.DT);
+  _idsb.base_R =  _m_robot->rootLink()->R;
+  _idsb.base_dR = (_idsb.base_R - _idsb.base_R_old) / _idsb.DT;
+  _idsb.base_w_hat = _idsb.base_dR * _idsb.base_R.transpose();
+  _idsb.base_w = hrp::Vector3(_idsb.base_w_hat(2,1), - _idsb.base_w_hat(0,2), _idsb.base_w_hat(1,0));
+  _idsb.base_dw = (_idsb.base_w - _idsb.base_w_old) / _idsb.DT;
+};
+
+void hrp::calcRootLinkWrenchFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _f_ans, hrp::Vector3& _t_ans){
+  for(int i=0;i<_m_robot->numJoints();i++){
+    _m_robot->joint(i)->dq = _idsb.dq(i);
+    _m_robot->joint(i)->ddq = _idsb.ddq(i);
+  }
+  _m_robot->rootLink()->vo = _idsb.base_v - _idsb.base_w.cross(_idsb.base_p);
+  _m_robot->rootLink()->dvo = _idsb.base_dv - _idsb.base_dw.cross(_idsb.base_p) - _idsb.base_w.cross(_idsb.base_v); // calc in differential way
+  _m_robot->rootLink()->w = _idsb.base_w;
+  _m_robot->rootLink()->dw = _idsb.base_dw;
+  _m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
+  _m_robot->calcInverseDynamics(_m_robot->rootLink(), _f_ans, _t_ans);// this returns f,t at the coordinate origin (not at base link pos)
+};
+
+void hrp::calcWorldZMPFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _zmp_ans){
+  hrp::Vector3 f_tmp, t_tmp;
+  calcRootLinkWrenchFromInverseDynamics(_m_robot, _idsb, f_tmp, t_tmp);
+  _zmp_ans(0) = -t_tmp(1)/f_tmp(2);
+  _zmp_ans(1) = t_tmp(0)/f_tmp(2);
+};
+
+void hrp::updateInvDynStateBuffer(InvDynStateBuffer& _idsb){
+   _idsb.q_oldold = _idsb.q_old;
+   _idsb.q_old = _idsb.q;
+   _idsb.base_p_oldold = _idsb.base_p_old;
+   _idsb.base_p_old = _idsb.base_p;
+   _idsb.base_R_old = _idsb.base_R;
+   _idsb.base_w_old = _idsb.base_w;
 };

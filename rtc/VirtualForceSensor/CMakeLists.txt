@@ -10,6 +10,6 @@ target_link_libraries(VirtualForceSensorComp ${libs})
 set(target VirtualForceSensor VirtualForceSensorComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

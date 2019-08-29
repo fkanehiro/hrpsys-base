@@ -21,7 +21,8 @@ module OpenHRP
       TPCC,
       EEFM,
       EEFMQP,
-      EEFMQPCOP
+      EEFMQPCOP,
+      EEFMQPCOP2
     };
 
     /**
@@ -78,6 +79,8 @@ module OpenHRP
         double reference_gain;
         /// Manipulability limit for inverse kinematics.
         double manipulability_limit;
+        /// IK loop count
+        unsigned short ik_loop_count;
     };
 
     /**
@@ -168,10 +171,22 @@ module OpenHRP
       double eefm_ee_rot_error_p_gain;
       /// Pos rot error cutoff freq [Hz]
       double eefm_ee_error_cutoff_freq;
-      /// Sequence of vertices for all end effectors
+      /// Sequence of vertices for all end effectors assuming that the order is (rleg, lleg, rarm, larm)
       sequence< SupportPolygonVertices > eefm_support_polygon_vertices_sequence;
       /// Use force difference control or each limb force control. True by default.
       boolean eefm_use_force_difference_control;
+      /// Use damping control for swing leg.
+      boolean eefm_use_swing_damping;
+      /// Swing damping control force threshold [N]
+      DblArray3 eefm_swing_damping_force_thre;
+      /// Swing damping control moment threshold [Nm]
+      DblArray3 eefm_swing_damping_moment_thre;
+      /// Rotation damping gain for swing leg [Nm/(rad/s)] (r,p,y)
+      DblArray3 eefm_swing_rot_damping_gain;
+      /// Position damping gain for swing leg [N/(m/s)] (x,y,z)
+      DblArray3 eefm_swing_pos_damping_gain;
+      /// Sequence of all end-effector force/moment distribution weight
+      sequence<sequence<double, 6> > eefm_ee_forcemoment_distribution_weight;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;
@@ -195,6 +210,8 @@ module OpenHRP
       DblArray2 ref_capture_point;
       /// act_CP [m] (x,y) (foot_origin relative coordinate)
       DblArray2 act_capture_point;
+      /// CP_offset [m] (x,y) (foot_origin relative coordinate)
+      DblArray2 cp_offset;
       /// contact decision threshold [N]
       double contact_decision_threshold;
       /// Foot origin position offset
@@ -206,6 +223,20 @@ module OpenHRP
       boolean is_estop_while_walking;
       /// Sequence for all end-effectors' ik limb parameters
       sequence<IKLimbParameters> ik_limb_parameters;
+      /// Whether change root link height for avoiding limb stretch
+      boolean use_limb_stretch_avoidance;
+      /// Limb stretch avoidance time constant [s]
+      double limb_stretch_avoidance_time_const;
+      /// Root link height change limitation for avoiding limb stretch [m/s] (lower, upper)
+      DblArray2 limb_stretch_avoidance_vlimit;
+      /// Sequence of limb length margin from max limb length [m]
+      sequence<double> limb_length_margin;
+      /// Detection time whether is in air [s]
+      double detection_time_to_air;
+      /// Limit of compensation for difference between ref-act root rot [rad].
+      DblArray2 root_rot_compensation_limit;
+      /// Whether truncate zmp according to foot support polygon or not
+      boolean use_zmp_truncation;
     };
 
     /**

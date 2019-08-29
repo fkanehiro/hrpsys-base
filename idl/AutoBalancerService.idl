@@ -10,8 +10,10 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
     //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
+    typedef double DblArray5[5];
 
     /**
      * @struct Footstep
@@ -127,8 +129,23 @@ module OpenHRP
      * @brief Mode of use_force
      */
     enum UseForceMode {
+      /// Mode in which robot's COG is not changed according to force/moment values
       MODE_NO_FORCE,
-      MODE_REF_FORCE
+      /// Mode in which robot's COG is changed according to sensors' force/moment values
+      MODE_REF_FORCE,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values for hands and feet (and root-link)
+      MODE_REF_FORCE_WITH_FOOT,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values using ReferenceForceUpdater's ext moment
+      MODE_REF_FORCE_RFU_EXT_MOMENT
+    };
+
+    /**
+     * @enum StrideLimitationType
+     * @brief Type of stride limitation
+     */
+    enum StrideLimitationType {
+      SQUARE,
+      CIRCLE
     };
 
     /**
@@ -181,8 +198,10 @@ module OpenHRP
       double default_double_support_ratio_swing_before;
       /// Ratio of double support period after swing. Ratio is included in (0, 1).
       double default_double_support_ratio_swing_after;
-      /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
-      sequence<double, 4> stride_parameter;
+      /// Stride limitation of forward x[m], outside y[m], outside theta[deg], backward x[m], inside y[m], inside theta[deg] for goPos and goVelocity
+      sequence<double, 6> stride_parameter;
+      /// Stride limitation when generating footsteps with stride limitation type CIRCLE (forward, outside, theta, backward, inside) [m]
+      DblArray5 stride_limitation_for_circle_type;
       /// Default OrbitType
       OrbitType default_orbit_type;
       /// Time offset [s] for swing trajectory by delay_hoffarbib_trajectory_generator.
@@ -193,6 +212,8 @@ module OpenHRP
       DblArray3 stair_trajectory_way_point_offset;
       /// Kick point offset 3D vector [m] for cycloid_delay_kick_hoffarbib_trajectory_generator.
       DblArray3 cycloid_delay_kick_point_offset;
+      /// Time offset between Z convergence to antecedent path and XY convergence. [swing time]=[Z convergence time]=[XY convergence time]-[swing_trajectory_xy_time_offset]. 0 by default, this means Z convergence time and XY convergence time are same.
+      double swing_trajectory_time_offset_xy2z;
       /// Gravitational acceleration [m/s^2]
       double gravitational_acceleration;
       /// Toe position offset [m] in end-effector frame x axis
@@ -207,12 +228,18 @@ module OpenHRP
       double toe_angle;
       /// Maximum heel angle [deg] for heel-contact motion
       double heel_angle;
+      /// Threshould [m] (>=0) whether toe is used or not. This is used only if use_toe_heel_auto_set == true.
+      double toe_check_thre;
+      /// Threshould [m] (>=0) whether heel is used or not. This is used only if use_toe_heel_auto_set == true.
+      double heel_check_thre;
       /// Sequence of phase ratio of toe-off and heel-contact. Sum of toe_heel_phase_ratio should be 1.0.
       sequence<double> toe_heel_phase_ratio;
       /// Use toe joint or not in toe-off heel-contact motion.
       boolean use_toe_joint;
       /// Use toe heel zmp transition. If true, zmp moves among default position, toe position (described by toe_zmp_offset_x), and heel position (described by heel_zmp_offset_x).
       boolean use_toe_heel_transition;
+      /// Use toe heel auto setting. If true, gait generator autonomously determine whether toe and heel are used.
+      boolean use_toe_heel_auto_set;
       /// ZMP weight of RLEG, LLEG, RARM and LARM
       sequence<double, 4> zmp_weight_map;
       /// Foot position offset[m] (rleg and lleg)
@@ -221,6 +248,22 @@ module OpenHRP
       long optional_go_pos_finalize_footstep_num;
       /// Offset for overwritable footstep index. Offset from current footstep index. Used in emergency_stop and velocity_mode.
       long overwritable_footstep_index_offset;
+      /// Stride limitation when overwriting footsteps (forward, outside, theta, backward, inside) [m]
+      DblArray5 overwritable_stride_limitation;
+      /// Use stride limitation or not
+      boolean use_stride_limitation;
+      /// Stride limitation type
+      StrideLimitationType stride_limitation_type;
+      /// Leg margin between foot end effector position and foot edge (front, rear, outside, inside) [m]
+      DblArray4 leg_margin;
+      /// Feedback gain when modifying footsteps based on Capture Point
+      double footstep_modification_gain;
+      /// Whether modify footsteps based on Capture Point
+      boolean modify_footsteps;
+      /// CP check margin when modifying footsteps (x, y) [m]
+      DblArray2 cp_check_margin;
+      /// Margin time ratio for footstep modification before landing [s]
+      double margin_time_ratio;
     };
 
     /**
@@ -276,6 +319,18 @@ module OpenHRP
       GaitType default_gait_type;
       /// Sequence for all end-effectors' ik limb parameters
       sequence<IKLimbParameters> ik_limb_parameters;
+      /// Whether change root link height for avoiding limb stretch
+      boolean use_limb_stretch_avoidance;
+      /// Limb stretch avoidance time constant [s]
+      double limb_stretch_avoidance_time_const;
+      /// Root link height change limitation for avoiding limb stretch [m/s] (lower, upper)
+      DblArray2 limb_stretch_avoidance_vlimit;
+      /// Sequence of limb length margin from max limb length [m]
+      sequence<double> limb_length_margin;
+      /// Name of additional force applied link for MODE_REF_FORCE_WITH_FOOT for MODE_REF_FORCE_RFU_EXT_MOMENT. Additional force is applied to the point without force sensors, such as torso.
+      string additional_force_applied_link_name;
+      /// Link local offset[m] of force applied point for MODE_REF_FORCE_WITH_FOOT. This is local value in the link frame specified by "additional_force_applied_link_name". Zero by default.
+      DblArray3 additional_force_applied_point_offset;
     };
 
     /**

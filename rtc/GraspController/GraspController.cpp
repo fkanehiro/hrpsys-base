@@ -63,7 +63,7 @@ GraspController::~GraspController()
 
 RTC::ReturnCode_t GraspController::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cout << "[" << m_profile.instance_name << "] : onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -115,7 +115,8 @@ RTC::ReturnCode_t GraspController::onInitialize()
   std::string grasp_name;
   GraspJoint grasp_joint;
   std::vector<GraspJoint> grasp_joints;
-  for(int i = 0, f = 0; i < grasp_joint_params.size(); i++ ){
+  std::cerr << "[" << m_profile.instance_name << "] Parse joint group setting..." << std::endl;
+  for(unsigned int i = 0, f = 0; i < grasp_joint_params.size(); i++ ){
     coil::vstring grasp_joint_group_names = coil::split(grasp_joint_params[i], ":");
     if ( grasp_joint_group_names.size() > 1 ) {
       if ( grasp_name != "" ) {
@@ -130,9 +131,13 @@ RTC::ReturnCode_t GraspController::onInitialize()
       grasp_name = grasp_joint_group_names[0];
       if ( !! m_robot->link(grasp_joint_group_names[1]) ) {
         grasp_joint.id = m_robot->link(std::string(grasp_joint_group_names[1].c_str()))->jointId;
+      } else {
+        std::cerr << "[" << m_profile.instance_name << "]   No such grasp joint name " << grasp_joint_group_names[1] << std::endl;
       }
       f = 0;
       i++;
+    } else {
+        std::cerr << "[" << m_profile.instance_name << "]   Invalid joint group setting (length " << grasp_joint_group_names.size() << " should be > 1" << std::endl;
     }
     if ( f == 0 ) {
       coil::stringTo(grasp_joint.dir,grasp_joint_params[i].c_str());
@@ -141,6 +146,8 @@ RTC::ReturnCode_t GraspController::onInitialize()
     } else {
       if ( !! m_robot->link(grasp_joint_params[i]) ) {
         grasp_joint.id = m_robot->link(grasp_joint_params[i])->jointId;
+      } else {
+        std::cerr << "[" << m_profile.instance_name << "]   No such grasp joint name " << grasp_joint_params[i] << std::endl;
       }
       f = 0 ;
     }
@@ -154,16 +161,15 @@ RTC::ReturnCode_t GraspController::onInitialize()
     m_grasp_param[grasp_name] = grasp_param;
   }
   //
-  if ( m_debugLevel ) {
-    std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();
-    while ( it != m_grasp_param.end() ) {
-      std::cerr << "[" << m_profile.instance_name << "] " << it->first << " : ";
-      for ( int i = 0 ; i < it->second.joints.size(); i++ ) {
+  std::cerr << "[" << m_profile.instance_name << "] Joint group setting results." << std::endl;
+  std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();
+  while ( it != m_grasp_param.end() ) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << it->first << " : ";
+      for ( unsigned int i = 0 ; i < it->second.joints.size(); i++ ) {
         std::cerr << "id = " << it->second.joints[i].id << ", dir = " << it->second.joints[i].dir << ", ";
       }
       std::cerr << std::endl;
       it++;
-    }
   }
 
 
@@ -193,13 +199,13 @@ RTC::ReturnCode_t GraspController::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t GraspController::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cout << "[" << m_profile.instance_name<< "] : onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t GraspController::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cout << "[" << m_profile.instance_name<< "] : onDeactivated(" << ec_id << ")" << std::endl;
   for (std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin(); it != m_grasp_param.end(); it++ ) {
     it->second.time = 2; // count down to 1
     it->second.target_error = 0;
@@ -230,9 +236,9 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
         grasp_param.time++;
       } else if ( grasp_param.time == 0 ) {// working
         //std::cerr << "grasp mode " << std::endl;
-        for ( int j= 0; j < grasp_param.joints.size(); j++ ) {
+        for ( unsigned int j= 0; j < grasp_param.joints.size(); j++ ) {
           int i = grasp_param.joints[j].id;
-          if ( 0 <= i && i < m_qRef.data.length() ) {
+          if ( 0 <= i && (unsigned int)i < m_qRef.data.length() ) {
             double error = (m_qCurrent.data[i] - m_qRef.data[i]) + grasp_param.target_error * grasp_param.joints[j].dir;
             double diff  = fabs(error);
             if ( error > 0 ) m_q.data[i] = m_qRef.data[i] + diff;
@@ -244,9 +250,9 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
         }
       } else if ( grasp_param.time > 1 ) { // stopping 
         grasp_param.time--;
-        for ( int j= 0; j < grasp_param.joints.size(); j++ ) {
+        for ( unsigned int j= 0; j < grasp_param.joints.size(); j++ ) {
           int i = grasp_param.joints[j].id;
-          if ( 0 <= i && i < m_qRef.data.length() ) {
+          if ( 0 <= i && (unsigned int)i < m_qRef.data.length() ) {
             m_qRef.data[i] = (m_qRef.data[i] - m_q.data[i] ) * grasp_param.time/1000 + m_q.data[i];
             double diff = m_qRef.data[i] - m_qCurrent.data[i];
             if ( diff > 0 ) diff = min(diff, 0.034907); // 2 [deg]
