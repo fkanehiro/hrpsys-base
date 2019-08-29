@@ -89,88 +89,27 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         RTC::TimedDoubleSeq m_optionalData;
         RTC::InPort<RTC::TimedDoubleSeq> m_optionalDataIn;
 
-
-
         std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedPose3D> > ITP3_Ptr;
         std::map<std::string, ITP3_Ptr> m_masterTgtPosesIn;
+
+        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
+        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
+        std::map<std::string, OTDS_Ptr> m_slaveEEWrenchesOut;
+
+        std::map<std::string, RTC::TimedDoubleSeq> m_localEEWrenches;
+        typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
+        std::map<std::string, ITDS_Ptr> m_localEEWrenchesIn;
 
         RTC::TimedDoubleSeq m_exData;
         RTC::InPort<RTC::TimedDoubleSeq> m_exDataIn;
         RTC::TimedStringSeq m_exDataIndex;
         RTC::InPort<RTC::TimedStringSeq> m_exDataIndexIn;
 
-        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
-        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
-        std::map<std::string, OTDS_Ptr> m_slaveEEWrenchesOut;
-
-
-//        RTC::TimedPose3D m_htcom;
-//        RTC::InPort<RTC::TimedPose3D> m_htcomIn;
-//        RTC::TimedPose3D m_htrf;
-//        RTC::InPort<RTC::TimedPose3D> m_htrfIn;
-//        RTC::TimedPose3D m_htlf;
-//        RTC::InPort<RTC::TimedPose3D> m_htlfIn;
-//        RTC::TimedPose3D m_htrh;
-//        RTC::InPort<RTC::TimedPose3D> m_htrhIn;
-//        RTC::TimedPose3D m_htlh;
-//        RTC::InPort<RTC::TimedPose3D> m_htlhIn;
-//        RTC::TimedPose3D m_hthead;
-//        RTC::InPort<RTC::TimedPose3D> m_htheadIn;
-//        RTC::TimedPoint3D m_htzmp;
-//        RTC::InPort<RTC::TimedPoint3D> m_htzmpIn;
-//        OpenHRP::TimedWrench m_htrfw;
-//        RTC::InPort<OpenHRP::TimedWrench> m_htrfwIn;
-//        OpenHRP::TimedWrench m_htlfw;
-//        RTC::InPort<OpenHRP::TimedWrench> m_htlfwIn;
-
-
-
-
         RTC::TimedPoint3D m_actCP;
         RTC::InPort<RTC::TimedPoint3D> m_actCPIn;
         RTC::TimedPoint3D m_actZMP;
         RTC::InPort<RTC::TimedPoint3D> m_actZMPIn;
-#ifdef USE_DEBUG_PORT
-    TimedPose3D m_htcom_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_htcom_dbgOut;
-    TimedPose3D m_htrf_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_htrf_dbgOut;
-    TimedPose3D m_htlf_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_htlf_dbgOut;
-    TimedPose3D m_htrh_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_htrh_dbgOut;
-    TimedPose3D m_htlh_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_htlh_dbgOut;
-    TimedPose3D m_hthead_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_hthead_dbgOut;
-    TimedPoint3D m_htzmp_dbg;
-    RTC::OutPort<RTC::TimedPoint3D> m_htzmp_dbgOut;
-    TimedDoubleSeq m_htrfw_dbg;
-    RTC::OutPort<RTC::TimedDoubleSeq> m_htrfw_dbgOut;
-    TimedDoubleSeq m_htlfw_dbg;
-    RTC::OutPort<RTC::TimedDoubleSeq> m_htlfw_dbgOut;
-    TimedPose3D m_rpcom_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rpcom_dbgOut;
-    TimedPose3D m_rprf_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rprf_dbgOut;
-    TimedPose3D m_rplf_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rplf_dbgOut;
-    TimedPose3D m_rprh_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rprh_dbgOut;
-    TimedPose3D m_rplh_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rplh_dbgOut;
-    TimedPose3D m_rphead_dbg;
-    RTC::OutPort<RTC::TimedPose3D> m_rphead_dbgOut;
-    TimedPoint3D m_rpzmp_dbg;
-    RTC::OutPort<RTC::TimedPoint3D> m_rpzmp_dbgOut;
-    TimedPoint3D m_rpdcp_dbg;
-    RTC::OutPort<RTC::TimedPoint3D> m_rpdcp_dbgOut;
-    TimedPoint3D m_rpacp_dbg;
-    RTC::OutPort<RTC::TimedPoint3D> m_rpacp_dbgOut;
-    TimedDoubleSeq m_invdyn_dbg;
-    RTC::OutPort<RTC::TimedDoubleSeq> m_invdyn_dbgOut;
-#endif
 
         RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
         RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
@@ -181,6 +120,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
 
         WholeBodyMasterSlaveService_impl m_service0;
 
+        std::map<std::string, int> to_enum;
 
         RTC::CorbaPort m_AutoBalancerServicePort;
         RTC::CorbaPort m_StabilizerServicePort;

@@ -19,45 +19,24 @@ static const char* WholeBodyMasterSlave_spec[] = {
 };
 
 WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
-        m_qRefIn("qRef", m_qRef),// from sh
-        m_zmpIn("zmpIn", m_zmp),
-        m_basePosIn("basePosIn", m_basePos),
-        m_baseRpyIn("baseRpyIn", m_baseRpy),
-        m_optionalDataIn("optionalData", m_optionalData),
-        m_qOut("q", m_qRef),// to abc
-        m_zmpOut("zmpOut", m_zmp),
-        m_basePosOut("basePosOut", m_basePos),
-        m_baseRpyOut("baseRpyOut", m_baseRpy),
-        m_optionalDataOut("optionalDataOut", m_optionalData),
-        m_actCPIn("actCapturePoint", m_actCP),
-        m_actZMPIn("zmp", m_actZMP),
-        m_exDataIn("exData", m_exData),
-        m_exDataIndexIn("exDataIndex", m_exDataIndex),
-#ifdef USE_DEBUG_PORT
-        m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),// to ros bridge
-        m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
-        m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
-        m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
-        m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
-        m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
-        m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
-        m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
-        m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
-        m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
-        m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
-        m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
-        m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
-        m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
-        m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
-        m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
-        m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
-        m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
-        m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
-#endif
-        m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
-        m_AutoBalancerServicePort("AutoBalancerService"),
-        m_StabilizerServicePort("StabilizerService"),
-        m_debugLevel(0)
+    m_qRefIn("qRef", m_qRef),// from sh
+    m_zmpIn("zmpIn", m_zmp),
+    m_basePosIn("basePosIn", m_basePos),
+    m_baseRpyIn("baseRpyIn", m_baseRpy),
+    m_optionalDataIn("optionalData", m_optionalData),
+    m_qOut("q", m_qRef),// to abc
+    m_zmpOut("zmpOut", m_zmp),
+    m_basePosOut("basePosOut", m_basePos),
+    m_baseRpyOut("baseRpyOut", m_baseRpy),
+    m_optionalDataOut("optionalDataOut", m_optionalData),
+    m_actCPIn("actCapturePoint", m_actCP),
+    m_actZMPIn("zmp", m_actZMP),
+    m_exDataIn("exData", m_exData),
+    m_exDataIndexIn("exDataIndex", m_exDataIndex),
+    m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
+    m_AutoBalancerServicePort("AutoBalancerService"),
+    m_StabilizerServicePort("StabilizerService"),
+    m_debugLevel(0)
 {
     m_service0.wholebodymasterslave(this);
 }
@@ -81,31 +60,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addInPort("zmp", m_actZMPIn);
     addInPort("exData", m_exDataIn);
     addInPort("exDataIndex", m_exDataIndexIn);
-#ifdef USE_DEBUG_PORT
-    addOutPort("htcom_dbgOut", m_htcom_dbgOut);// to ros bridge
-    addOutPort("htrf_dbgOut", m_htrf_dbgOut);
-    addOutPort("htlf_dbgOut", m_htlf_dbgOut);
-    addOutPort("htrh_dbgOut", m_htrh_dbgOut);
-    addOutPort("htlh_dbgOut", m_htlh_dbgOut);
-    addOutPort("hthead_dbgOut", m_hthead_dbgOut);
-    addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
-    addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
-    addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
-    addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
-    addOutPort("rprf_dbgOut", m_rprf_dbgOut);
-    addOutPort("rplf_dbgOut", m_rplf_dbgOut);
-    addOutPort("rprh_dbgOut", m_rprh_dbgOut);
-    addOutPort("rplh_dbgOut", m_rplh_dbgOut);
-    addOutPort("rphead_dbgOut", m_rphead_dbgOut);
-    addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
-    addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
-    addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
-    addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
-#endif
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
     addPort(m_WholeBodyMasterSlaveServicePort);
-
-
 
     m_AutoBalancerServicePort.registerConsumer("service0","AutoBalancerService", m_AutoBalancerServiceConsumer);
     m_StabilizerServicePort.registerConsumer("service0","StabilizerService", m_StabilizerServiceConsumer);
@@ -192,18 +148,31 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     lt.fill(0);
     rt.fill(0);
 
+    to_enum["lleg"] = lf;
+    to_enum["rleg"] = rf;
+    to_enum["larm"] = lh;
+    to_enum["rarm"] = rh;
+    to_enum["com"] =  com;
+    to_enum["head"] = head;
+
     for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "slave_"+ee_names[i]+"_wrench";
-        m_slaveEEWrenchesOut[tgt_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[tgt_names[i]]));
-        registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[tgt_names[i]]);
+        std::string n = "slave_"+ee_names[i]+"_wrench_out";
+        m_slaveEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
+        registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[ee_names[i]]);
         RTCOUT << " registerOutPort " << n << std::endl;
+    }
+    for ( int i=0; i<ee_names.size(); i++) {
+        std::string n = "local_"+ee_names[i]+"_wrench_in";
+        m_localEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee_names[i]]));
+        registerInPort(n.c_str(), *m_localEEWrenchesIn[ee_names[i]]);
+        RTCOUT << " registerInPort " << n << std::endl;
     }
 
     tgt_names = ee_names;
     tgt_names.push_back("com");
     tgt_names.push_back("head");
     for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "master_"+tgt_names[i]+"_pose";
+        std::string n = "master_"+tgt_names[i]+"_pose_in";
         m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
         registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt_names[i]]);
         RTCOUT << " registerInPort " << n << std::endl;
@@ -254,8 +223,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
-//    if (m_htrfwIn.isNew())  { m_htrfwIn.read(); wbms->hp_wld_raw.tgt[rf].w      = hrp::to_dvector6(m_htrfw.data); }
-//    if (m_htlfwIn.isNew())  { m_htlfwIn.read(); wbms->hp_wld_raw.tgt[lf].w      = hrp::to_dvector6(m_htlfw.data); }
+    for(int i=0; i<ee_names.size(); i++){ if (m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
 
     // button func
     hrp::dvector ex_data;
@@ -293,13 +261,14 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 //        is_blocking_continuous_hits = false;
 //    }
 
+
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
-        if (m_masterTgtPosesIn["lleg"]->isNew()){ m_masterTgtPosesIn["lleg"]->read(); wbms->hp_wld_raw.tgt[lf].abs   = hrp::to_Pose3(m_masterTgtPoses["lleg"].data); }
-        if (m_masterTgtPosesIn["rleg"]->isNew()){ m_masterTgtPosesIn["rleg"]->read(); wbms->hp_wld_raw.tgt[rf].abs   = hrp::to_Pose3(m_masterTgtPoses["rleg"].data); }
-        if (m_masterTgtPosesIn["larm"]->isNew()){ m_masterTgtPosesIn["larm"]->read(); wbms->hp_wld_raw.tgt[lh].abs   = hrp::to_Pose3(m_masterTgtPoses["larm"].data); }
-        if (m_masterTgtPosesIn["rarm"]->isNew()){ m_masterTgtPosesIn["rarm"]->read(); wbms->hp_wld_raw.tgt[rh].abs   = hrp::to_Pose3(m_masterTgtPoses["rarm"].data);}
-        if (m_masterTgtPosesIn["com" ]->isNew()){ m_masterTgtPosesIn["com" ]->read(); wbms->hp_wld_raw.tgt[com].abs  = hrp::to_Pose3(m_masterTgtPoses["com" ].data);}
-        if (m_masterTgtPosesIn["head"]->isNew()){ m_masterTgtPosesIn["head"]->read(); wbms->hp_wld_raw.tgt[head].abs = hrp::to_Pose3(m_masterTgtPoses["head"].data);}
+        for(int i=0; i<tgt_names.size(); i++){
+            if (m_masterTgtPosesIn[tgt_names[i]]->isNew()){
+                m_masterTgtPosesIn[tgt_names[i]]->read();
+                wbms->hp_wld_raw.tgt[to_enum[tgt_names[i]]].abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
+            }
+        }
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
         if (m_actZMPIn.isNew())  { m_actZMPIn.read(); rel_act_zmp = hrp::to_Vector3(m_actZMP.data);}
     }
@@ -374,75 +343,18 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     }
 
     // write
+    for(int i=0; i<ee_names.size(); i++){
+        const hrp::Vector3 f_wld = ee_ikc_map[ee_names[i]].getCurrentTargetRot(m_robot_vsafe) * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
+        const hrp::Vector3 t_wld = ee_ikc_map[ee_names[i]].getCurrentTargetRot(m_robot_vsafe) * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
+        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_wld,t_wld).finished());
+        m_slaveEEWrenches[ee_names[i]].tm = m_qRef.tm;
+        m_slaveEEWrenchesOut[ee_names[i]]->write();
+    }
     m_qOut.write();
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_zmpOut.write();
     m_optionalDataOut.write();
-
-#ifdef USE_DEBUG_PORT
-    // dbg plot
-    m_htcom_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[com].abs, m_htcom_dbg.data);
-    m_htcom_dbgOut.write();
-    m_htrf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[rf].abs, m_htrf_dbg.data);
-    m_htrf_dbgOut.write();
-    m_htlf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[lf].abs, m_htlf_dbg.data);
-    m_htlf_dbgOut.write();m_AutoBalancerService
-    m_htrh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[rh].abs, m_htrh_dbg.data);
-    m_htrh_dbgOut.write();
-    m_htlh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[lh].abs, m_htlh_dbg.data);
-    m_htlh_dbgOut.write();mode
-    m_hthead_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[head].abs, m_hthead_dbg.data);
-    m_hthead_dbgOut.write();
-    m_htzmp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(wbms->rp_ref_out.tgt[zmp].abs.p,m_rpzmp_dbg.data);
-    m_htzmp_dbgOut.write();
-    m_htrfw_dbg.tm = m_qRef.tm;
-    m_htrfw_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(wbms->hp_plot.tgt[rf].w, m_htrfw_dbg.data);
-    m_htrfw_dbgOut.write();
-    m_htlfw_dbg.tm = m_qRef.tm;
-    m_htlfw_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(wbms->hp_plot.tgt[lf].w, m_htlfw_dbg.data);
-    m_htlfw_dbgOut.write();
-    m_rpcom_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[com].abs, m_rpcom_dbg.data);
-    m_rpcom_dbgOut.write();
-    m_rprf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[rf].abs, m_rprf_dbg.data);
-    m_rprf_dbgOut.write();
-    m_rplf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[lf].abs, m_rplf_dbg.data);
-    m_rplf_dbgOut.write();
-    m_rprh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[rh].abs, m_rprh_dbg.data);
-    m_rprh_dbgOut.write();
-    m_rplh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[lh].abs, m_rplh_dbg.data);
-    m_rplh_dbgOut.write();
-    m_rphead_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[head].abs, m_rphead_dbg.data);
-    m_rphead_dbgOut.write();
-    m_rpzmp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(wbms->rp_ref_out.tgt[zmp].abs.p, m_rpzmp_dbg.data);
-    m_rpzmp_dbgOut.write();
-    m_rpdcp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(wbms->cp_dec,m_rpdcp_dbg.data);
-    m_rpdcp_dbgOut.write();
-    m_rpacp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(wbms->cp_acc,m_rpacp_dbg.data);
-    m_rpacp_dbgOut.write();
-    m_invdyn_dbg.tm = m_qRef.tm;
-    m_invdyn_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(wbms->invdyn_ft,m_invdyn_dbg.data);
-    m_invdyn_dbgOut.write();
-#endif
     addTimeReport("OutPort");
     if(DEBUGP) RTCOUT << time_report_str << std::endl;
     loop ++;

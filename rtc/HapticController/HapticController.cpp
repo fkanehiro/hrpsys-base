@@ -83,7 +83,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
 //    }
 
     for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "slave_"+ee_names[i]+"_wrench";
+        std::string n = "slave_"+ee_names[i]+"_wrench_in";
         m_feedbackWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_feedbackWrenches[ee_names[i]]));
         registerInPort(n.c_str(), *m_feedbackWrenchesIn[ee_names[i]]);
         m_feedbackWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
@@ -94,7 +94,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     tgt_names.push_back("com");
     tgt_names.push_back("head");
     for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "master_"+tgt_names[i]+"_pose";
+        std::string n = "master_"+tgt_names[i]+"_pose_out";
         m_eePosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
         registerOutPort(n.c_str(), *m_eePosesOut[tgt_names[i]]);
         RTCOUT << " registerOutPort " << n << std::endl;
@@ -437,7 +437,8 @@ void HapticController::calcTorque (){
         }else{
             m_masterTgtPoses[tgt_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
         }
-        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
+//        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
+        m_masterTgtPoses[tgt_names[i]].tm = m_qAct.tm;
         m_eePosesOut[tgt_names[i]]->write();
     }
 
