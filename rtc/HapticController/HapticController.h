@@ -91,6 +91,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
         std::map<std::string, OTP3_Ptr> m_eePosesOut;
+        RTC::TimedDoubleSeq m_debugData;
+        RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
 
 //        RTC::TimedDoubleSeq m_dq_filtered_dbg;
 //        RTC::OutPort<RTC::TimedDoubleSeq> m_dq_filtered_dbgOut;
@@ -115,12 +117,26 @@ class HapticController : public RTC::DataFlowComponentBase{
                 double gravity_compensation_ratio;
                 double force_feedback_ratio;
                 double dqAct_filter_cutoff_hz;
+                double ee_vel_filter_cutoff_hz;
                 double wrench_filter_cutoff_hz;
+                double q_friction_coeff;
+                hrp::Vector2 ee_friction_coeff;
+                double wrench_hpf_cutoff_hz;
+                double wrench_lpf_cutoff_hz;
+                double wrench_hpf_gain;
+                double wrench_lpf_gain;
             HCParams(){
-                gravity_compensation_ratio = 0.9;
-                force_feedback_ratio = 0.5;
-                dqAct_filter_cutoff_hz = 10;
-                wrench_filter_cutoff_hz = 10;
+                gravity_compensation_ratio  = 0.9;
+                force_feedback_ratio        = 0.2;
+                dqAct_filter_cutoff_hz      = 100;// 10以下で確実に位相遅れによる振動
+                ee_vel_filter_cutoff_hz     = 100;// 10以下で確実に位相遅れによる振動
+                wrench_filter_cutoff_hz     = 100;
+                q_friction_coeff            = 1.0;
+                ee_friction_coeff           << 1, 0.1;
+                wrench_hpf_cutoff_hz        = 20;
+                wrench_lpf_cutoff_hz        = 0.3;
+                wrench_hpf_gain             = 1;
+                wrench_lpf_gain             = 0.2;
             }
         } hcp;
 
@@ -132,8 +148,15 @@ class HapticController : public RTC::DataFlowComponentBase{
         hrp::InvDynStateBuffer idsb;
         BiquadIIRFilterVec2 dqAct_filter;
         hrp::dvector dqAct_filtered;
+        std::map<std::string, BiquadIIRFilterVec2> ee_vel_filter;
+        std::map<std::string, hrp::dvector6> ee_vel_filtered;
         std::map<std::string, BiquadIIRFilterVec2> wrench_filter;
         std::map<std::string, hrp::dvector6> wrench_filtered;
+
+        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf_for_hpf;
+        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf;
+        std::map<std::string, hrp::dvector6> wrench_shaped;
+        std::map<std::string, hrp::dvector6> wrench_used;
 
         std::map<std::string, IKConstraint> ee_ikc_map;
         ControlMode mode;

@@ -447,7 +447,7 @@ class HrpsysConfigurator(object):
                 
         # connection for hc
         if self.hc:
-            connectPorts(self.abc.port("q"),     self.hc.port("qRef"))
+            # connectPorts(self.abc.port("q"),     self.hc.port("qRef"))
             connectPorts(self.rh.port("q"),  self.hc.port("qAct"))
             connectPorts(self.rh.port("dq"), self.hc.port("dqAct"))
             connectPorts(self.hc.port("tau"), self.rh.port("tauRef"))
@@ -927,6 +927,9 @@ class HrpsysConfigurator(object):
             self.connectLoggerPort(self.sh, 'zmpOut')
         if self.ic != None:
             self.connectLoggerPort(self.ic, 'q')
+        if self.hc != None:
+            self.connectLoggerPort(self.hc, 'tau')
+            self.connectLoggerPort(self.hc, 'debugData')
         if self.wbms != None:
             self.connectLoggerPort(self.wbms, 'q')
             self.connectLoggerPort(self.wbms, 'basePosOut')

@@ -8,8 +8,10 @@ module OpenHRP
   
   interface HapticControllerService
   {
-    typedef sequence<double, 3> DblSequence3;
+    //typedef sequence<double, 2> DblSequence2;
+    //typedef sequence<double, 3> DblSequence3;
     //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
     typedef sequence<string> StrSequence;
@@ -20,6 +22,13 @@ module OpenHRP
         double force_feedback_ratio;
         double dqAct_filter_cutoff_hz;
         double wrench_filter_cutoff_hz;
+        double ee_vel_filter_cutoff_hz;
+        double q_friction_coeff;
+        DblArray2 ee_friction_coeff;
+        double wrench_hpf_cutoff_hz;
+        double wrench_lpf_cutoff_hz;
+        double wrench_hpf_gain;
+        double wrench_lpf_gain;
     };
     boolean startHapticController();
     boolean stopHapticController();
