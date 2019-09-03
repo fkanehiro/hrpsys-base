@@ -12,6 +12,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/Sensor.h>
 #include <time.h>
 
 #include "WholeBodyMasterSlaveService_impl.h"
@@ -80,6 +81,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
     protected:
         RTC::TimedDoubleSeq m_qRef;
         RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
+        RTC::TimedDoubleSeq m_qAct;
+        RTC::InPort<RTC::TimedDoubleSeq> m_qActIn;
         RTC::TimedPoint3D m_basePos;
         RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
         RTC::TimedOrientation3D m_baseRpy;
@@ -134,6 +137,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         unsigned int m_debugLevel;
         int optionalDataLength;
         bool is_legged_robot;
+        hrp::BodyPtr m_robot_act; // actual
         hrp::BodyPtr m_robot_vsafe; // joint trajectory safe
         typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
         fikPtr fik;
