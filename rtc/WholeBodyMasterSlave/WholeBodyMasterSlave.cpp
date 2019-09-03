@@ -20,6 +20,7 @@ static const char* WholeBodyMasterSlave_spec[] = {
 
 WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
     m_qRefIn("qRef", m_qRef),// from sh
+    m_qActIn("qAct", m_qAct),
     m_zmpIn("zmpIn", m_zmp),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
@@ -47,6 +48,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     RTCOUT << "onInitialize()" << std::endl;
     bindParameter("debugLevel", m_debugLevel, "0");
     addInPort("qRef", m_qRefIn);// from sh
+    addInPort("qAct", m_qActIn);
     addInPort("zmpIn", m_zmpIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
@@ -68,8 +70,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addPort(m_AutoBalancerServicePort);
     addPort(m_StabilizerServicePort);
 
-
-
     RTC::Properties& prop =  getProperties();
     coil::stringTo(m_dt, prop["dt"].c_str());
     RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -84,6 +84,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         RTCOUT << "failed to load model[" << prop["model"] << "]" << std::endl;
         return RTC::RTC_ERROR;
     }
+    m_robot_act = hrp::BodyPtr(new hrp::Body(*robot_for_ik)); //copy
     m_robot_vsafe = hrp::BodyPtr(new hrp::Body(*robot_for_ik)); //copy
     RTCOUT << "setup robot model finished" << std::endl;
 
@@ -219,6 +220,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     time_report_str.clear();
     clock_gettime(CLOCK_REALTIME, &startT);
     if (m_qRefIn.isNew()) { m_qRefIn.read(); }
+    if (m_qActIn.isNew()) { m_qActIn.read(); }
     if (m_basePosIn.isNew()) { m_basePosIn.read(); }
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
@@ -342,14 +344,25 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
     }
 
-    // write
-    for(int i=0; i<ee_names.size(); i++){
-        const hrp::Vector3 f_wld = ee_ikc_map[ee_names[i]].getCurrentTargetRot(m_robot_vsafe) * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
-        const hrp::Vector3 t_wld = ee_ikc_map[ee_names[i]].getCurrentTargetRot(m_robot_vsafe) * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
+
+    std::map<std::string, std::string> to_sname;
+    to_sname["lleg"] = "lfsensor";
+    to_sname["rleg"] = "rfsensor";
+    to_sname["larm"] = "lhsensor";
+    to_sname["rarm"] = "rhsensor";
+    hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
+    m_robot_act->calcForwardKinematics();
+    for(int i=0;i<ee_names.size();i++){
+        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee_names[i]]);
+        hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
+        hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
+        const hrp::Vector3 f_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
+        const hrp::Vector3 t_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
         m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_wld,t_wld).finished());
         m_slaveEEWrenches[ee_names[i]].tm = m_qRef.tm;
         m_slaveEEWrenchesOut[ee_names[i]]->write();
     }
+    // write
     m_qOut.write();
     m_basePosOut.write();
     m_baseRpyOut.write();
