@@ -26,6 +26,8 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
 #define dbgv(var) std::cout<<#var"= "<<(var.transpose())<<std::endl
 #define RTCOUT std::cerr << "[" << m_profile.instance_name << "] "
+#define RTC_INFO_STREAM(var) std::cout << "[" << m_profile.instance_name << "] "<< var << std::endl;
+#define RTC_WARN_STREAM(var) std::cerr << "\x1b[31m[" << m_profile.instance_name << "] " << var << "\x1b[39m" << std::endl;
 
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))

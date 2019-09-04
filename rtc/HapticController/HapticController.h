@@ -79,9 +79,9 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::InPort<RTC::TimedDoubleSeq> m_qActIn;
         RTC::TimedDoubleSeq m_dqAct;
         RTC::InPort<RTC::TimedDoubleSeq> m_dqActIn;
-        std::map<std::string, RTC::TimedDoubleSeq> m_feedbackWrenches;
+        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
-        std::map<std::string, ITDS_Ptr> m_feedbackWrenchesIn;
+        std::map<std::string, ITDS_Ptr> m_slaveEEWrenchesIn;
 
         RTC::TimedDoubleSeq m_tau;
         RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
@@ -90,7 +90,7 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
         std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
-        std::map<std::string, OTP3_Ptr> m_eePosesOut;
+        std::map<std::string, OTP3_Ptr> m_masterTgtPosesOut;
         RTC::TimedDoubleSeq m_debugData;
         RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
 
@@ -108,8 +108,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         unsigned int m_debugLevel;
         hrp::BodyPtr m_robot;
 
-        double output_ratio, q_ref_output_ratio;
-        interpolator *t_ip, *q_ref_ip;
+        double output_ratio, q_ref_output_ratio, floor_h_from_base;
+        interpolator *t_ip, *q_ref_ip, *floor_h_ip;
 
         hrp::InvDynStateBuffer idsb;
         BiquadIIRFilterVec2 dqAct_filter;
@@ -159,8 +159,8 @@ class HapticController : public RTC::DataFlowComponentBase{
                 wrench_hpf_gain             = 1;
                 wrench_lpf_gain             = 0.2;
                 ee_pos_rot_friction_coeff   << 0, 0; // 1, 0.1
-                floor_pd_gain               << 1000, 10;
-                foot_horizontal_pd_gain     << 1000, 10;
+                floor_pd_gain               << 1000, 1;
+                foot_horizontal_pd_gain     << 1000, 1;
                 q_ref_pd_gain               << 0, 0;
             }
         } hcp;

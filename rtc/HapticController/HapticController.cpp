@@ -65,15 +65,20 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     setupEEIKConstraintFromConf(ee_ikc_map, m_robot, prop);
     RTCOUT << "setupEEIKConstraintFromConf finished" << std::endl;
 
-    const double tmp = 0;
+    const double tmp_init = 0;
     t_ip = new interpolator(1, m_dt, interpolator::LINEAR, 1);
     t_ip->clear();
-    t_ip->set(&tmp);
+    t_ip->set(&tmp_init);
     t_ip->get(&output_ratio, false);
     q_ref_ip = new interpolator(1, m_dt, interpolator::LINEAR, 1);
     q_ref_ip->clear();
-    q_ref_ip->set(&tmp);
+    q_ref_ip->set(&tmp_init);
     q_ref_ip->get(&q_ref_output_ratio, false);
+    const double floor_h_from_base_init = -1.5;
+    floor_h_ip = new interpolator(1, m_dt, interpolator::LINEAR, 1);
+    floor_h_ip->clear();
+    floor_h_ip->set(&floor_h_from_base_init);
+    floor_h_ip->get(&floor_h_from_base, false);
     RTCOUT << "setup interpolator finished" << std::endl;
 
     dqAct_filter = BiquadIIRFilterVec2(m_robot->numJoints());
@@ -93,9 +98,9 @@ RTC::ReturnCode_t HapticController::onInitialize(){
 
     for ( int i=0; i<ee_names.size(); i++) {
         std::string n = "slave_"+ee_names[i]+"_wrench_in";
-        m_feedbackWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_feedbackWrenches[ee_names[i]]));
-        registerInPort(n.c_str(), *m_feedbackWrenchesIn[ee_names[i]]);
-        m_feedbackWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
+        m_slaveEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
+        registerInPort(n.c_str(), *m_slaveEEWrenchesIn[ee_names[i]]);
+        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
         RTCOUT << " registerInPort " << n << std::endl;
     }
 
@@ -104,8 +109,8 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     tgt_names.push_back("head");
     for ( int i=0; i<tgt_names.size(); i++) {
         std::string n = "master_"+tgt_names[i]+"_pose_out";
-        m_eePosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
-        registerOutPort(n.c_str(), *m_eePosesOut[tgt_names[i]]);
+        m_masterTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
+        registerOutPort(n.c_str(), *m_masterTgtPosesOut[tgt_names[i]]);
         RTCOUT << " registerOutPort " << n << std::endl;
     }
 
@@ -117,21 +122,21 @@ RTC::ReturnCode_t HapticController::onInitialize(){
 }
 
 RTC::ReturnCode_t HapticController::setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop){
-    coil::vstring ee_conf_all = coil::split(_prop["end_effectors"], ",");
+    std::vector<std::string> ee_conf_all = coil::split(_prop["end_effectors"], ",");
     size_t prop_num = 10; // limbname + linkname + basename + pos(3) + angleaxis(4)
     if (ee_conf_all.size() > 0) {
         size_t ee_num = ee_conf_all.size()/prop_num;
         for (size_t i = 0; i < ee_num; i++) {
             std::string ee_name, target_link_name, base_name; // e.g. rleg, RLEG_JOINT5, WAIST
-            coil::stringTo(ee_name,             ee_conf_all[i*prop_num].c_str());
-            coil::stringTo(target_link_name,    ee_conf_all[i*prop_num+1].c_str());
-            coil::stringTo(base_name,           ee_conf_all[i*prop_num+2].c_str());
+            ee_name             = ee_conf_all[i*prop_num];
+            target_link_name    = ee_conf_all[i*prop_num+1];
+            base_name           = ee_conf_all[i*prop_num+2];
             ee_names.push_back(ee_name);
             _ee_ikc_map[ee_name].target_link_name = target_link_name;
-            for (size_t j = 0; j < XYZ; j++){ coil::stringTo(_ee_ikc_map[ee_name].localPos(j), ee_conf_all[i*prop_num+3+j].c_str()); }
-            double tmp_aa[4];
-            for (int j = 0; j < 4; j++ ){ coil::stringTo(tmp_aa[j], ee_conf_all[i*prop_num+6+j].c_str()); }
-            _ee_ikc_map[ee_name].localR = Eigen::AngleAxis<double>(tmp_aa[3], hrp::Vector3(tmp_aa[0], tmp_aa[1], tmp_aa[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+            for (size_t j = 0; j < XYZ; j++){ _ee_ikc_map[ee_name].localPos(j) = std::atof( ee_conf_all[i*prop_num+3+j].c_str() ); }
+            hrp::Vector4 tmp_aa;
+            for (int j = 0; j < 4; j++ ){ tmp_aa(j) = std::atof( ee_conf_all[i*prop_num+6+j].c_str() ); }
+            _ee_ikc_map[ee_name].localR = Eigen::AngleAxis<double>(tmp_aa(3), tmp_aa.head(3)).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             jpath_ee[ee_name] = hrp::JointPath(m_robot->rootLink(), m_robot->link(target_link_name));
             if(_robot->link(target_link_name)){
               RTCOUT << "End Effector [" << ee_name << "]" << std::endl;
@@ -153,18 +158,16 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     if (m_qActIn.isNew())   { m_qActIn.read(); }
     if (m_dqActIn.isNew())  { m_dqActIn.read(); }
     for (int i=0; i<ee_names.size(); i++) {
-        if ( m_feedbackWrenchesIn[ee_names[i]]->isNew() ) { m_feedbackWrenchesIn[ee_names[i]]->read(); }
+        if ( m_slaveEEWrenchesIn[ee_names[i]]->isNew() ) { m_slaveEEWrenchesIn[ee_names[i]]->read(); }
     }
-
-    processTransition();
     mode.update();
+    processTransition();
 
     calcCurrentState();
     calcTorque();
 
     if (mode.isRunning()) {
         if(mode.isInitialize()){
-//            preProcessForHapticController();
             idsb.setInitState(m_robot, m_dt);//逆動力学初期化
         }
 
@@ -236,7 +239,7 @@ void HapticController::calcCurrentState(){
     }
     if(ee_pose_old.size()==0){ ee_pose_old = ee_pose; } //init
     for(int i=0; i<ee_names.size();i++){
-        ee_vel[ee_names[i]].head(3) = (ee_pose[ee_names[i]].p - ee_pose_old[ee_names[i]].p) / m_dt;
+        ee_vel[ee_names[i]].head(3) = (ee_pose[ee_names[i]].p - ee_pose_old[ee_names[i]].p) / m_dt;// rawは廃止したほうがいい？
         ee_vel[ee_names[i]].tail(3) = ee_pose_old[ee_names[i]].R * hrp::omegaFromRot(ee_pose_old[ee_names[i]].R.transpose() * ee_pose[ee_names[i]].R) / m_dt; // world angular velocity
         ee_vel_filtered[ee_names[i]] = ee_vel_filter[ee_names[i]].passFilter(ee_vel[ee_names[i]]);
     }
@@ -306,6 +309,7 @@ void HapticController::calcTorque(){
 //    }
 
 
+    std::map<std::string, bool> is_contact_to_floor;
     {
         std::vector<std::string> tgt;
         tgt.push_back("lleg");
@@ -329,7 +333,7 @@ void HapticController::calcTorque(){
         for (int i=0; i<tgt.size();i++){
             hrp::Vector3 diff_rot;
             rats::difference_rotation(diff_rot, ee_pose[tgt[i]].R, hrp::Matrix33::Identity());
-            const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - ee_vel[tgt[i]].tail(3);
+            const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - ee_vel_filtered[tgt[i]].tail(3);
             hrp::dvector6 wrench = (hrp::dvector6()<< 0,0,0, diff_rot * hcp.foot_horizontal_pd_gain(0) + diff_rot_vel * hcp.foot_horizontal_pd_gain(1)).finished();
             LIMIT_NORM(wrench.tail(3), 50);
             hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
@@ -342,17 +346,21 @@ void HapticController::calcTorque(){
             if(loop%1000==0){
                 dbg(current_z);
             }
-            if(current_z < hcp.floor_height_from_base){
-                hrp::dvector6 wrench = (hrp::dvector6()<< 0,0, (hcp.floor_height_from_base-current_z)*hcp.floor_pd_gain(0) + (0-ee_vel[tgt[i]](fz))*hcp.floor_pd_gain(1), 0,0,0).finished();
+            if(current_z < floor_h_from_base){
+                hrp::dvector6 wrench = (hrp::dvector6()<< 0,0, (floor_h_from_base - current_z)*hcp.floor_pd_gain(0) + (0-ee_vel_filtered[tgt[i]](fz))*hcp.floor_pd_gain(1), 0,0,0).finished();
                 LIMIT_NORM(wrench, 1000);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out2; }
+
+                is_contact_to_floor[tgt[i]] = true;
+            }else{
+                is_contact_to_floor[tgt[i]] = false;
             }
         }
 
         ///// virtual back wall
         for (int i=0; i<tgt.size();i++){
-            const double wall_x_rel_base = 0.0;
+            const double wall_x_rel_base = -0.1;
             const double current_x = ee_pose[tgt[i]].p(X) - m_robot->rootLink()->p(X);
             if(current_x < wall_x_rel_base){
                 hrp::dvector6 wrench = (hrp::dvector6()<< (wall_x_rel_base - current_x) * 1000,0,0, 0,0,0).finished();
@@ -372,12 +380,56 @@ void HapticController::calcTorque(){
                 for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out2; }
             }
         }
+
+        ///// virtual floor, leg constraint
+        static hrp::Vector3 locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+        if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"]){
+            for (int i=0; i<tgt.size();i++){
+                hrp::Vector3 cur_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+                hrp::Vector2 rleg_wrench = (locked_rel_pos - cur_rel_pos).head(XY) * 1000;
+                hrp::dvector6 wrench = (hrp::dvector6()<< (tgt[i]=="rleg" ? 1:-1) * rleg_wrench, 0,0,0,0).finished();
+                LIMIT_NORM(wrench, 1000);
+                hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
+                for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+            }
+        }else{
+            locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+        }
+
+
+        static std::map<std::string, hrp::Vector2> leg_pos_from_floor_origin;
+        if(loop==0){
+            leg_pos_from_floor_origin["lleg"] << 0,  0.15;
+            leg_pos_from_floor_origin["rleg"] << 0, -0.15;
+        }
+        if(is_contact_to_floor["lleg"]){
+            // not update
+        }else{
+            leg_pos_from_floor_origin["lleg"] = (ee_pose["lleg"].p - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+        }
+        if(is_contact_to_floor["rleg"]){
+            // not update
+        }else{
+            leg_pos_from_floor_origin["rleg"] = (ee_pose["rleg"].p - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
+        }
+
+        hrp::Vector2 floor_origin_from_baselink_2d = (ee_pose["rleg"].p - m_robot->rootLink()->p).head(XY) - leg_pos_from_floor_origin["rleg"];
+        hrp::Vector3 floor_origin_from_baselink = (hrp::Vector3() << floor_origin_from_baselink_2d, floor_h_from_base).finished();
+
+        m_teleopOdom.data = (RTC::Pose3D){floor_origin_from_baselink(X),floor_origin_from_baselink(Y),floor_origin_from_baselink(Z), 0,0,0};
+        m_teleopOdom.tm = m_qRef.tm;
+        m_teleopOdomOut.write();
+
+        m_robot->rootLink()->p = -floor_origin_from_baselink;//ヤバい
+
+
     }
+
 
 
     // calc real robot feedback force
     for (int i=0; i<ee_names.size(); i++){
-        const hrp::dvector6 wrench_raw = hrp::to_dvector(m_feedbackWrenches[ee_names[i]].data);
+        const hrp::dvector6 wrench_raw = hrp::to_dvector(m_slaveEEWrenches[ee_names[i]].data);
         const hrp::dvector6 w_hpf = wrench_raw - wrench_lpf_for_hpf[ee_names[i]].passFilter( wrench_raw );
         const hrp::dvector6 w_lpf = wrench_lpf[ee_names[i]].passFilter( wrench_raw );
         wrench_shaped[ee_names[i]] = w_hpf * hcp.wrench_hpf_gain + w_lpf * hcp.wrench_lpf_gain;
@@ -428,11 +480,9 @@ void HapticController::calcTorque(){
     }
 
     { // real robot joint friction damper
-//        const hrp::dvector q_friction_coeff_const = (hrp::dvector(m_robot->numJoints()) << 0,0,0,0,0,0, 0,0,0,0,0,0, 0, 3,3,2,2,1,0.5,0.5, 3,3,2,2,1,0.5,0.5).finished();
-//        hrp::dvector friction_tq = - q_friction_coeff_const.array() * dqAct_filtered.array();
         hrp::dvector friction_tq = - hcp.q_friction_coeff * dqAct_filtered;
         for (int i=0; i<m_robot->numJoints(); i++){
-         LIMIT_MINMAX(friction_tq(i), -5, 5);
+         LIMIT_MINMAX(friction_tq(i), -10, 10);
          m_robot->joint(i)->u += friction_tq(i);
         }
         if(loop%1000==0)dbgv(friction_tq);
@@ -474,49 +524,29 @@ void HapticController::calcTorque(){
         }
 //        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
         m_masterTgtPoses[tgt_names[i]].tm = m_qAct.tm;
-        m_eePosesOut[tgt_names[i]]->write();
+        m_masterTgtPosesOut[tgt_names[i]]->write();
     }
 
-
-    m_teleopOdom.data = (RTC::Pose3D){1.0,2.0,3.0,0.0,0.0,1.57* loop * 0.001};
-    m_teleopOdom.tm = m_qRef.tm;
-    m_teleopOdomOut.write();
 
 }
 
 void HapticController::processTransition(){
-    switch(mode.now()){
-        case MODE_SYNC_TO_HC:
-            if(mode.pre() == MODE_IDLE){ double tmp = 1.0; t_ip->setGoal(&tmp, 10.0, true); }
-            if (!t_ip->isEmpty() ){
-                t_ip->get(&output_ratio, true);
-            }else{
-                mode.setNextMode(MODE_HC);
-            }
-            break;
-
-        case MODE_SYNC_TO_IDLE:
-            if(mode.pre() == MODE_HC || mode.pre() == MODE_PAUSE){ double tmp = 0.0; t_ip->setGoal(&tmp, 5.0, true); }
-            if (!t_ip->isEmpty()) {
-                t_ip->get(&output_ratio, true);
-            }else{
-                mode.setNextMode(MODE_IDLE);
-            }
-            break;
-    }
-    if (!q_ref_ip->isEmpty() ){
-        q_ref_ip->get(&q_ref_output_ratio, true);
-    }
+    if(!q_ref_ip->isEmpty()     ){ q_ref_ip->get(   &q_ref_output_ratio,    true); }
+    if(!floor_h_ip->isEmpty()   ){ floor_h_ip->get( &floor_h_from_base,     true); }
+    if(!t_ip->isEmpty()         ){ t_ip->get(       &output_ratio,          true); }
+    if(mode.now() == MODE_SYNC_TO_HC    && output_ratio == 1.0){ mode.setNextMode(MODE_HC); }
+    if(mode.now() == MODE_SYNC_TO_IDLE  && output_ratio == 0.0){ mode.setNextMode(MODE_IDLE); }
 }
 
 
 bool HapticController::startHapticController(){
     if(mode.now() == MODE_IDLE){
-        RTCOUT << "startHapticController" << std::endl;
+        RTC_INFO_STREAM("startHapticController");
         mode.setNextMode(MODE_SYNC_TO_HC);
+        const double next_goal = 1.0; t_ip->setGoal(&next_goal, 10.0, true);
         return true;
     }else{
-        RTCOUT << "Invalid context to startHapticController" << std::endl;
+        RTC_WARN_STREAM("Invalid context to startHapticController");
         return false;
     }
 }
@@ -524,11 +554,11 @@ bool HapticController::startHapticController(){
 
 bool HapticController::pauseHapticController(){
     if(mode.now() == MODE_HC){
-        RTCOUT << "pauseHapticController" << std::endl;
+        RTC_INFO_STREAM("pauseHapticController");
         mode.setNextMode(MODE_PAUSE);
         return true;
     }else{
-        RTCOUT << "Invalid context to pauseHapticController" << std::endl;
+        RTC_WARN_STREAM("Invalid context to pauseHapticController");
         return false;
     }
 }
@@ -536,11 +566,11 @@ bool HapticController::pauseHapticController(){
 
 bool HapticController::resumeHapticController(){
     if(mode.now() == MODE_PAUSE){
-        RTCOUT << "resumeHapticController" << std::endl;
+        RTC_INFO_STREAM("resumeHapticController");
         mode.setNextMode(MODE_HC);
         return true;
     }else{
-        RTCOUT << "Invalid context to resumeHapticController" << std::endl;
+        RTC_WARN_STREAM("Invalid context to resumeHapticController");
         return false;
     }
 }
@@ -548,11 +578,12 @@ bool HapticController::resumeHapticController(){
 
 bool HapticController::stopHapticController(){
     if(mode.now() == MODE_HC || mode.now() == MODE_PAUSE ){
-        RTCOUT << "stopHapticController" << std::endl;
+        RTC_INFO_STREAM("stopHapticController");
         mode.setNextMode(MODE_SYNC_TO_IDLE);
+        const double next_goal = 0.0; t_ip->setGoal(&next_goal, 5.0, true);
         return true;
     }else{
-        RTCOUT << "Invalid context to stopHapticController" << std::endl;
+        RTC_WARN_STREAM("Invalid context to stopHapticController");
         return false;
     }
 }
@@ -583,6 +614,7 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
     hcp.q_ref_pd_gain               = hrp::to_Vector2(i_param.q_ref_pd_gain);
     ///// update process if required
     q_ref_ip->setGoal(&hcp.q_ref_output_ratio_goal, 5.0, true);
+    floor_h_ip->setGoal(&hcp.floor_height_from_base, 5.0, true);
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
     for(int i=0;i<ee_names.size();i++){
@@ -620,8 +652,8 @@ bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControl
 }
 
 
-RTC::ReturnCode_t HapticController::onActivated(RTC::UniqueId ec_id){ RTCOUT << "onActivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
-RTC::ReturnCode_t HapticController::onDeactivated(RTC::UniqueId ec_id){ RTCOUT << "onDeactivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
+RTC::ReturnCode_t HapticController::onActivated(RTC::UniqueId ec_id){ RTC_INFO_STREAM("onActivated(" << ec_id << ")"); return RTC::RTC_OK; }
+RTC::ReturnCode_t HapticController::onDeactivated(RTC::UniqueId ec_id){ RTC_INFO_STREAM("onDeactivated(" << ec_id << ")"); return RTC::RTC_OK; }
 RTC::ReturnCode_t HapticController::onFinalize(){ return RTC::RTC_OK; }
 
 extern "C"{
