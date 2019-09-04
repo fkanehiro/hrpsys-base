@@ -42,13 +42,14 @@ void HapticControllerService_impl::setParams(const OpenHRP::HapticControllerServ
 void HapticControllerService_impl::getParams(OpenHRP::HapticControllerService::HapticControllerParam_out i_param)
 {
     //????????????????????????????????????????????????????????
-    OpenHRP::HapticControllerService::HapticControllerParam tmp;
-    m_hapticcontroller->getParams(tmp);
-    i_param = tmp;
+//    OpenHRP::HapticControllerService::HapticControllerParam tmp;
+//    m_hapticcontroller->getParams(tmp);
+//    i_param = tmp;
 
-    //今までこれでいけてた？
-//    i_param = new OpenHRP::HapticControllerService::HapticControllerParam();
-//    m_hapticcontroller->getParams(*i_param);
+    //今までこれでいけてた？ idlにsequence<double, 2>とか可変長を含むとき？
+    i_param = new OpenHRP::HapticControllerService::HapticControllerParam();
+    m_hapticcontroller->getParams(*i_param);
 
-//  m_hapticcontroller->getParams(i_param); // error: no matching function for call to ‘HapticController::getParams(OpenHRP::HapticControllerService::HapticControllerParam_out&)’
-};
+    // error: no matching function for call to ‘HapticController::getParams(OpenHRP::HapticControllerService::HapticControllerParam_out&)’
+//  m_hapticcontroller->getParams(i_param);
+ };

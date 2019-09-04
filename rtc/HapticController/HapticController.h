@@ -16,8 +16,8 @@
 #include <time.h>
 
 #include "HapticControllerService_impl.h"
-#include "../Stabilizer/StabilizerService_impl.h"
-#include "../AutoBalancer/AutoBalancerService_impl.h"
+//#include "../Stabilizer/StabilizerService_impl.h"
+//#include "../AutoBalancer/AutoBalancerService_impl.h"
 //#include "wbms_core.h"
 #include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 
@@ -99,75 +99,76 @@ class HapticController : public RTC::DataFlowComponentBase{
 //        std::map<std::string, RTC::TimedDoubleSeq> m_feedbackWrenches_filtered_dbg;
 //        RTC::OutPort<RTC::TimedDoubleSeq> m_dq_filtered_dbgOut;
 
-
-
         RTC::CorbaPort m_HapticControllerServicePort;
-
-        hrp::BodyPtr m_robot;
-
         HapticControllerService_impl m_service0;
 
     private:
         double m_dt;
         unsigned int loop;
         unsigned int m_debugLevel;
+        hrp::BodyPtr m_robot;
 
-        class HCParams {
-            public:
-                double gravity_compensation_ratio;
-                double force_feedback_ratio;
-                double dqAct_filter_cutoff_hz;
-                double ee_vel_filter_cutoff_hz;
-                double wrench_filter_cutoff_hz;
-                double q_friction_coeff;
-                hrp::Vector2 ee_friction_coeff;
-                double wrench_hpf_cutoff_hz;
-                double wrench_lpf_cutoff_hz;
-                double wrench_hpf_gain;
-                double wrench_lpf_gain;
-            HCParams(){
-                gravity_compensation_ratio  = 0.9;
-                force_feedback_ratio        = 0.2;
-                dqAct_filter_cutoff_hz      = 100;// 10以下で確実に位相遅れによる振動
-                ee_vel_filter_cutoff_hz     = 100;// 10以下で確実に位相遅れによる振動
-                wrench_filter_cutoff_hz     = 100;
-                q_friction_coeff            = 1.0;
-                ee_friction_coeff           << 1, 0.1;
-                wrench_hpf_cutoff_hz        = 20;
-                wrench_lpf_cutoff_hz        = 0.3;
-                wrench_hpf_gain             = 1;
-                wrench_lpf_gain             = 0.2;
-            }
-        } hcp;
-
-
-        double output_ratio;
-        interpolator *t_ip,*q_ip;
-        hrp::dvector avg_q_vel, avg_q_acc;
+        double output_ratio, q_ref_output_ratio;
+        interpolator *t_ip, *q_ref_ip;
 
         hrp::InvDynStateBuffer idsb;
         BiquadIIRFilterVec2 dqAct_filter;
         hrp::dvector dqAct_filtered;
-        std::map<std::string, BiquadIIRFilterVec2> ee_vel_filter;
-        std::map<std::string, hrp::dvector6> ee_vel_filtered;
-        std::map<std::string, BiquadIIRFilterVec2> wrench_filter;
-        std::map<std::string, hrp::dvector6> wrench_filtered;
-
-        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf_for_hpf;
-        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf;
-        std::map<std::string, hrp::dvector6> wrench_shaped;
-        std::map<std::string, hrp::dvector6> wrench_used;
-
         std::map<std::string, IKConstraint> ee_ikc_map;
+        std::map<std::string, BiquadIIRFilterVec2> ee_vel_filter;
+        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf_for_hpf, wrench_lpf;
+        std::map<std::string, hrp::dvector6> wrench_shaped, wrench_used;
+        std::map<std::string, hrp::Pose3> ee_pose, ee_pose_old;
+        std::map<std::string, hrp::dvector6> ee_vel, ee_vel_filtered; // = twist
+        std::map<std::string, hrp::JointPath> jpath_ee;
+        std::map<std::string, hrp::dmatrix> J_ee;
+
         ControlMode mode;
 
-        std::vector<std::string> ee_names;
-        std::vector<std::string> tgt_names;
+        std::vector<std::string> ee_names, tgt_names;
+
+        class HCParams {
+            public:
+                double dqAct_filter_cutoff_hz;
+                double ee_vel_filter_cutoff_hz;
+                double floor_height_from_base;
+                double foot_min_distance;
+                double force_feedback_ratio;
+                double gravity_compensation_ratio;
+                double q_friction_coeff;
+                double q_ref_output_ratio_goal;
+                double wrench_hpf_cutoff_hz;
+                double wrench_lpf_cutoff_hz;
+                double wrench_hpf_gain;
+                double wrench_lpf_gain;
+                hrp::Vector2 ee_pos_rot_friction_coeff;
+                hrp::Vector2 floor_pd_gain;
+                hrp::Vector2 foot_horizontal_pd_gain;
+                hrp::Vector2 q_ref_pd_gain;
+            HCParams(){
+                dqAct_filter_cutoff_hz      = 100;// 10以下で確実に位相遅れによる振動
+                ee_vel_filter_cutoff_hz     = 100;// 10以下で確実に位相遅れによる振動
+                floor_height_from_base      = -1.1;
+                foot_min_distance           = 0.3;
+                force_feedback_ratio        = 0.2;
+                gravity_compensation_ratio  = 0.9;
+                q_friction_coeff            = 0;
+                q_ref_output_ratio_goal     = 0;
+                wrench_hpf_cutoff_hz        = 20;
+                wrench_lpf_cutoff_hz        = 0.3;
+                wrench_hpf_gain             = 1;
+                wrench_lpf_gain             = 0.2;
+                ee_pos_rot_friction_coeff   << 0, 0; // 1, 0.1
+                floor_pd_gain               << 1000, 10;
+                foot_horizontal_pd_gain     << 1000, 10;
+                q_ref_pd_gain               << 0, 0;
+            }
+        } hcp;
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
+        void calcCurrentState();
         void calcTorque();
         void processTransition();
-//        void processHapticController(const HumanPose& pose_ref);
 };
 
 

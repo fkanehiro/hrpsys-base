@@ -8,9 +8,9 @@ module OpenHRP
   
   interface HapticControllerService
   {
-    //typedef sequence<double, 2> DblSequence2;
-    //typedef sequence<double, 3> DblSequence3;
-    //typedef sequence<double, 4> DblSequence4;
+    typedef sequence<double, 2> DblSequence2;
+    typedef sequence<double, 3> DblSequence3;
+    typedef sequence<double, 4> DblSequence4;
     typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
@@ -18,17 +18,22 @@ module OpenHRP
 
     struct HapticControllerParam
     {
-        double gravity_compensation_ratio;
-        double force_feedback_ratio;
         double dqAct_filter_cutoff_hz;
-        double wrench_filter_cutoff_hz;
         double ee_vel_filter_cutoff_hz;
+        double floor_height_from_base;
+        double foot_min_distance;
+        double force_feedback_ratio;
+        double gravity_compensation_ratio;
         double q_friction_coeff;
-        DblArray2 ee_friction_coeff;
+        double q_ref_output_ratio_goal;
         double wrench_hpf_cutoff_hz;
         double wrench_lpf_cutoff_hz;
         double wrench_hpf_gain;
         double wrench_lpf_gain;
+        DblSequence2 ee_pos_rot_friction_coeff;
+        DblSequence2 floor_pd_gain;
+        DblSequence2 foot_horizontal_pd_gain;
+        DblSequence2 q_ref_pd_gain;
     };
     boolean startHapticController();
     boolean stopHapticController();

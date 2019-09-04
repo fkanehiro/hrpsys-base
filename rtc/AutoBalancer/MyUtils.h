@@ -119,7 +119,7 @@ class BiquadIIRFilterVec2{
         BiquadIIRFilterVec2(const int len){resize(len);}
         void resize(const int len){filters.resize(len); ans.resize(len);}
         ~BiquadIIRFilterVec2(){}
-        void setParameter(const hrp::dvector& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
+        void setParameter(const hrp::dvector& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad(std::min(fc_in(i),HZ/2), Q, HZ); } }
         void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
         hrp::dvector passFilter(const hrp::dvector& input){
             for(int i=0;i<filters.size();i++){

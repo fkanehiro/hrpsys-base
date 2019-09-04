@@ -448,9 +448,9 @@ class HrpsysConfigurator(object):
                 
         # connection for hc
         if self.hc:
-            # connectPorts(self.abc.port("q"),     self.hc.port("qRef"))
-            connectPorts(self.rh.port("q"),  self.hc.port("qAct"))
-            connectPorts(self.rh.port("dq"), self.hc.port("dqAct"))
+            connectPorts(self.sh.port("qOut"),   self.hc.port("qRef"))
+            connectPorts(self.rh.port("q"),   self.hc.port("qAct"))
+            connectPorts(self.rh.port("dq"),  self.hc.port("dqAct"))
             connectPorts(self.hc.port("tau"), self.rh.port("tauRef"))
 #            connectPorts(self.hc.port("q"), self.rh.port("??????"))
 #            connectPorts(self.hc.port("teleopOdom"), self.rh.port("??????"))
