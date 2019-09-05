@@ -74,11 +74,12 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     q_ref_ip->clear();
     q_ref_ip->set(&tmp_init);
     q_ref_ip->get(&q_ref_output_ratio, false);
-    const double floor_h_from_base_init = -1.5;
-    floor_h_ip = new interpolator(1, m_dt, interpolator::LINEAR, 1);
-    floor_h_ip->clear();
-    floor_h_ip->set(&floor_h_from_base_init);
-    floor_h_ip->get(&floor_h_from_base, false);
+    default_baselink_h_from_floor = 1.5;
+    hcp.baselink_height_from_floor = default_baselink_h_from_floor;
+    baselink_h_ip = new interpolator(1, m_dt, interpolator::LINEAR, 1);
+    baselink_h_ip->clear();
+    baselink_h_ip->set(&default_baselink_h_from_floor);
+    baselink_h_ip->get(&baselink_h_from_floor, false);
     RTCOUT << "setup interpolator finished" << std::endl;
 
     dqAct_filter = BiquadIIRFilterVec2(m_robot->numJoints());
@@ -315,20 +316,6 @@ void HapticController::calcTorque(){
         tgt.push_back("lleg");
         tgt.push_back("rleg");
 
-        static double out1=1,out2=1,out3=1;
-//        if(mode.isRunning()){
-//            out1 += m_dt/5;
-//            LIMIT_MAX(out1,1);
-//            if(out1 >= 1){
-//                out2 += m_dt/5;
-//                LIMIT_MAX(out2,1);
-//                if(out2>= 1){
-//                    out3 += m_dt/5;
-//                    LIMIT_MAX(out3,1);
-//                }
-//            }
-//        }
-
         ///// fix ee rot horizontal
         for (int i=0; i<tgt.size();i++){
             hrp::Vector3 diff_rot;
@@ -337,20 +324,20 @@ void HapticController::calcTorque(){
             hrp::dvector6 wrench = (hrp::dvector6()<< 0,0,0, diff_rot * hcp.foot_horizontal_pd_gain(0) + diff_rot_vel * hcp.foot_horizontal_pd_gain(1)).finished();
             LIMIT_NORM(wrench.tail(3), 50);
             hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
-            for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out1; }
+            for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
         }
 
         ///// virtual floor
         for (int i=0; i<tgt.size();i++){
-            const double current_z = ee_pose[tgt[i]].p(Z) - m_robot->rootLink()->p(Z);
+            const double foot_h_from_floor = ee_pose[tgt[i]].p(Z);
             if(loop%1000==0){
-                dbg(current_z);
+                dbg(foot_h_from_floor);
             }
-            if(current_z < floor_h_from_base){
-                hrp::dvector6 wrench = (hrp::dvector6()<< 0,0, (floor_h_from_base - current_z)*hcp.floor_pd_gain(0) + (0-ee_vel_filtered[tgt[i]](fz))*hcp.floor_pd_gain(1), 0,0,0).finished();
+            if(foot_h_from_floor < 0){
+                hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-ee_vel_filtered[tgt[i]](fz))*hcp.floor_pd_gain(1));
                 LIMIT_NORM(wrench, 1000);
-                hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out2; }
+                const hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
+                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
 
                 is_contact_to_floor[tgt[i]] = true;
             }else{
@@ -366,7 +353,7 @@ void HapticController::calcTorque(){
                 hrp::dvector6 wrench = (hrp::dvector6()<< (wall_x_rel_base - current_x) * 1000,0,0, 0,0,0).finished();
                 LIMIT_NORM(wrench, 100);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out3; }
+                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
             }
         }
 
@@ -377,7 +364,7 @@ void HapticController::calcTorque(){
                 hrp::dvector6 wrench = (hrp::dvector6()<< 0, (tgt[i]=="lleg" ? 1:-1) * (hcp.foot_min_distance - current_dist) * 1000, 0,0,0,0).finished();
                 LIMIT_NORM(wrench, 50);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j) * out2; }
+                for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
             }
         }
 
@@ -398,29 +385,33 @@ void HapticController::calcTorque(){
 
 
         static std::map<std::string, hrp::Vector2> leg_pos_from_floor_origin;
+        hrp::Vector2 baselink_pos_from_floor_origin;
         if(loop==0){
-            leg_pos_from_floor_origin["lleg"] << 0,  0.15;
-            leg_pos_from_floor_origin["rleg"] << 0, -0.15;
+            leg_pos_from_floor_origin["lleg"] << 0, 0.15;
+            leg_pos_from_floor_origin["rleg"] << 0,- 0.15;
+            baselink_pos_from_floor_origin << 0,0;
         }
-        if(is_contact_to_floor["lleg"]){
-            // not update
-        }else{
-            leg_pos_from_floor_origin["lleg"] = (ee_pose["lleg"].p - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+        if(is_contact_to_floor["lleg"] && !is_contact_to_floor["rleg"] ){ // when lleg has contact to floor, each value can be calculated from lleg
+            leg_pos_from_floor_origin["rleg"]   = (ee_pose["rleg"].p        - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
         }
-        if(is_contact_to_floor["rleg"]){
-            // not update
-        }else{
-            leg_pos_from_floor_origin["rleg"] = (ee_pose["rleg"].p - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
+        else if(!is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when rleg has contact to floor, each value can be calculated from rleg
+            leg_pos_from_floor_origin["lleg"]   = (ee_pose["lleg"].p        - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+        }
+        else if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when both has contact to floor, baselink may be calculated from rleg or lleg
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
+        }
+        else{ // when both in the air, both feet pos won't be update, only baselink will be update
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
         }
 
-        hrp::Vector2 floor_origin_from_baselink_2d = (ee_pose["rleg"].p - m_robot->rootLink()->p).head(XY) - leg_pos_from_floor_origin["rleg"];
-        hrp::Vector3 floor_origin_from_baselink = (hrp::Vector3() << floor_origin_from_baselink_2d, floor_h_from_base).finished();
+        //update base link pos from world
+        m_robot->rootLink()->p << baselink_pos_from_floor_origin, baselink_h_from_floor;
 
-        m_teleopOdom.data = (RTC::Pose3D){floor_origin_from_baselink(X),floor_origin_from_baselink(Y),floor_origin_from_baselink(Z), 0,0,0};
+        m_teleopOdom.data = (RTC::Pose3D){m_robot->rootLink()->p(X),m_robot->rootLink()->p(Y),m_robot->rootLink()->p(Z), 0,0,0};
         m_teleopOdom.tm = m_qRef.tm;
         m_teleopOdomOut.write();
-
-        m_robot->rootLink()->p = -floor_origin_from_baselink;//ヤバい
 
 
     }
@@ -522,8 +513,8 @@ void HapticController::calcTorque(){
         }else{
             m_masterTgtPoses[tgt_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
         }
-//        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
-        m_masterTgtPoses[tgt_names[i]].tm = m_qAct.tm;
+        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
+//        m_masterTgtPoses[tgt_names[i]].tm = m_qAct.tm;
         m_masterTgtPosesOut[tgt_names[i]]->write();
     }
 
@@ -531,9 +522,9 @@ void HapticController::calcTorque(){
 }
 
 void HapticController::processTransition(){
-    if(!q_ref_ip->isEmpty()     ){ q_ref_ip->get(   &q_ref_output_ratio,    true); }
-    if(!floor_h_ip->isEmpty()   ){ floor_h_ip->get( &floor_h_from_base,     true); }
-    if(!t_ip->isEmpty()         ){ t_ip->get(       &output_ratio,          true); }
+    if(!q_ref_ip        ->isEmpty()){q_ref_ip       ->get( &q_ref_output_ratio,     true); }
+    if(!baselink_h_ip   ->isEmpty()){baselink_h_ip  ->get( &baselink_h_from_floor,  true); }
+    if(!t_ip            ->isEmpty()){t_ip           ->get( &output_ratio,           true); }
     if(mode.now() == MODE_SYNC_TO_HC    && output_ratio == 1.0){ mode.setNextMode(MODE_HC); }
     if(mode.now() == MODE_SYNC_TO_IDLE  && output_ratio == 0.0){ mode.setNextMode(MODE_IDLE); }
 }
@@ -581,6 +572,7 @@ bool HapticController::stopHapticController(){
         RTC_INFO_STREAM("stopHapticController");
         mode.setNextMode(MODE_SYNC_TO_IDLE);
         const double next_goal = 0.0; t_ip->setGoal(&next_goal, 5.0, true);
+        baselink_h_ip->setGoal(&default_baselink_h_from_floor, 5.0, true);
         return true;
     }else{
         RTC_WARN_STREAM("Invalid context to stopHapticController");
@@ -596,9 +588,9 @@ namespace hrp{
 
 bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param){
     RTCOUT << "setHapticControllerParam" << std::endl;
+    hcp.baselink_height_from_floor  = i_param.baselink_height_from_floor;
     hcp.dqAct_filter_cutoff_hz      = i_param.dqAct_filter_cutoff_hz;
     hcp.ee_vel_filter_cutoff_hz     = i_param.ee_vel_filter_cutoff_hz;
-    hcp.floor_height_from_base      = i_param.floor_height_from_base;
     hcp.foot_min_distance           = i_param.foot_min_distance;
     hcp.force_feedback_ratio        = i_param.force_feedback_ratio;
     hcp.gravity_compensation_ratio  = i_param.gravity_compensation_ratio;
@@ -614,7 +606,7 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
     hcp.q_ref_pd_gain               = hrp::to_Vector2(i_param.q_ref_pd_gain);
     ///// update process if required
     q_ref_ip->setGoal(&hcp.q_ref_output_ratio_goal, 5.0, true);
-    floor_h_ip->setGoal(&hcp.floor_height_from_base, 5.0, true);
+    baselink_h_ip->setGoal(&hcp.baselink_height_from_floor, 5.0, true);
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
     for(int i=0;i<ee_names.size();i++){
@@ -632,9 +624,9 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
 
 bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControllerParam& i_param){
     RTCOUT << "getHapticControllerParam" << std::endl;
+    i_param.baselink_height_from_floor  = hcp.baselink_height_from_floor;
     i_param.dqAct_filter_cutoff_hz      = hcp.dqAct_filter_cutoff_hz;
     i_param.ee_vel_filter_cutoff_hz     = hcp.ee_vel_filter_cutoff_hz;
-    i_param.floor_height_from_base      = hcp.floor_height_from_base;
     i_param.foot_min_distance           = hcp.foot_min_distance;
     i_param.force_feedback_ratio        = hcp.force_feedback_ratio;
     i_param.gravity_compensation_ratio  = hcp.gravity_compensation_ratio;

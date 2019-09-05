@@ -72,7 +72,6 @@ class HapticController : public RTC::DataFlowComponentBase{
         bool getParams(OpenHRP::HapticControllerService::HapticControllerParam& i_param);
 
     protected:
-
         RTC::TimedDoubleSeq m_qRef;
         RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
         RTC::TimedDoubleSeq m_qAct;
@@ -82,7 +81,6 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
         std::map<std::string, ITDS_Ptr> m_slaveEEWrenchesIn;
-
         RTC::TimedDoubleSeq m_tau;
         RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
         RTC::TimedPose3D m_teleopOdom;
@@ -93,12 +91,6 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, OTP3_Ptr> m_masterTgtPosesOut;
         RTC::TimedDoubleSeq m_debugData;
         RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
-
-//        RTC::TimedDoubleSeq m_dq_filtered_dbg;
-//        RTC::OutPort<RTC::TimedDoubleSeq> m_dq_filtered_dbgOut;
-//        std::map<std::string, RTC::TimedDoubleSeq> m_feedbackWrenches_filtered_dbg;
-//        RTC::OutPort<RTC::TimedDoubleSeq> m_dq_filtered_dbgOut;
-
         RTC::CorbaPort m_HapticControllerServicePort;
         HapticControllerService_impl m_service0;
 
@@ -108,8 +100,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         unsigned int m_debugLevel;
         hrp::BodyPtr m_robot;
 
-        double output_ratio, q_ref_output_ratio, floor_h_from_base;
-        interpolator *t_ip, *q_ref_ip, *floor_h_ip;
+        double output_ratio, q_ref_output_ratio, baselink_h_from_floor, default_baselink_h_from_floor;
+        interpolator *t_ip, *q_ref_ip, *baselink_h_ip;
 
         hrp::InvDynStateBuffer idsb;
         BiquadIIRFilterVec2 dqAct_filter;
@@ -126,12 +118,12 @@ class HapticController : public RTC::DataFlowComponentBase{
         ControlMode mode;
 
         std::vector<std::string> ee_names, tgt_names;
-
         class HCParams {
             public:
+                double baselink_height_from_floor;
+                double default_baselink_h_from_floor;
                 double dqAct_filter_cutoff_hz;
                 double ee_vel_filter_cutoff_hz;
-                double floor_height_from_base;
                 double foot_min_distance;
                 double force_feedback_ratio;
                 double gravity_compensation_ratio;
@@ -146,9 +138,9 @@ class HapticController : public RTC::DataFlowComponentBase{
                 hrp::Vector2 foot_horizontal_pd_gain;
                 hrp::Vector2 q_ref_pd_gain;
             HCParams(){
-                dqAct_filter_cutoff_hz      = 100;// 10以下で確実に位相遅れによる振動
-                ee_vel_filter_cutoff_hz     = 100;// 10以下で確実に位相遅れによる振動
-                floor_height_from_base      = -1.1;
+                baselink_height_from_floor  = 1.5;// will be overwrited
+                dqAct_filter_cutoff_hz      = 500;// 10以下で確実に位相遅れによる振動
+                ee_vel_filter_cutoff_hz     = 500;// 10以下で確実に位相遅れによる振動
                 foot_min_distance           = 0.3;
                 force_feedback_ratio        = 0.2;
                 gravity_compensation_ratio  = 0.9;
@@ -159,8 +151,8 @@ class HapticController : public RTC::DataFlowComponentBase{
                 wrench_hpf_gain             = 1;
                 wrench_lpf_gain             = 0.2;
                 ee_pos_rot_friction_coeff   << 0, 0; // 1, 0.1
-                floor_pd_gain               << 1000, 1;
-                foot_horizontal_pd_gain     << 1000, 1;
+                floor_pd_gain               << 5000, 100;
+                foot_horizontal_pd_gain     << 300, 30;
                 q_ref_pd_gain               << 0, 0;
             }
         } hcp;

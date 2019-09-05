@@ -20,7 +20,7 @@ module OpenHRP
     {
         double dqAct_filter_cutoff_hz;
         double ee_vel_filter_cutoff_hz;
-        double floor_height_from_base;
+        double baselink_height_from_floor;
         double foot_min_distance;
         double force_feedback_ratio;
         double gravity_compensation_ratio;
