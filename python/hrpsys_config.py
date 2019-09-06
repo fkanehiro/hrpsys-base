@@ -397,10 +397,10 @@ class HrpsysConfigurator(object):
             connectPorts(self.sh.port("basePosOut"), self.wbms.port("basePosIn"))
             connectPorts(self.sh.port("baseRpyOut"), self.wbms.port("baseRpyIn"))
             connectPorts(self.sh.port("optionalDataOut"), self.wbms.port("optionalData"))
-            connectPorts(self.rmfo.port("off_lfsensor"), self.wbms.port("local_lleg_wrench_in"))
-            connectPorts(self.rmfo.port("off_rfsensor"), self.wbms.port("local_rleg_wrench_in"))
-            connectPorts(self.rmfo.port("off_lhsensor"), self.wbms.port("local_larm_wrench_in"))
-            connectPorts(self.rmfo.port("off_rhsensor"), self.wbms.port("local_rarm_wrench_in"))
+            connectPorts(self.rmfo.port("off_lfsensor"), self.wbms.port("local_lleg_wrench"))
+            connectPorts(self.rmfo.port("off_rfsensor"), self.wbms.port("local_rleg_wrench"))
+            connectPorts(self.rmfo.port("off_lhsensor"), self.wbms.port("local_larm_wrench"))
+            connectPorts(self.rmfo.port("off_rhsensor"), self.wbms.port("local_rarm_wrench"))
 
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(

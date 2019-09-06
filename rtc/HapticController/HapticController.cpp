@@ -98,7 +98,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     }
 
     for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "slave_"+ee_names[i]+"_wrench_in";
+        std::string n = "slave_"+ee_names[i]+"_wrench";
         m_slaveEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
         registerInPort(n.c_str(), *m_slaveEEWrenchesIn[ee_names[i]]);
         m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
@@ -109,7 +109,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     tgt_names.push_back("com");
     tgt_names.push_back("head");
     for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "master_"+tgt_names[i]+"_pose_out";
+        std::string n = "master_"+tgt_names[i]+"_pose";
         m_masterTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
         registerOutPort(n.c_str(), *m_masterTgtPosesOut[tgt_names[i]]);
         RTC_INFO_STREAM(" registerOutPort " << n);

@@ -147,7 +147,7 @@ class FullbodyInverseKinematicsSolver{
                     tgt_jpath.calcJacobian(J_jpath, _ikc_list[i].localPos);
                     for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ J_part.col(tgt_jpath.joint(id_in_jpath)->jointId) = J_jpath.col(id_in_jpath); } //ジョイントパスのJacobianを全身用に並び替え
                     J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
-                    J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - m_robot->rootLink()->p);
+                    J_part.rightCols(BASE_DOF).topRightCorner(3,3) = - hrp::hat(tgt_cur_pos - m_robot->rootLink()->p);
                 }
                 else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){ //重心限定
                     dp_part.head(3) = _ikc_list[i].targetPos - m_robot->calcCM();
@@ -164,7 +164,7 @@ class FullbodyInverseKinematicsSolver{
                 if(c_part_selection_mat.rows() != 0 && c_part_selection_mat.cols() != 0 ){
 
 
-                    const double dp_max = 0.1;
+                    const double dp_max = 0.1;// ???????
 
                     J_all.middleRows                (CURRENT_C_COUNT, c_part_selection_mat.rows()) = c_part_selection_mat * J_part * q_select_mat.transpose();
                     err_all.segment                 (CURRENT_C_COUNT, c_part_selection_mat.rows()) = c_part_selection_mat * dp_part.cwiseMin(hrp::dvector6::Constant(dp_max)).cwiseMax(hrp::dvector6::Constant(-dp_max));
@@ -221,8 +221,8 @@ class FullbodyInverseKinematicsSolver{
 
             // rtconf localhost:15005/wbms.rtc set debugLevel 1 とかにしたい
             static int count;
+#if 0
             if(count++ % 10000 == 0){
-//                if(true){
                 std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
                 dbg(J_all.rows());
                 dbg(J_all.cols());
@@ -249,7 +249,7 @@ class FullbodyInverseKinematicsSolver{
                 dbgv(hrp::getRobotStateVec(m_robot));
                 std::cout<<std::endl;
             }
-
+#endif
             // update joint angles
             for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"[FullbodyIK] ERROR nan/inf is found" << std::endl; return;} }
             dq_all = q_select_mat.transpose() * dq_all;
@@ -258,25 +258,20 @@ class FullbodyInverseKinematicsSolver{
                 LIMIT_MINMAX(m_robot->joint(i)->q, m_robot->joint(i)->llimit, m_robot->joint(i)->ulimit);
             }
 
-            // update rootlink pos rot
-            m_robot->rootLink()->p += dq_all.tail(6).head(3);
+            // rootlink rpy limit ???
             for(int i=0;i<3;i++){
                 if(hrp::rpyFromRot(m_robot->rootLink()->R)(i) < rootlink_rpy_llimit(i) && dq_all.tail(6).tail(3)(i) < 0) dq_all.tail(6).tail(3)(i) = 0;
                 if(hrp::rpyFromRot(m_robot->rootLink()->R)(i) > rootlink_rpy_ulimit(i) && dq_all.tail(6).tail(3)(i) > 0) dq_all.tail(6).tail(3)(i) = 0;
             }
 
+            // update rootlink pos rot
+            m_robot->rootLink()->p += dq_all.tail(6).head(3);
             hrp::Matrix33 dR;
-            hrp::Vector3 omega = dq_all.tail(6).tail(3);
+            const hrp::Vector3 omega = dq_all.tail(6).tail(3);
             hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
-            hrp::Matrix33 R_base_ans = m_robot->rootLink()->R * dR;
-            if(!R_base_ans.isUnitary()){
-                std::cerr <<"[FullbodyIK] WARN R_base_ans is not Unitary, normalize via Quaternion" << std::endl;
-                Eigen::Quaternion<double> quat(R_base_ans);
-                quat.normalize();
-                R_base_ans = quat.toRotationMatrix();
-                return;
-            }else{
-                m_robot->rootLink()->R = R_base_ans;
+            rats::rotm3times(m_robot->rootLink()->R, dR, m_robot->rootLink()->R); // safe rot operation with quartanion normalization
+            if(!m_robot->rootLink()->R.isUnitary()){
+                std::cerr <<"[FullbodyIK] WARN m_robot->rootLink()->R is not Unitary, something wrong !" << std::endl;
             }
             m_robot->calcForwardKinematics();
             #else

@@ -136,7 +136,6 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         unsigned int loop;
         unsigned int m_debugLevel;
         int optionalDataLength;
-        bool is_legged_robot;
         hrp::BodyPtr m_robot_act; // actual
         hrp::BodyPtr m_robot_vsafe; // joint trajectory safe
         typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
