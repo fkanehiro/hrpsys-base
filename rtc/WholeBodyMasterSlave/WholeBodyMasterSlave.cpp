@@ -45,7 +45,7 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
 WholeBodyMasterSlave::~WholeBodyMasterSlave(){}
 
 RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
-    RTCOUT << "onInitialize()" << std::endl;
+    RTC_INFO_STREAM("onInitialize()");
     bindParameter("debugLevel", m_debugLevel, "0");
     addInPort("qRef", m_qRefIn);// from sh
     addInPort("qAct", m_qActIn);
@@ -81,17 +81,17 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
 
     hrp::BodyPtr robot_for_ik = hrp::BodyPtr(new hrp::Body());
     if (!loadBodyFromModelLoader(robot_for_ik, prop["model"].c_str(), CosNaming::NamingContext::_duplicate(naming.getRootContext()) )){
-        RTCOUT << "failed to load model[" << prop["model"] << "]" << std::endl;
+        RTC_WARN_STREAM("failed to load model[" << prop["model"] << "]");
         return RTC::RTC_ERROR;
     }
     m_robot_act = hrp::BodyPtr(new hrp::Body(*robot_for_ik)); //copy
     m_robot_vsafe = hrp::BodyPtr(new hrp::Body(*robot_for_ik)); //copy
-    RTCOUT << "setup robot model finished" << std::endl;
+    RTC_INFO_STREAM("setup robot model finished");
 
     fik = fikPtr(new FullbodyInverseKinematicsSolver(robot_for_ik, std::string(m_profile.instance_name), m_dt));
     setupEEIKConstraintFromConf(ee_ikc_map, robot_for_ik, prop);
     is_legged_robot = (ee_ikc_map.find("rleg") != ee_ikc_map.end() && ee_ikc_map.find("lleg") != ee_ikc_map.end());
-    RTCOUT << "setup fullbody ik finished" << std::endl;
+    RTC_INFO_STREAM("setup fullbody ik finished");
 
     wbms = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
     if(fik->m_robot->name() == "RHP4B"){
@@ -105,11 +105,11 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     }
 
     if(fik->m_robot->name().find("JAXON") != std::string::npos){ // for demo
-//        wbms->wp.use_targets.push_back("rleg");
-//        wbms->wp.use_targets.push_back("lleg");
+        wbms->wp.use_targets.push_back("rleg");
+        wbms->wp.use_targets.push_back("lleg");
         wbms->wp.use_targets.push_back("rarm");
         wbms->wp.use_targets.push_back("larm");
-//        wbms->wp.use_targets.push_back("com");
+        wbms->wp.use_targets.push_back("com");
         wbms->wp.use_targets.push_back("head");
     }else{
         wbms->wp.use_targets.push_back("rleg");
@@ -120,7 +120,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         wbms->wp.use_targets.push_back("head");
     }
     sccp = boost::shared_ptr<CapsuleCollisionChecker>(new CapsuleCollisionChecker(fik->m_robot));
-    RTCOUT << "setup main function class finished" << std::endl;
+    RTC_INFO_STREAM("setup main function class finished");
 
     // allocate memory for outPorts
     m_qRef.data.length(fik->m_robot->numJoints()); // is really needed?
@@ -140,9 +140,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     avg_q_acc = hrp::dvector::Constant(fik->numStates(), 16.0); // all joint max avarage acc = 16.0 rad/s^2
     avg_q_vel.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link vel
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
-    RTCOUT << "setup interpolator finished" << std::endl;
+    RTC_INFO_STREAM("setup interpolator finished");
 
-    //    invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
     cp_flag = -1;
@@ -160,13 +159,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         std::string n = "slave_"+ee_names[i]+"_wrench_out";
         m_slaveEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
         registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[ee_names[i]]);
-        RTCOUT << " registerOutPort " << n << std::endl;
+        RTC_INFO_STREAM(" registerOutPort " << n);
     }
     for ( int i=0; i<ee_names.size(); i++) {
         std::string n = "local_"+ee_names[i]+"_wrench_in";
         m_localEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee_names[i]]));
         registerInPort(n.c_str(), *m_localEEWrenchesIn[ee_names[i]]);
-        RTCOUT << " registerInPort " << n << std::endl;
+        RTC_INFO_STREAM(" registerInPort " << n);
     }
 
     tgt_names = ee_names;
@@ -176,10 +175,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         std::string n = "master_"+tgt_names[i]+"_pose_in";
         m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
         registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt_names[i]]);
-        RTCOUT << " registerInPort " << n << std::endl;
+        RTC_INFO_STREAM(" registerInPort " << n);
     }
 
-    RTCOUT << "onInitialize() OK" << std::endl;
+    RTC_INFO_STREAM("onInitialize() OK");
     loop = 0;
     return RTC::RTC_OK;
 }
@@ -201,13 +200,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::setupEEIKConstraintFromConf(std::map<std
             for (int j = 0; j < 4; j++ ){ coil::stringTo(tmp_aa[j], ee_conf_all[i*prop_num+6+j].c_str()); }
             _ee_ikc_map[ee_name].localR = Eigen::AngleAxis<double>(tmp_aa[3], hrp::Vector3(tmp_aa[0], tmp_aa[1], tmp_aa[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             if(_robot->link(target_link_name)){
-              RTCOUT << "End Effector [" << ee_name << "]" << std::endl;
-              RTCOUT << "   target_link_name = " << _ee_ikc_map[ee_name].target_link_name << ", base = " << base_name << std::endl;
-              RTCOUT << "   offset_pos = " << _ee_ikc_map[ee_name].localPos.transpose() << "[m]" << std::endl;
-              RTCOUT << "   has_toe_joint = " << "fix to false now" << std::endl;
+                RTC_INFO_STREAM("End Effector [" << ee_name << "]");
+                RTC_INFO_STREAM("   target_link_name = " << _ee_ikc_map[ee_name].target_link_name << ", base = " << base_name);
+                RTC_INFO_STREAM("   offset_pos = " << _ee_ikc_map[ee_name].localPos.transpose() << "[m]");
+                RTC_INFO_STREAM("   has_toe_joint = " << "fix to false now");
             }else{
-              RTCOUT << "Target link [" << target_link_name << "] not found !" << std::endl;
-              return RTC::RTC_ERROR;
+                RTC_WARN_STREAM("Target link [" << target_link_name << "] not found !");
+                return RTC::RTC_ERROR;
             }
             contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));////TODO:要移動? //used for check optional data order
         }
@@ -216,7 +215,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::setupEEIKConstraintFromConf(std::map<std
 }
 
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
-    if(DEBUGP_ONCE) RTCOUT << "onExecute(" << ec_id << ")" << std::endl;
+    if(DEBUGP_ONCE) RTC_INFO_STREAM("onExecute(" << ec_id << ")");
     time_report_str.clear();
     clock_gettime(CLOCK_REALTIME, &startT);
     if (m_qRefIn.isNew()) { m_qRefIn.read(); }
@@ -369,7 +368,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_zmpOut.write();
     m_optionalDataOut.write();
     addTimeReport("OutPort");
-    if(DEBUGP) RTCOUT << time_report_str << std::endl;
+    if(DEBUGP) RTC_INFO_STREAM(time_report_str);
     loop ++;
     return RTC::RTC_OK;
 }
@@ -770,11 +769,11 @@ void WholeBodyMasterSlave::smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPt
 
 bool WholeBodyMasterSlave::startWholeBodyMasterSlave(){
     if(mode.now() == MODE_IDLE){
-        RTCOUT << "startWholeBodyMasterSlave" << std::endl;
+        RTC_INFO_STREAM("startWholeBodyMasterSlave");
         mode.setNextMode(MODE_SYNC_TO_HC);
         return true;
     }else{
-        RTCOUT << "Invalid context to startWholeBodyMasterSlave" << std::endl;
+        RTC_WARN_STREAM("Invalid context to startWholeBodyMasterSlave");
         return false;
     }
 }
@@ -782,11 +781,11 @@ bool WholeBodyMasterSlave::startWholeBodyMasterSlave(){
 
 bool WholeBodyMasterSlave::pauseWholeBodyMasterSlave(){
     if(mode.now() == MODE_WBMS){
-        RTCOUT << "pauseWholeBodyMasterSlave" << std::endl;
+        RTC_INFO_STREAM("pauseWholeBodyMasterSlave");
         mode.setNextMode(MODE_PAUSE);
         return true;
     }else{
-        RTCOUT << "Invalid context to pauseWholeBodyMasterSlave" << std::endl;
+        RTC_WARN_STREAM("Invalid context to pauseWholeBodyMasterSlave");
         return false;
     }
 }
@@ -794,11 +793,11 @@ bool WholeBodyMasterSlave::pauseWholeBodyMasterSlave(){
 
 bool WholeBodyMasterSlave::resumeWholeBodyMasterSlave(){
     if(mode.now() == MODE_PAUSE){
-        RTCOUT << "resumeWholeBodyMasterSlave" << std::endl;
+        RTC_INFO_STREAM("resumeWholeBodyMasterSlave");
         mode.setNextMode(MODE_WBMS);
         return true;
     }else{
-        RTCOUT << "Invalid context to resumeWholeBodyMasterSlave" << std::endl;
+        RTC_WARN_STREAM("Invalid context to resumeWholeBodyMasterSlave");
         return false;
     }
 }
@@ -806,18 +805,18 @@ bool WholeBodyMasterSlave::resumeWholeBodyMasterSlave(){
 
 bool WholeBodyMasterSlave::stopWholeBodyMasterSlave(){
     if(mode.now() == MODE_WBMS || mode.now() == MODE_PAUSE ){
-        RTCOUT << "stopWholeBodyMasterSlave" << std::endl;
+        RTC_INFO_STREAM("stopWholeBodyMasterSlave");
         mode.setNextMode(MODE_SYNC_TO_IDLE);
         return true;
     }else{
-        RTCOUT << "Invalid context to stopWholeBodyMasterSlave" << std::endl;
+        RTC_WARN_STREAM("Invalid context to stopWholeBodyMasterSlave");
         return false;
     }
 }
 
 
 bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
-    RTCOUT << "setWholeBodyMasterSlaveParam" << std::endl;
+    RTC_INFO_STREAM("setWholeBodyMasterSlaveParam");
     wbms->wp.auto_swing_foot_landing_threshold  = i_param.auto_swing_foot_landing_threshold;
     wbms->wp.human_to_robot_ratio               = i_param.human_to_robot_ratio;
     wbms->wp.set_com_height_fix                 = i_param.set_com_height_fix;
@@ -831,14 +830,14 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
         wbms->wp.use_joints                     = hrp::to_string_vector(i_param.use_joints);
         wbms->wp.use_targets                    = hrp::to_string_vector(i_param.use_targets);
     }else{
-      RTCOUT << "use_head, use_upper, use_lower can be changed in MODE_IDLE" << std::endl;
+        RTC_WARN_STREAM("use_head, use_upper, use_lower can be changed in MODE_IDLE");
     }
     return true;
 }
 
 
 bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
-    RTCOUT << "getWholeBodyMasterSlaveParam" << std::endl;
+    RTC_INFO_STREAM("getWholeBodyMasterSlaveParam");
     i_param.auto_swing_foot_landing_threshold   = wbms->wp.auto_swing_foot_landing_threshold;
     i_param.human_to_robot_ratio                = wbms->wp.human_to_robot_ratio;
     i_param.set_com_height_fix                  = wbms->wp.set_com_height_fix;
@@ -854,8 +853,8 @@ bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::Whole
 }
 
 
-RTC::ReturnCode_t WholeBodyMasterSlave::onActivated(RTC::UniqueId ec_id){ RTCOUT << "onActivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
-RTC::ReturnCode_t WholeBodyMasterSlave::onDeactivated(RTC::UniqueId ec_id){ RTCOUT << "onDeactivated(" << ec_id << ")" << std::endl; return RTC::RTC_OK; }
+RTC::ReturnCode_t WholeBodyMasterSlave::onActivated(RTC::UniqueId ec_id){ RTC_INFO_STREAM("onActivated(" << ec_id << ")"); return RTC::RTC_OK; }
+RTC::ReturnCode_t WholeBodyMasterSlave::onDeactivated(RTC::UniqueId ec_id){ RTC_INFO_STREAM("onDeactivated(" << ec_id << ")"); return RTC::RTC_OK; }
 RTC::ReturnCode_t WholeBodyMasterSlave::onFinalize(){ return RTC::RTC_OK; }
 
 extern "C"{

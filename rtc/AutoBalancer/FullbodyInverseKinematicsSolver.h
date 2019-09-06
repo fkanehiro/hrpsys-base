@@ -153,7 +153,7 @@ class FullbodyInverseKinematicsSolver{
                     dp_part.head(3) = _ikc_list[i].targetPos - m_robot->calcCM();
                     dp_part.tail(3) = (_ikc_list[i].targetRpy - cur_momentum_around_COM_filtered) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける(+フィルタ)
                     m_robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
-                    m_robot->calcAngularMomentumJacobian(NULL, J_am);//world座標系での角運動量を生成するヤコビアン(なので本当はCOM周りには使えない)
+                    m_robot->calcAngularMomentumJacobian(NULL, J_am);//base=NULLの時は重心周りの角運動量っぽい？
                     J_part << J_com, J_am;
                 }
                 else{

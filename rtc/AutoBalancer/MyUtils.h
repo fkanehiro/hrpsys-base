@@ -25,15 +25,20 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 #define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
 #define dbgv(var) std::cout<<#var"= "<<(var.transpose())<<std::endl
-#define RTCOUT std::cerr << "[" << m_profile.instance_name << "] "
 #define RTC_INFO_STREAM(var) std::cout << "[" << m_profile.instance_name << "] "<< var << std::endl;
 #define RTC_WARN_STREAM(var) std::cerr << "\x1b[31m[" << m_profile.instance_name << "] " << var << "\x1b[39m" << std::endl;
 
-#define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
-#define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
-#define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
-#define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
-#define LIMIT_NORM(v,max) if(v.norm()>max){ v=v.normalized()*max; }
+#define eps_eq(a, b, c)             (fabs((a)-(b)) <= c)
+#define LIMIT_NORM(x,max)           (x= ( x<(-max) ? -max : (x>max ? max : x)))
+#define LIMIT_MIN(x,min)            (x= ( x<min ? min : x ))
+#define LIMIT_MAX(x,max)            (x= ( x>max ? max : x ))
+#define LIMIT_MINMAX(x,min,max)     (x= ( x<min ? min : ( x>max ? max : x )))
+#define LIMIT_NORM_V(v,max)         if(v.norm()>max){v=v.normalized()*max;}
+#define LIMIT_MIN_V(v,minv)         (v= v.cwiseMax(minv))
+#define LIMIT_MAX_V(v,maxv)         (v= v.cwiseMin(maxv))
+#define LIMIT_MINMAX_V(v,minv,maxv) (v= v.cwiseMin(minv).cwiseMax(maxv))
+
+
 
 namespace hrp{
     class Pose3{
