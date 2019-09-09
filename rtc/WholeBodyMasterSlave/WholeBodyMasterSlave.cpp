@@ -396,25 +396,17 @@ void WholeBodyMasterSlave::processTransition(){
 
 
 void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(){
-    hrp::Vector3 basePos_heightChecked = hrp::to_Vector3(m_basePos.data);//ベースリンク高さ調整により足裏高さ0に
-    fik->m_robot->rootLink()->p = basePos_heightChecked;
-//    for ( int i = 0; i < fik->m_robot->numJoints(); i++ ){ fik->m_robot->joint(i)->q = m_qRef.data[i]; }
+    fik->m_robot->rootLink()->p = hrp::to_Vector3(m_basePos.data);
     hrp::setQAll(fik->m_robot, hrp::to_dvector(m_qRef.data));
     fik->m_robot->calcForwardKinematics();
-
-    //TODO
-//    hrp::Vector3 init_foot_mid_coord = (fik_in->getEndEffectorPos("rleg") + fik_in->getEndEffectorPos("lleg")) / 2;
-//    if( fabs((double)init_foot_mid_coord(Z)) > 1e-5 ){
-//        basePos_heightChecked(Z) -= init_foot_mid_coord(Z);
-//        init_foot_mid_coord(Z) = 0;
-//        std::cerr<<"["<<m_profile.instance_name<<"] Input basePos height is invalid. Auto modify "<<m_basePos.data.z<<" -> "<<basePos_heightChecked(Z)<<endl;
-//    }
+    double current_foot_height_from_world = std::min(ee_ikc_map["rleg"].getCurrentTargetPos(fik->m_robot)(Z), ee_ikc_map["lleg"].getCurrentTargetPos(fik->m_robot)(Z));
+    RTC_INFO_STREAM("current_foot_height_from_world = "<<current_foot_height_from_world<<" will be modified to 0");
 
     std::vector<hrp::BodyPtr> body_list;
     body_list.push_back(fik->m_robot);
     body_list.push_back(m_robot_vsafe);
     for(int i=0;i<body_list.size();i++){//初期姿勢でBodyをFK
-        hrp::setRobotStateVec(body_list[i], hrp::to_dvector(m_qRef.data), basePos_heightChecked, hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y));
+        hrp::setRobotStateVec(body_list[i], hrp::to_dvector(m_qRef.data), hrp::to_Vector3(m_basePos.data) - hrp::Vector3::UnitZ() * current_foot_height_from_world, hrp::rotFromRpy(hrp::to_Vector3(m_baseRpy.data)));
         body_list[i]->calcForwardKinematics();
     }
 
