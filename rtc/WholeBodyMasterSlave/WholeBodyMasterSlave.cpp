@@ -132,7 +132,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     q_ip = new interpolator(fik->numStates(), m_dt, interpolator::CUBICSPLINE, 1); // or HOFFARBIB, QUINTICSPLINE
     q_ip->clear();
     if(fik->m_robot->name().find("JAXON") != std::string::npos){
-        avg_q_vel = hrp::dvector::Constant(fik->numStates(), 2.0); // all joint max avarage vel = 1.0 rad/s
+        avg_q_vel = hrp::dvector::Constant(fik->numStates(), 4.0); // all joint max avarage vel = 1.0 rad/s
     }else{
         avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0); // all joint max avarage vel = 1.0 rad/s
     }
@@ -141,7 +141,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
     RTC_INFO_STREAM("setup interpolator finished");
 
-    ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
+    ref_zmp_filter.setParameter(20, 1/m_dt, Q_BUTTERWORTH);
 
     cp_flag = -1;
     lt.fill(0);
@@ -292,6 +292,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         smoothingJointAngles(fik->m_robot, m_robot_vsafe);
 
         hrp::Vector3 com = m_robot_vsafe->calcCM();
+        com(Z) += 0.3;//hotfix
         static hrp::Vector3 com_old = com;
         static hrp::Vector3 com_old_old = com_old;
         hrp::Vector3 com_acc = (com - 2*com_old + com_old_old)/(m_dt*m_dt);
@@ -302,6 +303,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         com_old = com;
         wbms->act_rs.com = com;
         wbms->act_rs.zmp = ref_zmp;
+        wbms->act_rs.st_zmp = m_robot_vsafe->rootLink()->p + m_robot_vsafe->rootLink()->R * rel_act_zmp;
 
 //            if(wbms->rp_ref_out.tgt[rf].is_contact && !wbms->rp_ref_out.tgt[lf].is_contact){
 //                ref_zmp.head(XY) = m_robot_vsafe->link(ee_ikc_map["rleg"].target_link_name)->p.head(XY);
@@ -628,13 +630,13 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         }
     }
 
-    const int IK_MAX_LOOP = 2;
+    const int IK_MAX_LOOP = 1;
     int loop_result = fik->solveFullbodyIKLoop(ikc_list, IK_MAX_LOOP);
 }
 
 void WholeBodyMasterSlave::smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe){
     double goal_time = 0.0;
-    const double min_goal_time_offset = 0.1;
+    const double min_goal_time_offset = 0.3;
 
     static hrp::dvector ans_state_vel = hrp::dvector::Zero(fik->numStates());
 

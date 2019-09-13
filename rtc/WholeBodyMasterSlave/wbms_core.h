@@ -7,12 +7,6 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 // geometry
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgproc/types_c.h>
-#include <opencv2/core/eigen.hpp>
-
-// geometry
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/multi/geometries/multi_point.hpp>
@@ -356,22 +350,21 @@ class WBMSCore{
         double HZ, DT;
         BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters, com_in_filter;
         hrp::Vector3 com_old, com_oldold, comacc, com_CP_ref_old;
-        std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rpy_filters;
         HumanPose rp_ref_out_old, hp_swap_checked;
         unsigned int loop;
         bool is_initial_loop;
         bool cp_force_go_contact[LR];
+        int zmp_force_go_contact_count[LR];
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         double H_cur;
         HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
-        FILE *sr_log, *cz_log, *id_log;
         hrp::Pose3 baselinkpose;
         hrp::Vector3 cp_dec, cp_acc;
         hrp::dmatrix foot_vert3d_act[LR], foot_vert3d_check[LR]; // A = [p0 p1 p2 p3]
         hrp::Vector2 com_forcp_ref,com_vel_forcp_ref;
         hrp::dvector6 invdyn_ft;
-        hrp::Vector4 foot_vert_act_fblr[LR], foot_vert_safe_fblr[LR], foot_vert_check_fblr[LR];
+        hrp::Vector4 foot_vert_act_fblr[LR], foot_vert_safe_fblr[LR];//, foot_vert_check_fblr[LR];
         struct WBMSparameters {
             double auto_swing_foot_landing_threshold;
             double human_to_robot_ratio;
@@ -386,7 +379,7 @@ class WBMSCore{
             std::vector<std::string> use_targets;
         } wp;
         struct ActualRobotState {
-            hrp::Vector3 com, zmp;
+            hrp::Vector3 com, zmp, st_zmp;
         } act_rs;
 
         WBMSCore(const double& dt){
@@ -397,30 +390,17 @@ class WBMSCore{
             com_old = com_oldold = comacc = hrp::Vector3::Zero();
             cp_dec = cp_acc = hrp::Vector3::Zero();
             invdyn_ft = hrp::dvector6::Zero();
-            tgt_pos_filters.resize(num_pose_tgt);
-            tgt_rpy_filters.resize(num_pose_tgt);
-            for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(1.0, HZ, Q_NOOVERSHOOT);//四肢拘束点用(position)
-            for(int i=0;i<tgt_rpy_filters.size();i++)tgt_rpy_filters[i].setParameter(1.0, HZ, Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
-            tgt_pos_filters[com].setParameter(1.0, HZ, Q_NOOVERSHOOT);//重心pos用
-            tgt_rpy_filters[com].setParameter(0.6, HZ, Q_NOOVERSHOOT);//重心rot用
-            tgt_pos_filters[rf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, Q_NOOVERSHOOT);//右足pos用
-            tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, Q_NOOVERSHOOT);//左足pos用
             calcacc_v_filters.setParameter(5, HZ, Q_BUTTERWORTH);//加速度計算用
             acc4zmp_v_filters.setParameter(5, HZ, Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
             com_in_filter.setParameter(1, HZ);
-            foot_vert_act_fblr[R] << 0.13, -0.10,  0.06, -0.08;
-            foot_vert_act_fblr[L] << 0.13, -0.10,  0.08, -0.06;
-            foot_vert_check_fblr[R] << 0.02+0.002, -0.01-0.002,  0.02+0.002,  0.01-0.002;
-            foot_vert_check_fblr[L] << 0.02+0.002, -0.01-0.002, -0.01+0.002, -0.02-0.002;
-            foot_vert_safe_fblr[R] << 0.02, -0.01,  0.02,  0.01;
-            foot_vert_safe_fblr[L] << 0.02, -0.01, -0.01, -0.02;
+            foot_vert_safe_fblr[R] << 0.02, -0.02,  0.02,  0.01;
+            foot_vert_safe_fblr[L] << 0.02, -0.02, -0.01, -0.02;
             for(int i=0;i<LR;i++){
                 foot_vert3d_act[i]      = make_rect_3d(foot_vert_act_fblr[i]);
-                foot_vert3d_check[i]    = make_rect_3d(foot_vert_check_fblr[i]);
+                foot_vert3d_check[i]    = make_rect_3d(offset_fblr(foot_vert_safe_fblr[i], 0.002));
             }
-            cp_force_go_contact[R] = false;
-            cp_force_go_contact[L] = false;
-
+            cp_force_go_contact[R] = cp_force_go_contact[L] = false;
+            zmp_force_go_contact_count[R] = zmp_force_go_contact_count[L] = 0;
             wp.auto_swing_foot_landing_threshold = 0.04;
             wp.human_to_robot_ratio = 1.0;//human 1.1m vs jaxon 1.06m
             wp.set_com_height_fix = false;
@@ -433,14 +413,10 @@ class WBMSCore{
             rp_ref_out_old.reset();
             rp_ref_out.reset();
             rp_ref_vel_old.reset();
-            if(DEBUG){
-                sr_log = fopen("/home/ishiguro/HumanSync_support_region.log","w+");
-                cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
-                id_log = fopen("/home/ishiguro/HumanSync_invdyn.log","w+");
-            }
             is_initial_loop = true;
             cout<<"WBMSCore constructed"<<endl;
         }
+        ~WBMSCore(){ cout<<"WBMSCore destructed"<<endl; }
         hrp::dmatrix make_rect_3d(const hrp::Vector4& ForwardBackLeftRight){
             return (hrp::dmatrix(3,4) << // (XYZ,4)とかの#defineマクロ効かない
                 hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(2), 0),//左前
@@ -448,11 +424,8 @@ class WBMSCore{
                 hrp::Vector3(ForwardBackLeftRight(1), ForwardBackLeftRight(3), 0),//右後
                 hrp::Vector3(ForwardBackLeftRight(0), ForwardBackLeftRight(3), 0)).finished();//右前
         }
-        ~WBMSCore(){
-            if(DEBUG)fclose(sr_log);
-            if(DEBUG)fclose(cz_log);
-            if(DEBUG)fclose(id_log);
-            cout<<"WBMSCore destructed"<<endl;
+        hrp::Vector4 offset_fblr(const hrp::Vector4& in, const double offset){
+            return (hrp::Vector4()<< in(0)+offset, in(1)-offset, in(2)+offset, in(3)-offset).finished();//右前
         }
         void initializeHumanPoseFromCurrentInput(){
             std::string ns[7] = {"com","rf","lf","rh","lh","zmp","head"};
@@ -470,7 +443,7 @@ class WBMSCore{
                     rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
                 }
             }
-            rp_ref_out.tgt[com].offs.p = act_rs.com = act_rs.zmp = robot_in->calcCM();
+            rp_ref_out.tgt[com].offs.p = act_rs.com = act_rs.zmp = act_rs.st_zmp = robot_in->calcCM();
             com_CP_ref_old = rp_ref_out.tgt[com].offs.p;
             rp_ref_out.tgt[com].offs.R = robot_in->rootLink()->R;
             rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
@@ -511,7 +484,6 @@ class WBMSCore{
             com_forcp_ref_old = com_forcp_ref;
             applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
-//            applyLPFilter_post                       (rp_ref_out);
             applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
             modifyFootRotAndXYForContact        (rp_ref_out);
             H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
@@ -539,12 +511,34 @@ class WBMSCore{
             out.tgt[zmp].abs = in.tgt[zmp].abs;//最近使わない
         }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
-            hrp::Vector3 inside_vec_rf = old.tgt[rf].abs.R * hrp::Vector3(0,1,0);
-            hrp::Vector3 inside_vec_lf = old.tgt[lf].abs.R * hrp::Vector3(0,-1,0);
-            hrp::Vector2 rf2zmp = act_rs.zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
-            hrp::Vector2 lf2zmp = act_rs.zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
-            if( inside_vec_rf.head(XY).dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }//2D,3D混ざって微妙
-            if( inside_vec_lf.head(XY).dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
+            hrp::Vector3 inside_vec_rf = old.tgt[rf].abs.R * hrp::Vector3::UnitY();
+            hrp::Vector3 inside_vec_lf = old.tgt[lf].abs.R * (-hrp::Vector3::UnitY());
+            {
+                hrp::Vector2 rf2zmp = act_rs.zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
+                hrp::Vector2 lf2zmp = act_rs.zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
+                if( inside_vec_rf.head(XY).dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }//2D,3D混ざって微妙
+                if( inside_vec_lf.head(XY).dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
+            }
+            {
+                hrp::Vector2 rf2zmp = act_rs.st_zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
+                hrp::Vector2 lf2zmp = act_rs.st_zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
+                if( inside_vec_rf.head(XY).dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){
+                    zmp_force_go_contact_count[L] = 1;
+                }else if(zmp_force_go_contact_count[L] > 0 && zmp_force_go_contact_count[L] < HZ*1 ){
+                    zmp_force_go_contact_count[L]++;
+                }else{
+                    zmp_force_go_contact_count[L] = 0;
+                }
+                if( inside_vec_lf.head(XY).dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){
+                    zmp_force_go_contact_count[R] = 1;
+                }else if(zmp_force_go_contact_count[R] > 0 && zmp_force_go_contact_count[R] < HZ*1 ){
+                    zmp_force_go_contact_count[R]++;
+                }else{
+                    zmp_force_go_contact_count[R] = 0;
+                }
+                out.tgt[lf].go_contact |= (zmp_force_go_contact_count[L] > 0);
+                out.tgt[rf].go_contact |= (zmp_force_go_contact_count[R] > 0);
+            }
         }
         void limitEEWorkspace(HumanPose& out){
             const double MAX_FW = 0.25;
@@ -564,7 +558,7 @@ class WBMSCore{
                 sp2sw_vec = base_rot * sp2sw_vec_baserel;
                 swing_leg.abs.p.head(XY) = sp2sw_vec + support_leg.cnt.p.head(XY);
             }
-            const double base2hand_min = 0.4;// for jaxon demo
+            const double base2hand_min = 0.5;// for jaxon demo
             for(int i=0, l[2]={rh,lh}; i<2; i++){
                 hrp::Vector2 horizontal_dist = out.tgt[l[i]].abs.p.head(XY) - baselinkpose.p.head(XY);
                 if(horizontal_dist.norm() < base2hand_min){
@@ -636,10 +630,8 @@ class WBMSCore{
             com_ans = com_in;
             if (is_initial_loop)com_ans_old = com_in;
             hrp::Vector3 com_vel = (com_in - com_ans_old)/DT;
-            hrp::Vector4 marginDelta_for_dcp(+0.001,-0.001,0.001,-0.001);
-            hrp::Vector4 marginDelta_for_acp(+0.010,-0.010,0.010,-0.010);
-            hrp::dmatrix hull_dcp = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_dcp, foot_vert_safe_fblr[L]+marginDelta_for_dcp);
-            hrp::dmatrix hull_acp = createSupportRegionByFootPos(rfin_abs, lfin_abs, foot_vert_safe_fblr[R]+marginDelta_for_acp, foot_vert_safe_fblr[L]+marginDelta_for_acp);
+            hrp::dmatrix hull_dcp = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(foot_vert_safe_fblr[R], 0.001),    offset_fblr(foot_vert_safe_fblr[L], 0.001));
+            hrp::dmatrix hull_acp = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(foot_vert_safe_fblr[R], 0.01),     offset_fblr(foot_vert_safe_fblr[L], 0.01));
             hrp::Vector2 com_vel_ans_2d;
             regulateCOMVelocityByCapturePointVec( com_ans_old.head(XY), com_vel.head(XY), hull_dcp, hull_acp, com_vel_ans_2d);
             com_ans.head(XY) = com_ans_old.head(XY) + com_vel_ans_2d * DT;
@@ -694,23 +686,6 @@ class WBMSCore{
             hrp::dmatrix both_sole_verts_abs = (hrp::dmatrix(3, rf_sole_verts_abs.cols()+lf_sole_verts_abs.cols()) << rf_sole_verts_abs, lf_sole_verts_abs).finished();
             return makeConvexHull2D(both_sole_verts_abs.topRows(XY));
         }
-        void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const hrp::dvector6& rfwin, const hrp::dvector6& lfwin, hrp::Vector3& zmp_ans){
-            hrp::Vector3 rfzmp,lfzmp;
-            const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
-            if( rfwin(fz) > 1.0e-6 ){
-                rfzmp(0) = ( - rfwin(ty) - rfwin(fx) * F_H_OFFSET + rfwin(fz) * 0 ) / rfwin(fz) + rfpos(0);
-                rfzmp(1) = (   rfwin(tx) - rfwin(fy) * F_H_OFFSET + rfwin(fz) * 0 ) / rfwin(fz) + rfpos(1);
-            }
-            if( lfwin(fz) > 1.0e-6 ){
-                lfzmp(0) = ( - lfwin(ty) - lfwin(fx) * F_H_OFFSET + lfwin(fz) * 0 ) / lfwin(fz) + lfpos(0);
-                lfzmp(1) = (   lfwin(tx) - lfwin(fy) * F_H_OFFSET + lfwin(fz) * 0 ) / lfwin(fz) + lfpos(1);
-            }
-            if( rfwin(fz) > 1.0e-6 || lfwin(fz) > 1.0e-6 ){
-                zmp_ans(0) = ( rfzmp(0)*rfwin(fz) + lfzmp(0)*lfwin(fz) ) / ( rfwin(fz) + lfwin(fz));
-                zmp_ans(1) = ( rfzmp(1)*rfwin(fz) + lfzmp(1)*lfwin(fz) ) / ( rfwin(fz) + lfwin(fz));
-            }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
-            zmp_ans(2) = 0;
-        }
         bool calcCrossPointOnHull(const hrp::Vector2& inside_start_pt, const hrp::Vector2& outside_goal_pt, const hrp::dmatrix& hull, hrp::Vector2& ans_cross_pt){
             if(hull.rows() != 2){ std::cerr << "Invalid input for calcCrossPointOnHull" << std::endl; dbgn(hull); }
             bg_linestring anchor_vec;
@@ -749,26 +724,10 @@ class WBMSCore{
             return ans_nearest_pt;
         }
         hrp::dmatrix makeConvexHull2D(const hrp::dmatrix& pts_2d){
-//            return makeConvexHull2D_OpenCV(pts_2d);
             return makeConvexHull2D_Boost(pts_2d);
         }
         bool isPointInHull2D(const hrp::Vector2& pt, const hrp::dmatrix& hull){
-//            return isPointInHull2D_OpenCV(pt, hull);
             return isPointInHull2D_Boost(pt, hull);
-        }
-        hrp::dmatrix makeConvexHull2D_OpenCV(const hrp::dmatrix& pts_2d){
-            if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHull2D_OpenCV" << std::endl; dbgn(pts_2d); }
-            cv::Mat pts_2d_cv;
-            std::vector<cv::Point2f> points(pts_2d.cols()), hull_2d_cv;
-            for(int i=0; i<pts_2d.cols(); i++){
-                points[i] = cv::Point2f(pts_2d.col(i)(X), pts_2d.col(i)(Y));
-            }
-            cv::convexHull( cv::Mat(points), hull_2d_cv, true);
-            hrp::dmatrix hull_2d(2, hull_2d_cv.size());
-            for(int i=0; i<hull_2d_cv.size(); i++){
-                hull_2d.col(i) << hull_2d_cv[i].x,  hull_2d_cv[i].y;
-            }
-            return hull_2d;
         }
         hrp::dmatrix makeConvexHull2D_Boost(const hrp::dmatrix& pts_2d){
             if(pts_2d.rows() != 2){ std::cerr << "Invalid input for makeConvexHull_Boost" << std::endl; dbgn(pts_2d); }
@@ -785,29 +744,9 @@ class WBMSCore{
             }
             return hull_2d;
         }
-        bool isPointInHull2D_OpenCV(const hrp::Vector2& pt, const hrp::dmatrix& hull){
-            if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2dOpenCV" << std::endl; dbgn(hull); }
-            std::vector<cv::Point2f> hull_cv(hull.cols());
-            for(int i=0; i<hull.cols(); i++){
-                hull_cv[i] = cv::Point2f(hull.col(i)(X), hull.col(i)(Y));
-            }
-            return (cv::pointPolygonTest(cv::Mat(hull_cv), cv::Point2f(pt(X),pt(Y)), false) > 0);
-        }
         bool isPointInHull2D_Boost(const hrp::Vector2& pt, const hrp::dmatrix& hull){
             if(hull.rows() != 2){ std::cerr << "Invalid input for isPointInHull2D_Boost" << std::endl; dbgn(hull); }
             return bg::within(to_bg_point(pt), to_bg_hull(hull));
-        }
-        void applyLPFilter_post(HumanPose& tgt){
-            if(is_initial_loop){
-                for(int i=0, l[1]={com}; i<1; i++){
-                    tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
-                    tgt_rpy_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy());
-                }
-            }
-            for(int i=0, l[1]={com}; i<1; i++){
-                tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
-                tgt.tgt[l[i]].abs.setRpy(tgt_rpy_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy()));
-            }
         }
         void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
             comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
