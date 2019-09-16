@@ -266,7 +266,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         for(int i=0; i<tgt_names.size(); i++){
             if (m_masterTgtPosesIn[tgt_names[i]]->isNew()){
                 m_masterTgtPosesIn[tgt_names[i]]->read();
-                wbms->hp_wld_raw.tgt[to_enum[tgt_names[i]]].abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
+                wbms->hp_wld_raw.tgt_by_str(tgt_names[i]).abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
             }
         }
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
@@ -335,8 +335,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
             for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
         }
-        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = wbms->rp_ref_out.tgt[rf].is_contact;
-        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact;
+        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = wbms->rp_ref_out.tgt[rf].is_contact();
+        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact();
         addTimeReport("SetOutPut");
     }
     wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
@@ -448,7 +448,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         tmp.localR = ee_ikc_map["rleg"].localR;
         tmp.targetPos = rf_ref.p;
         tmp.targetRpy = rf_ref.rpy();
-        if(wbms->rp_ref_out.tgt[rf].is_contact){
+        if(wbms->rp_ref_out.tgt[rf].is_contact()){
             tmp.constraint_weight = hrp::dvector6::Constant(3);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
@@ -462,7 +462,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         tmp.localR = ee_ikc_map["lleg"].localR;
         tmp.targetPos = lf_ref.p;
         tmp.targetRpy = lf_ref.rpy();
-        if(wbms->rp_ref_out.tgt[lf].is_contact){
+        if(wbms->rp_ref_out.tgt[lf].is_contact()){
             tmp.constraint_weight = hrp::dvector6::Constant(3);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
@@ -511,12 +511,12 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
             ikc_list.push_back(tmp);
         }
     }
-    if(wbms->rp_ref_out.tgt[rf].is_contact){
+    if(wbms->rp_ref_out.tgt[rf].is_contact()){
         sccp->avoid_priority.head(12).head(6).fill(4);
     }else{
         sccp->avoid_priority.head(12).head(6).fill(3);
     }
-    if(wbms->rp_ref_out.tgt[lf].is_contact){
+    if(wbms->rp_ref_out.tgt[lf].is_contact()){
         sccp->avoid_priority.head(12).tail(6).fill(4);
     }else{
         sccp->avoid_priority.head(12).tail(6).fill(3);
@@ -585,8 +585,8 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
     if( fik->m_robot->link("HEAD_JOINT1") != NULL) fik->m_robot->link("HEAD_JOINT1")->ulimit = deg2rad(10);
     if( fik->m_robot->link("RARM_JOINT2") != NULL) fik->m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-45);//脇内側の干渉回避
     if( fik->m_robot->link("LARM_JOINT2") != NULL) fik->m_robot->link("LARM_JOINT2")->llimit = deg2rad(45);
-    if( fik->m_robot->link("RLEG_JOINT3") != NULL) fik->m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);//膝伸びきり防止のため
-    if( fik->m_robot->link("LLEG_JOINT3") != NULL) fik->m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
+    if( fik->m_robot->link("RLEG_JOINT3") != NULL) fik->m_robot->link("RLEG_JOINT3")->llimit = deg2rad(15);//膝伸びきり防止のため
+    if( fik->m_robot->link("LLEG_JOINT3") != NULL) fik->m_robot->link("LLEG_JOINT3")->llimit = deg2rad(15);
 
     if( fik->m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_Y")->jointId) = 0.1;//K
     if( fik->m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_P")->jointId) = 0.1;
