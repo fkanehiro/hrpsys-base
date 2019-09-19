@@ -8,26 +8,30 @@ module OpenHRP
   
   interface WholeBodyMasterSlaveService
   {
+    typedef sequence<double, 2> DblSequence2;
     typedef sequence<double, 3> DblSequence3;
-    //typedef sequence<double, 4> DblSequence4;
+    typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
     typedef sequence<string> StrSequence;
 
-    /**
-     * HumanSync
-     */
     struct WholeBodyMasterSlaveParam
     {
-        double auto_swing_foot_landing_threshold;
+        boolean auto_com_mode;
+        double additional_double_support_time;
+        double auto_com_foot_move_detect_height;
+        double base_to_hand_min_distance;
+        double capture_point_extend_ratio;
+        double foot_collision_avoidance_distance;
         double human_to_robot_ratio;
-        double set_com_height_fix_val;
-        double swing_foot_height_offset;
+        double max_double_support_width;
         double upper_body_rmc_ratio;
-        boolean set_com_height_fix;
-        boolean use_head;
-        boolean use_upper;
-        boolean use_lower;
+        double single_foot_zmp_safety_distance;
+        double swing_foot_height_offset;
+        DblSequence3 com_offset;
+        DblSequence4 actual_foot_vert_fbio;
+        DblSequence4 safety_foot_vert_fbio;
         StrSequence use_joints;
         StrSequence use_targets;
     };

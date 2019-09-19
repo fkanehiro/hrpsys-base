@@ -266,9 +266,13 @@ class FullbodyInverseKinematicsSolver{
 
             // update rootlink pos rot
             m_robot->rootLink()->p += dq_all.tail(6).head(3);
-            hrp::Matrix33 dR;
             const hrp::Vector3 omega = dq_all.tail(6).tail(3);
-            hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
+            hrp::Matrix33 dR;
+            if(omega.norm() > 1e-12){
+                hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
+            }else{
+                dR = hrp::Matrix33::Identity();
+            }
             rats::rotm3times(m_robot->rootLink()->R, dR, m_robot->rootLink()->R); // safe rot operation with quartanion normalization
             if(!m_robot->rootLink()->R.isUnitary()){
                 std::cerr <<"[FullbodyIK] WARN m_robot->rootLink()->R is not Unitary, something wrong !" << std::endl;
