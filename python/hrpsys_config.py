@@ -2304,6 +2304,64 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
 
             pass
 
+    @classmethod
+    def hrpsysInterpreter(cls):
+        '''!@brief
+        This is class method providing interpleter.
+        please refer to hrpsyspy for detail usage.
+        '''
+        import argparse, code, sys
+        global hcf
+
+        parser = argparse.ArgumentParser(description="hrpsys command line interpreters, try `hrpsyspy -- --host xxxx --port xxxx `")
+        parser.add_argument('--host', help='corba name server hostname', default='localhost')
+        parser.add_argument('--port', help='corba name server port number', default=15005)
+        parser.add_argument('--robot', help='robot modlule name (RobotHardware0) for real robot)', default='RobotHardware0')
+        args, unknown = parser.parse_known_args()
+
+        if args.host:
+            rtm.nshost = args.host
+        if args.port:
+            rtm.nsport = args.port
+        rh_name = args.robot
+
+        hcf = cls()
+
+        hcf.getRTCList = hcf.getRTCListUnstable
+        # estimate robot hardware name
+        hcf.waitForRTCManager(args.host)
+        if rh_name in [x.name() for x in hcf.ms.get_components()]:
+            pass
+        else:
+            for x in hcf.ms.get_components():
+                try: # see findService() in rtm.py
+                    for pp in x.ref.get_component_profile().port_profiles:
+                        ifs = pp.interfaces
+                        for aif in ifs:
+                            if aif.instance_name == "service0" and aif.type_name == "RobotHardwareService" and aif.polarity == PROVIDED:
+                                con_prof = RTC.ConnectorProfile("noname", "", [pp.port_ref], [])
+                                ret, con_prof = pp.port_ref.connect(con_prof)
+                                ior = any.from_any(con_prof.properties[0].value)
+                                svc = rtm.orb.string_to_object(ior)
+                                if len(svc.getStatus().angle) > 0 :
+                                    rh_name = x.name()
+                except:
+                    pass
+        hcf.waitForRobotHardware(rh_name)
+        hcf.checkSimulationMode()
+        hcf.findComps(max_timeout_count=0, verbose=False)
+        rtc = hcf.getRTCInstanceList(verbose=False)
+        print('\033[33;1mStarting hrpsys python interface for %s\033[0m'%(rtc[0].name()))
+        print('\033[32;1m Installed rtc are ...\033[0m'),
+        for r in rtc[1:]:
+            print('\033[32;1m %s \033[0m'%(r.name())),
+        print('\033[32;1m\033[0m')
+        print("\033[32;1m Use 'hcf' instance to access to the hrpsys controller\033[0m")
+
+        # start ipython
+        from IPython import embed
+        embed()
+
     def __init__(self, cname="[hrpsys.py] "):
         initCORBA()
         self.configurator_name = cname
