@@ -141,6 +141,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     avg_q_acc.tail(6).fill(std::numeric_limits<double>::max()); // no limit for base link acc
     RTC_INFO_STREAM("setup interpolator finished");
 
+    ref_zmp_filter.resize(XYZ);
     ref_zmp_filter.setParameter(20, 1/m_dt, Q_BUTTERWORTH);
 
     cp_flag = -1;
@@ -716,6 +717,7 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
     wbms->wp.auto_com_foot_move_detect_height   = i_param.auto_com_foot_move_detect_height;
     wbms->wp.base_to_hand_min_distance          = i_param.base_to_hand_min_distance;
     wbms->wp.capture_point_extend_ratio         = i_param.capture_point_extend_ratio;
+    wbms->wp.com_filter_cutoff_hz               = i_param.com_filter_cutoff_hz;
     wbms->wp.foot_collision_avoidance_distance  = i_param.foot_collision_avoidance_distance;
     wbms->wp.human_to_robot_ratio               = i_param.human_to_robot_ratio;
     wbms->wp.max_double_support_width           = i_param.max_double_support_width;
@@ -738,6 +740,7 @@ bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::Whole
     i_param.auto_com_foot_move_detect_height    = wbms->wp.auto_com_foot_move_detect_height;
     i_param.base_to_hand_min_distance           = wbms->wp.base_to_hand_min_distance;
     i_param.capture_point_extend_ratio          = wbms->wp.capture_point_extend_ratio;
+    i_param.com_filter_cutoff_hz                = wbms->wp.com_filter_cutoff_hz;
     i_param.foot_collision_avoidance_distance   = wbms->wp.foot_collision_avoidance_distance;
     i_param.human_to_robot_ratio                = wbms->wp.human_to_robot_ratio;
     i_param.max_double_support_width            = wbms->wp.max_double_support_width;
