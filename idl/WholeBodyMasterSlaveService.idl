@@ -23,6 +23,7 @@ module OpenHRP
         double auto_com_foot_move_detect_height;
         double base_to_hand_min_distance;
         double capture_point_extend_ratio;
+        double com_filter_cutoff_hz;
         double foot_collision_avoidance_distance;
         double human_to_robot_ratio;
         double max_double_support_width;
