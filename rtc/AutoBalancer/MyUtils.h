@@ -118,7 +118,7 @@ namespace hrp{
 }
 
 
-class BiquadIIRFilterVec2{
+class BiquadIIRFilterVec2{/// safe ver
     private:
         std::vector<IIRFilter> filters;
         hrp::dvector ans;
