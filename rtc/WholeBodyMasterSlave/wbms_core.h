@@ -347,7 +347,7 @@ class WBMSCore{
         bool is_initial_loop;
         bool cp_force_go_contact[LR];
         int zmp_force_go_contact_count[LR];
-        BiquadIIRFilterVec2 acc4zmp_v_filters, com_filter;
+        BiquadIIRFilterVec acc4zmp_v_filters, com_filter;
         double com_filter_cutoff_hz_old;
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW

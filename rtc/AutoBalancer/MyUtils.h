@@ -118,17 +118,17 @@ namespace hrp{
 }
 
 
-class BiquadIIRFilterVec2{/// safe ver
+class BiquadIIRFilterVec{/// safe ver
     private:
         std::vector<IIRFilter> filters;
         hrp::dvector ans;
     public:
-        BiquadIIRFilterVec2(){}
-        BiquadIIRFilterVec2(const int len){resize(len);}
+        BiquadIIRFilterVec(){}
+        BiquadIIRFilterVec(const int len){resize(len);}
         void resize(const int len){filters.resize(len); ans.resize(len);}
-        ~BiquadIIRFilterVec2(){}
-        void setParameter(const hrp::dvector& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad(std::min(fc_in(i),HZ/2), Q, HZ); } }
-        void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
+        ~BiquadIIRFilterVec(){}
+        void setParameter(const hrp::dvector& fc_in, const double HZ, const double Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad(std::min(fc_in(i),HZ/2), Q, HZ); } }
+        void setParameter(const double fc_in, const double HZ, const double Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
         hrp::dvector passFilter(const hrp::dvector& input){
             for(int i=0;i<filters.size();i++){
                 ans(i) = filters[i].passFilter((double)input(i));
@@ -136,7 +136,7 @@ class BiquadIIRFilterVec2{/// safe ver
             return ans;
         }
         void reset(const hrp::dvector& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset((double)initial_input(i));} }
-        void reset(const double& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset(initial_input);} }
+        void reset(const double initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset(initial_input);} }
 };
 
 inline bool has(const std::vector<std::string> v, const std::string& s){ return (std::find(v.begin(), v.end(), s) != v.end());}
