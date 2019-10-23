@@ -228,7 +228,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if(m_baseRpyIn.isNew()                  ){ m_baseRpyIn.read(); }
     if(m_zmpIn.isNew()                      ){ m_zmpIn.read(); }
     if(m_optionalDataIn.isNew()             ){ m_optionalDataIn.read(); }
-    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); }
+    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
     for(int i=0; i<ee_names.size(); i++){ if(m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
 
     // button func
@@ -347,7 +347,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_zmpOut.write();
-    m_delayCheckPacketOutboundOut.write();
     m_optionalDataOut.write();
     addTimeReport("OutPort");
     if(DEBUGP) RTC_INFO_STREAM(time_report_str);

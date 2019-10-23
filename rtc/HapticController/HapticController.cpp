@@ -162,7 +162,7 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     if(m_qRefIn.isNew()                     ){ m_qRefIn.read(); }
     if(m_qActIn.isNew()                     ){ m_qActIn.read(); }
     if(m_dqActIn.isNew()                    ){ m_dqActIn.read(); }
-    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); }
+    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
     for (int i=0; i<ee_names.size(); i++) {
         if ( m_slaveEEWrenchesIn[ee_names[i]]->isNew() ) { m_slaveEEWrenchesIn[ee_names[i]]->read(); }
     }
@@ -188,7 +188,6 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     m_qOut.write();
     m_tauOut.write();
     m_teleopOdomOut.write();
-    m_delayCheckPacketOutboundOut.write();
 
     loop ++;
     return RTC::RTC_OK;
