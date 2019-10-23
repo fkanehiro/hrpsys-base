@@ -33,8 +33,8 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
     m_actCPIn("actCapturePoint", m_actCP),
     m_actZMPIn("zmp", m_actZMP),
     m_exDataIn("exData", m_exData),
-    m_calcDelayInboundIn("calc_delay_inbound", m_calcDelayInbound),
-    m_calcDelayOutboundOut("calc_delay_outbound", m_calcDelayOutbound),
+    m_delayCheckPacketInboundIn("delay_check_packet_inbound", m_delayCheckPacket),
+    m_delayCheckPacketOutboundOut("delay_check_packet_outbound", m_delayCheckPacket),
     m_exDataIndexIn("exDataIndex", m_exDataIndex),
     m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
     m_AutoBalancerServicePort("AutoBalancerService"),
@@ -62,8 +62,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addOutPort("optionalDataOut", m_optionalDataOut);
     addInPort("actCapturePoint", m_actCPIn);
     addInPort("zmp", m_actZMPIn);
-    addInPort("calc_delay_inbound", m_calcDelayInboundIn);
-    addOutPort("calc_delay_outbound", m_calcDelayOutboundOut);
+    addInPort("delay_check_packet_inbound", m_delayCheckPacketInboundIn);
+    addOutPort("delay_check_packet_outbound", m_delayCheckPacketOutboundOut);
     addInPort("exData", m_exDataIn);
     addInPort("exDataIndex", m_exDataIndexIn);
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
@@ -222,17 +222,14 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if(DEBUGP_ONCE) RTC_INFO_STREAM("onExecute(" << ec_id << ")");
     time_report_str.clear();
     clock_gettime(CLOCK_REALTIME, &startT);
-    if (m_qRefIn.isNew()) { m_qRefIn.read(); }
-    if (m_qActIn.isNew()) { m_qActIn.read(); }
-    if (m_basePosIn.isNew()) { m_basePosIn.read(); }
-    if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
-    if (m_zmpIn.isNew()) { m_zmpIn.read(); }
-    if (m_calcDelayInboundIn.isNew()) {
-        m_calcDelayInboundIn.read();
-        m_calcDelayOutbound = m_calcDelayInbound;
-    }
-    if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
-    for(int i=0; i<ee_names.size(); i++){ if (m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
+    if(m_qRefIn.isNew()                     ){ m_qRefIn.read(); }
+    if(m_qActIn.isNew()                     ){ m_qActIn.read(); }
+    if(m_basePosIn.isNew()                  ){ m_basePosIn.read(); }
+    if(m_baseRpyIn.isNew()                  ){ m_baseRpyIn.read(); }
+    if(m_zmpIn.isNew()                      ){ m_zmpIn.read(); }
+    if(m_optionalDataIn.isNew()             ){ m_optionalDataIn.read(); }
+    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); }
+    for(int i=0; i<ee_names.size(); i++){ if(m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
 
     // button func
     hrp::dvector ex_data;
@@ -245,30 +242,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         m_exDataIndexIn.read();
         ex_data_index = hrp::to_string_vector(m_exDataIndex.data);
     }
-
-//    if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_IDLE){
-//        std::cerr<<"startWholeBodyMasterSlave() called by button"<<std::endl;
-//        startWholeBodyMasterSlave();
-//    }else if(m_htlfw.data.force.y >= 1 && m_htrfw.data.force.y >= 1 && mode.now() == MODE_WBMS){
-//        std::cerr<<"stopWholeBodyMasterSlave() called by button"<<std::endl;
-//        stopWholeBodyMasterSlave();
-//    }
-//    static bool is_blocking_continuous_hits = false;
-//    if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_PAUSE){
-//        if(!is_blocking_continuous_hits){
-//            std::cerr<<"resumeWholeBodyMasterSlave() called by button"<<std::endl;
-//            resumeWholeBodyMasterSlave();
-//            is_blocking_continuous_hits = true;
-//        }
-//    }else if(m_htlfw.data.force.z >= 1 && m_htrfw.data.force.z >= 1 && mode.now() == MODE_WBMS){
-//        if(!is_blocking_continuous_hits){
-//            std::cerr<<"pauseWholeBodyMasterSlave() called by button"<<std::endl;
-//            pauseWholeBodyMasterSlave();
-//            is_blocking_continuous_hits = true;
-//        }
-//    }else{
-//        is_blocking_continuous_hits = false;
-//    }
 
 
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
@@ -374,7 +347,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_zmpOut.write();
-    m_calcDelayOutboundOut.write();
+    m_delayCheckPacketOutboundOut.write();
     m_optionalDataOut.write();
     addTimeReport("OutPort");
     if(DEBUGP) RTC_INFO_STREAM(time_report_str);

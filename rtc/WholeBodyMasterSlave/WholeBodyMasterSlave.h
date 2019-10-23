@@ -104,9 +104,9 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
         std::map<std::string, ITDS_Ptr> m_localEEWrenchesIn;
 
-        RTC::Time m_calcDelayInbound, m_calcDelayOutbound;
-        RTC::InPort<RTC::Time> m_calcDelayInboundIn;
-        RTC::OutPort<RTC::Time> m_calcDelayOutboundOut;
+        RTC::Time m_delayCheckPacket;
+        RTC::InPort<RTC::Time> m_delayCheckPacketInboundIn;
+        RTC::OutPort<RTC::Time> m_delayCheckPacketOutboundOut;
 
         RTC::TimedDoubleSeq m_exData;
         RTC::InPort<RTC::TimedDoubleSeq> m_exDataIn;

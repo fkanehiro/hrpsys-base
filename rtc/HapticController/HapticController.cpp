@@ -26,6 +26,8 @@ HapticController::HapticController(RTC::Manager* manager) : RTC::DataFlowCompone
     m_tauOut("tau", m_tau),
     m_teleopOdomOut("teleopOdom", m_teleopOdom),
     m_debugDataOut("debugData", m_debugData),
+    m_delayCheckPacketInboundIn("delay_check_packet_inbound", m_delayCheckPacket),
+    m_delayCheckPacketOutboundOut("delay_check_packet_outbound", m_delayCheckPacket),
     m_HapticControllerServicePort("HapticControllerService"),
     m_debugLevel(0)
 {
@@ -44,6 +46,8 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     addOutPort("tau", m_tauOut);
     addOutPort("teleopOdom", m_teleopOdomOut);
     addOutPort("debugData", m_debugDataOut);
+    addInPort("delay_check_packet_inbound", m_delayCheckPacketInboundIn);
+    addOutPort("delay_check_packet_outbound", m_delayCheckPacketOutboundOut);
     m_HapticControllerServicePort.registerProvider("service0", "HapticControllerService", m_service0);
     addPort(m_HapticControllerServicePort);
 
@@ -155,9 +159,10 @@ RTC::ReturnCode_t HapticController::setupEEIKConstraintFromConf(std::map<std::st
 
 RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     if(DEBUGP_ONCE) RTC_INFO_STREAM("onExecute(" << ec_id << ") dt = " << m_dt);
-    if (m_qRefIn.isNew())   { m_qRefIn.read(); }
-    if (m_qActIn.isNew())   { m_qActIn.read(); }
-    if (m_dqActIn.isNew())  { m_dqActIn.read(); }
+    if(m_qRefIn.isNew()                     ){ m_qRefIn.read(); }
+    if(m_qActIn.isNew()                     ){ m_qActIn.read(); }
+    if(m_dqActIn.isNew()                    ){ m_dqActIn.read(); }
+    if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); }
     for (int i=0; i<ee_names.size(); i++) {
         if ( m_slaveEEWrenchesIn[ee_names[i]]->isNew() ) { m_slaveEEWrenchesIn[ee_names[i]]->read(); }
     }
@@ -183,6 +188,7 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     m_qOut.write();
     m_tauOut.write();
     m_teleopOdomOut.write();
+    m_delayCheckPacketOutboundOut.write();
 
     loop ++;
     return RTC::RTC_OK;

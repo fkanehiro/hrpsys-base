@@ -94,6 +94,10 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::CorbaPort m_HapticControllerServicePort;
         HapticControllerService_impl m_service0;
 
+        RTC::Time m_delayCheckPacket;
+        RTC::InPort<RTC::Time> m_delayCheckPacketInboundIn;
+        RTC::OutPort<RTC::Time> m_delayCheckPacketOutboundOut;
+
     private:
         double m_dt;
         unsigned int loop;
