@@ -104,11 +104,11 @@ class HapticController : public RTC::DataFlowComponentBase{
         interpolator *t_ip, *q_ref_ip, *baselink_h_ip;
 
         hrp::InvDynStateBuffer idsb;
-        BiquadIIRFilterVec2 dqAct_filter;
+        BiquadIIRFilterVec dqAct_filter;
         hrp::dvector dqAct_filtered;
         std::map<std::string, IKConstraint> ee_ikc_map;
-        std::map<std::string, BiquadIIRFilterVec2> ee_vel_filter;
-        std::map<std::string, BiquadIIRFilterVec2> wrench_lpf_for_hpf, wrench_lpf;
+        std::map<std::string, BiquadIIRFilterVec> ee_vel_filter;
+        std::map<std::string, BiquadIIRFilterVec> wrench_lpf_for_hpf, wrench_lpf;
         std::map<std::string, hrp::dvector6> wrench_shaped, wrench_used;
         std::map<std::string, hrp::Pose3> ee_pose, ee_pose_old;
         std::map<std::string, hrp::dvector6> ee_vel, ee_vel_filtered; // = twist

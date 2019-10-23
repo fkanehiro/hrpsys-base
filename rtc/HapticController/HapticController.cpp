@@ -82,17 +82,17 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     baselink_h_ip->get(&baselink_h_from_floor, false);
     RTC_INFO_STREAM("setup interpolator finished");
 
-    dqAct_filter = BiquadIIRFilterVec2(m_robot->numJoints());
+    dqAct_filter = BiquadIIRFilterVec(m_robot->numJoints());
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
     for ( int i=0; i<ee_names.size(); i++) {
-        ee_vel_filter[ee_names[i]] = BiquadIIRFilterVec2(6);
+        ee_vel_filter[ee_names[i]] = BiquadIIRFilterVec(6);
         ee_vel_filter[ee_names[i]].setParameter(hcp.ee_vel_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
         ee_vel_filter[ee_names[i]].reset(0);
-        wrench_lpf_for_hpf[ee_names[i]] = BiquadIIRFilterVec2(6);
+        wrench_lpf_for_hpf[ee_names[i]] = BiquadIIRFilterVec(6);
         wrench_lpf_for_hpf[ee_names[i]].setParameter(hcp.wrench_hpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
         wrench_lpf_for_hpf[ee_names[i]].reset(0);
-        wrench_lpf[ee_names[i]] = BiquadIIRFilterVec2(6);
+        wrench_lpf[ee_names[i]] = BiquadIIRFilterVec(6);
         wrench_lpf[ee_names[i]].setParameter(hcp.wrench_lpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
         wrench_lpf[ee_names[i]].reset(0);
     }

@@ -18,6 +18,8 @@ enum { fx, fy, fz, tx, ty, tz, ft_xyz };
 enum { com, rf, lf, rh, lh, head, zmp, num_pose_tgt };
 enum { num_ee_tgt=4 };
 
+#define OPPOSITE(lr) (lr==R ? L : R)
+
 static const double G = 9.80665;
 static const double Q_NOOVERSHOOT = 0.5;
 static const double Q_BUTTERWORTH = 0.707106781;
@@ -39,7 +41,6 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define LIMIT_MINMAX_V(v,minv,maxv) (v= v.cwiseMin(minv).cwiseMax(maxv))
 
 
-
 namespace hrp{
     class Pose3{
         public:
@@ -47,14 +48,14 @@ namespace hrp{
             hrp::Vector3 p;
             hrp::Matrix33 R;
             Pose3()                                                                                                             { reset();}
-            Pose3(const double& _X, const double& _Y, const double& _Z, const double& _r, const double& _p, const double& _y)   { p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
+            Pose3(const double _X, const double _Y, const double _Z, const double _r, const double _p, const double _y)         { p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
             Pose3(const hrp::dvector6& _xyz_rpy)                                                                                { p = _xyz_rpy.head(3); R = hrp::rotFromRpy(_xyz_rpy.tail(3)); }
 //            Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy)                                                           { p = _xyz; R = hrp::rotFromRpy(_rpy); }// ambiguous overload...
             Pose3(const hrp::Vector3& _xyz, const hrp::Matrix33& _R)                                                            { p = _xyz; R = _R; }
             void reset()                                                                                                        { p.fill(0); R.setIdentity(); }
             hrp::Vector3 rpy() const                                                                                            { return hrp::rpyFromRot(R); }
             hrp::dvector6 to_dvector6() const                                                                                   { return (hrp::dvector6() << p, hrp::rpyFromRot(R)).finished(); }
-            void setRpy(const double& _r, const double& _p, const double& _y)                                                   { R = rotFromRpy(_r,_p,_y); }
+            void setRpy(const double _r, const double _p, const double _y)                                                      { R = rotFromRpy(_r,_p,_y); }
             void setRpy(const hrp::Vector3& _rpy)                                                                               { R = rotFromRpy(_rpy); }
     };
 
@@ -117,17 +118,17 @@ namespace hrp{
 }
 
 
-class BiquadIIRFilterVec2{
+class BiquadIIRFilterVec{/// safe ver
     private:
         std::vector<IIRFilter> filters;
         hrp::dvector ans;
     public:
-        BiquadIIRFilterVec2(){}
-        BiquadIIRFilterVec2(const int len){resize(len);}
+        BiquadIIRFilterVec(){}
+        BiquadIIRFilterVec(const int len){resize(len);}
         void resize(const int len){filters.resize(len); ans.resize(len);}
-        ~BiquadIIRFilterVec2(){}
-        void setParameter(const hrp::dvector& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad(std::min(fc_in(i),HZ/2), Q, HZ); } }
-        void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
+        ~BiquadIIRFilterVec(){}
+        void setParameter(const hrp::dvector& fc_in, const double HZ, const double Q = 0.5){ for(int i=0;i<filters.size();i++){ filters[i].setParameterAsBiquad(std::min(fc_in(i),HZ/2), Q, HZ); } }
+        void setParameter(const double fc_in, const double HZ, const double Q = 0.5){ setParameter(hrp::dvector::Constant(filters.size(), fc_in), HZ, Q); }//overload
         hrp::dvector passFilter(const hrp::dvector& input){
             for(int i=0;i<filters.size();i++){
                 ans(i) = filters[i].passFilter((double)input(i));
@@ -135,7 +136,7 @@ class BiquadIIRFilterVec2{
             return ans;
         }
         void reset(const hrp::dvector& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset((double)initial_input(i));} }
-        void reset(const double& initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset(initial_input);} }
+        void reset(const double initial_input){ for(int i=0;i<filters.size();i++){ filters[i].reset(initial_input);} }
 };
 
 inline bool has(const std::vector<std::string> v, const std::string& s){ return (std::find(v.begin(), v.end(), s) != v.end());}
