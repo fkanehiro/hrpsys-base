@@ -338,11 +338,8 @@ void HapticController::calcTorque(){
                 LIMIT_NORM_V(wrench, 1000);
                 const hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-
-                is_contact_to_floor[tgt[i]] = true;
-            }else{
-                is_contact_to_floor[tgt[i]] = false;
             }
+            is_contact_to_floor[tgt[i]] = (foot_h_from_floor < 0 + 0.05);
         }
 
         ///// virtual back wall
@@ -420,6 +417,7 @@ void HapticController::calcTorque(){
 
     // calc real robot feedback force
     for (int i=0; i<ee_names.size(); i++){
+        if(ee_names[i] == "lleg" || ee_names[i] == "rleg" ) continue; // skip leg force feedback
         const hrp::dvector6 wrench_raw = hrp::to_dvector(m_slaveEEWrenches[ee_names[i]].data);
         const hrp::dvector6 w_hpf = wrench_raw - wrench_lpf_for_hpf[ee_names[i]].passFilter( wrench_raw );
         const hrp::dvector6 w_lpf = wrench_lpf[ee_names[i]].passFilter( wrench_raw );
