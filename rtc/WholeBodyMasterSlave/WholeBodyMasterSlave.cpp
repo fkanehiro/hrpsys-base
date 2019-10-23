@@ -33,6 +33,8 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
     m_actCPIn("actCapturePoint", m_actCP),
     m_actZMPIn("zmp", m_actZMP),
     m_exDataIn("exData", m_exData),
+    m_calcDelayInboundIn("calc_delay_inbound", m_calcDelayInbound),
+    m_calcDelayOutboundOut("calc_delay_outbound", m_calcDelayOutbound),
     m_exDataIndexIn("exDataIndex", m_exDataIndex),
     m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
     m_AutoBalancerServicePort("AutoBalancerService"),
@@ -60,6 +62,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addOutPort("optionalDataOut", m_optionalDataOut);
     addInPort("actCapturePoint", m_actCPIn);
     addInPort("zmp", m_actZMPIn);
+    addInPort("calc_delay_inbound", m_calcDelayInboundIn);
+    addOutPort("calc_delay_outbound", m_calcDelayOutboundOut);
     addInPort("exData", m_exDataIn);
     addInPort("exDataIndex", m_exDataIndexIn);
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
@@ -223,6 +227,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_basePosIn.isNew()) { m_basePosIn.read(); }
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
+    if (m_calcDelayInboundIn.isNew()) {
+        m_calcDelayInboundIn.read();
+        m_calcDelayOutbound = m_calcDelayInbound;
+    }
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
     for(int i=0; i<ee_names.size(); i++){ if (m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
 
@@ -366,6 +374,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_zmpOut.write();
+    m_calcDelayOutboundOut.write();
     m_optionalDataOut.write();
     addTimeReport("OutPort");
     if(DEBUGP) RTC_INFO_STREAM(time_report_str);
