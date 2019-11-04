@@ -100,6 +100,10 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
         std::map<std::string, OTDS_Ptr> m_slaveEEWrenchesOut;
 
+        std::map<std::string, RTC::TimedPose3D> m_slaveTgtPoses;
+        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
+        std::map<std::string, OTP3_Ptr> m_slaveTgtPosesOut;
+
         std::map<std::string, RTC::TimedDoubleSeq> m_localEEWrenches;
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
         std::map<std::string, ITDS_Ptr> m_localEEWrenchesIn;

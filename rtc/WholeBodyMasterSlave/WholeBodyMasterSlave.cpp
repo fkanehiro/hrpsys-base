@@ -181,6 +181,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt_names[i]]);
         RTC_INFO_STREAM(" registerInPort " << n);
     }
+    for ( int i=0; i<tgt_names.size(); i++) {
+        std::string n = "slave_"+tgt_names[i]+"_pose";
+        m_slaveTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt_names[i]]));
+        registerOutPort(n.c_str(), *m_slaveTgtPosesOut[tgt_names[i]]);
+        RTC_INFO_STREAM(" registerOutPort " << n);
+    }
 
     RTC_INFO_STREAM("onInitialize() OK");
     loop = 0;
@@ -336,12 +342,23 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee_names[i]]);
         hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
         hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
-        const hrp::Vector3 f_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
-        const hrp::Vector3 t_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
-        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_wld,t_wld).finished());
+        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
+        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
+
+        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[ee_names[i]].getCurrentTargetPos(m_robot_act) - sensor->link->p;
+
+        const hrp::Vector3 f_ee_wld = f_sensor_wld;
+        const hrp::Vector3 t_ee_wld = t_sensor_wld - sensor_to_ee_vec_wld.cross(f_sensor_wld);
+        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
         m_slaveEEWrenches[ee_names[i]].tm = m_qRef.tm;
         m_slaveEEWrenchesOut[ee_names[i]]->write();
+        m_slaveTgtPoses[ee_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot_act));
+        m_slaveTgtPoses[ee_names[i]].tm = m_qRef.tm;
+        m_slaveTgtPosesOut[ee_names[i]]->write();
     }
+    m_slaveTgtPoses["com"].data = hrp::to_Pose3D( (hrp::dvector6()<<m_robot_act->calcCM(),0,0,0).finished());
+    m_slaveTgtPoses["com"].tm = m_qRef.tm;
+    m_slaveTgtPosesOut["com"]->write();
     // write
     m_qOut.write();
     m_basePosOut.write();
