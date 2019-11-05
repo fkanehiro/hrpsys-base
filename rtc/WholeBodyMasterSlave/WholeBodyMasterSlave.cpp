@@ -175,6 +175,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     tgt_names = ee_names;
     tgt_names.push_back("com");
     tgt_names.push_back("head");
+    tgt_names.push_back("rhand");
+    tgt_names.push_back("lhand");
     for ( int i=0; i<tgt_names.size(); i++) {
         std::string n = "master_"+tgt_names[i]+"_pose";
         m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
@@ -250,11 +252,16 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     }
 
 
+
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
         for(int i=0; i<tgt_names.size(); i++){
             if (m_masterTgtPosesIn[tgt_names[i]]->isNew()){
                 m_masterTgtPosesIn[tgt_names[i]]->read();
-                wbms->hp_wld_raw.tgt_by_str(tgt_names[i]).abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
+                if(tgt_names[i] == "lhand" || tgt_names[i] == "rhand"){
+                    // nothind
+                }else{
+                    wbms->hp_wld_raw.tgt_by_str(tgt_names[i]).abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
+                }
             }
         }
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
@@ -276,6 +283,26 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
         solveFullbodyIK(wbms->rp_ref_out.tgt[com].abs, wbms->rp_ref_out.tgt[rf].abs, wbms->rp_ref_out.tgt[lf].abs, wbms->rp_ref_out.tgt[rh].abs, wbms->rp_ref_out.tgt[lh].abs, wbms->rp_ref_out.tgt[head].abs);
         addTimeReport("IK");
+
+        // RHP finger
+        if(fik->m_robot->name() == "RHP4B"){
+            const double hand_max_vel = M_PI/0.4;//0.4s for 180deg
+            {
+                double trigger_in = m_masterTgtPoses["lhand"].data.position.y;
+                LIMIT_MINMAX(trigger_in, 0.0, 1.0);
+                double tgt_hand_q = (-29.0 + (124.0-(-29.0))*trigger_in ) /180.0*M_PI;
+                LIMIT_MINMAX(tgt_hand_q, fik->m_robot->link("L_HAND")->llimit, fik->m_robot->link("L_HAND")->ulimit);
+                fik->m_robot->link("L_HAND")->q = tgt_hand_q;
+                avg_q_vel(fik->m_robot->link("L_HAND")->jointId) = hand_max_vel;
+            }{
+                double trigger_in = m_masterTgtPoses["rhand"].data.position.y;
+                LIMIT_MINMAX(trigger_in, 0.0, 1.0);
+                double tgt_hand_q = (-29.0 + (124.0-(-29.0))*trigger_in ) /180.0*M_PI;
+                LIMIT_MINMAX(tgt_hand_q, fik->m_robot->link("R_HAND")->llimit, fik->m_robot->link("R_HAND")->ulimit);
+                fik->m_robot->link("R_HAND")->q = tgt_hand_q;
+                avg_q_vel(fik->m_robot->link("R_HAND")->jointId) = hand_max_vel;
+            }
+        }
 
         smoothingJointAngles(fik->m_robot, m_robot_vsafe);
 
