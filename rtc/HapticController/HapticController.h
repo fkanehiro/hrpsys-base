@@ -155,9 +155,9 @@ class HapticController : public RTC::DataFlowComponentBase{
                 wrench_hpf_gain             = 1;
                 wrench_lpf_gain             = 0.2;
                 ee_pos_rot_friction_coeff   << 0, 0; // 1, 0.1
-                floor_pd_gain               << 5000, 100;
+                floor_pd_gain               << 10000, 500;
                 foot_horizontal_pd_gain     << 300, 30;
-                q_ref_pd_gain               << 0, 0;
+                q_ref_pd_gain               << 50, 0;
             }
         } hcp;
 

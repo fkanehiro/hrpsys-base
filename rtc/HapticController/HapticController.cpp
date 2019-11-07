@@ -344,7 +344,7 @@ void HapticController::calcTorque(){
                 const hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
             }
-            is_contact_to_floor[tgt[i]] = (foot_h_from_floor < 0 + 0.05);
+            is_contact_to_floor[tgt[i]] = (foot_h_from_floor < 0 + 0.03);
         }
 
         ///// virtual back wall
@@ -482,11 +482,16 @@ void HapticController::calcTorque(){
         if(loop%1000==0)dbgv(friction_tq);
     }
 
+
+    const hrp::dvector max_torque = (hrp::dvector(m_robot->numJoints()) << 20,40,60,60,20,20, 20,40,60,60,20,20, 40, 15,15,10,10,6,4,4, 15,15,10,10,6,4,4).finished();
+    hrp::dvector j_power_coeff = max_torque/max_torque.maxCoeff(); // reduce gain of light inertia joint
+
     {// calc qref pd control torque
         hrp::dvector q_diff = hrp::to_dvector(m_qRef.data) - hrp::to_dvector(m_qAct.data);
         hrp::dvector dq_diff = - dqAct_filtered;
-        hrp::dvector torque = q_diff * hcp.q_ref_pd_gain(0) + dq_diff * hcp.q_ref_pd_gain(1);
+        hrp::dvector torque = (q_diff * hcp.q_ref_pd_gain(0) + dq_diff * hcp.q_ref_pd_gain(1)) * j_power_coeff;
         for (int i=0; i<m_robot->numJoints(); i++){
+            LIMIT_NORM(torque(i), max_torque(i)/5);// pd torque will be limited to 1/5 max torque
             m_robot->joint(i)->u += torque(i);
         }
     }
@@ -495,10 +500,9 @@ void HapticController::calcTorque(){
 
 
 
-    const hrp::dvector max_torque = (hrp::dvector(m_robot->numJoints()) << 30,80,80,80,30,30, 30,80,80,80,30,30, 80, 30,30,25,25,20,10,10, 30,30,25,25,20,10,10).finished();
 
     for(int i=0;i<m_robot->numJoints();i++){
-        LIMIT_MINMAX(m_robot->joint(i)->u, -max_torque(i), max_torque(i));
+        LIMIT_NORM(m_robot->joint(i)->u, max_torque(i)*2);// up to x2 max torque
 //        double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;////?????
     }
 
