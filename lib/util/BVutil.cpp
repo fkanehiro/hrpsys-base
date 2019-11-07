@@ -1,4 +1,7 @@
 #include <iostream>
+#if (defined __QNX__)
+#include <math.h>
+#endif
 extern "C" {
 #if (defined __APPLE__)
 #include <pcl/surface/qhull.h>
