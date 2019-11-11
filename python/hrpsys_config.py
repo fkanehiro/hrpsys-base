@@ -375,9 +375,12 @@ class HrpsysConfigurator(object):
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
         if StrictVersion(self.seq_version) >= StrictVersion('315.2.0'):
             connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
-        for sen in self.getForceSensorNames():
-            connectPorts(self.seq.port(sen + "Ref"),
-                         self.sh.port(sen + "In"))
+        if self.seq.port("wrenchesAll") and self.sh.port("wrenchesAllIn"):
+            connectPorts(self.seq.port("wrenchesAll"), self.sh.port("wrenchesAllIn"))
+        else:
+            for sen in self.getForceSensorNames():
+                connectPorts(self.seq.port(sen + "Ref"),
+                             self.sh.port(sen + "In"))
 
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(

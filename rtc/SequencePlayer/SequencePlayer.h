@@ -157,6 +157,8 @@ class SequencePlayer
   OutPort<TimedOrientation3D> m_baseRpyOut;
   std::vector<TimedDoubleSeq> m_wrenches;
   std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
+  TimedDoubleSeq m_wrenchesAll;
+  OutPort<TimedDoubleSeq> m_wrenchesAllOut;
   TimedDoubleSeq m_optionalData;
   OutPort<TimedDoubleSeq> m_optionalDataOut;
 

@@ -116,6 +116,7 @@ class StateHolder
   InPort<TimedOrientation3D> m_baseRpyIn;
   InPort<TimedPoint3D> m_zmpIn;
   std::vector<InPort<TimedDoubleSeq> *> m_wrenchesIn;
+  InPort<TimedDoubleSeq> m_wrenchesAllIn;
   TimedDoubleSeq m_optionalData;
   InPort<TimedDoubleSeq> m_optionalDataIn;
 
@@ -134,6 +135,7 @@ class StateHolder
   TimedPose3D m_basePose;
   TimedPoint3D m_zmp;
   std::vector<TimedDoubleSeq> m_wrenches;
+  TimedDoubleSeq m_wrenchesAll;
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<TimedDoubleSeq> m_tqOut;
   OutPort<TimedPoint3D> m_basePosOut;
