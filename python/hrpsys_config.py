@@ -1437,7 +1437,7 @@ class HrpsysConfigurator(object):
         Move the end-effector to the given absolute pose.
         All d* arguments are in meter.
 
-        @param gname str: Name of the joint group.
+        @param gname str: Name of the joint group. Case-insensitive.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
         @param tm float: Second to complete the command. This only includes the time taken for execution
@@ -1447,11 +1447,15 @@ class HrpsysConfigurator(object):
         @return bool: False if unreachable.
         '''
         print(gname, frame_name, pos, rpy, tm)
+        if gname.upper() not in map (lambda x : x[0].upper(), self.Groups):
+            print(self.configurator_name + " setTargetPose failed. {} is not available in the kinematic groups. "
+                  "Check available Groups (by e.g. self.Groups/robot.Groups).".format(gname))
+            return False
         if frame_name:
             gname = gname + ':' + frame_name
         result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
         if not result:
-            print("setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
+            print(self.configurator_name + " setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
                    + "Currently, returning IK result error\n"
                    + "(like the one in https://github.com/start-jsk/rtmros_hironx/issues/103)"
                    + " is not implemented. Patch is welcomed.")
