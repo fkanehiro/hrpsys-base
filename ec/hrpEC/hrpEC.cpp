@@ -78,6 +78,7 @@ namespace RTC
             }
         }
 
+#ifndef __QNX__
         if (m_cpu>=0){
             cpu_set_t cpu_set;
             CPU_ZERO(&cpu_set);
@@ -87,6 +88,7 @@ namespace RTC
                 perror("sched_setaffinity():");
             }
         }
+#endif
 #endif
         /* Pre-fault our stack */
         stack_prefault();
