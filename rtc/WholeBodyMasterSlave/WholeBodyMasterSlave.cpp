@@ -146,7 +146,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     RTC_INFO_STREAM("setup interpolator finished");
 
     ref_zmp_filter.resize(XYZ);
-    ref_zmp_filter.setParameter(20, 1/m_dt, Q_BUTTERWORTH);
+    ref_zmp_filter.setParameter(100, 1/m_dt, Q_BUTTERWORTH);
 
     cp_flag = -1;
     lt.fill(0);
@@ -307,13 +307,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         smoothingJointAngles(fik->m_robot, m_robot_vsafe);
 
         hrp::Vector3 com = m_robot_vsafe->calcCM();
-        com(Z) += 0.3;//hotfix
         static hrp::Vector3 com_old = com;
         static hrp::Vector3 com_old_old = com_old;
         hrp::Vector3 com_acc = (com - 2*com_old + com_old_old)/(m_dt*m_dt);
         hrp::Vector3 ref_zmp; ref_zmp << com.head(XY)-(com(Z)/G)*com_acc.head(XY), 0;
-        if(mode.isInitialize()){ ref_zmp_filter.reset(ref_zmp); }
-        ref_zmp = ref_zmp_filter.passFilter(ref_zmp);
+//        if(mode.isInitialize()){ ref_zmp_filter.reset(ref_zmp); }
+//        ref_zmp = ref_zmp_filter.passFilter(ref_zmp);
         com_old_old = com_old;
         com_old = com;
         wbms->act_rs.com = com;
@@ -598,10 +597,10 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
     if( fik->m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT1")->jointId) = 1e3;
 //    if( fik->m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT2")->jointId) = 10;
     if( fik->m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(fik->m_robot->link("CHEST_JOINT2")->jointId) = 0;//実機修理中
-    if( fik->m_robot->link("HEAD_JOINT0") != NULL) fik->m_robot->link("HEAD_JOINT0")->llimit = deg2rad(-30);
-    if( fik->m_robot->link("HEAD_JOINT0") != NULL) fik->m_robot->link("HEAD_JOINT0")->ulimit = deg2rad(30);
-    if( fik->m_robot->link("HEAD_JOINT1") != NULL) fik->m_robot->link("HEAD_JOINT1")->llimit = deg2rad(-45);
-    if( fik->m_robot->link("HEAD_JOINT1") != NULL) fik->m_robot->link("HEAD_JOINT1")->ulimit = deg2rad(10);
+//    if( fik->m_robot->link("HEAD_JOINT0") != NULL) fik->m_robot->link("HEAD_JOINT0")->llimit = deg2rad(-30);
+//    if( fik->m_robot->link("HEAD_JOINT0") != NULL) fik->m_robot->link("HEAD_JOINT0")->ulimit = deg2rad(30);
+//    if( fik->m_robot->link("HEAD_JOINT1") != NULL) fik->m_robot->link("HEAD_JOINT1")->llimit = deg2rad(-45);
+//    if( fik->m_robot->link("HEAD_JOINT1") != NULL) fik->m_robot->link("HEAD_JOINT1")->ulimit = deg2rad(10);
     if( fik->m_robot->link("RARM_JOINT2") != NULL) fik->m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-45);//脇内側の干渉回避
     if( fik->m_robot->link("LARM_JOINT2") != NULL) fik->m_robot->link("LARM_JOINT2")->llimit = deg2rad(45);
     if( fik->m_robot->link("RLEG_JOINT3") != NULL) fik->m_robot->link("RLEG_JOINT3")->llimit = deg2rad(40);//膝伸びきり防止のため
@@ -659,10 +658,10 @@ void WholeBodyMasterSlave::smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPt
 
     static hrp::dvector ans_state_vel = hrp::dvector::Zero(fik->numStates());
 
-    hrp::dvector estimated_times_from_vel_limit = (hrp::getRobotStateVec(_robot) - hrp::getRobotStateVec(_robot_safe)).array().abs() / avg_q_vel.array();
-    hrp::dvector estimated_times_from_acc_limit = ans_state_vel.array().abs() / avg_q_acc.array();
-    double longest_estimated_time_from_vel_limit = estimated_times_from_vel_limit.maxCoeff();
-    double longest_estimated_time_from_acc_limit = estimated_times_from_acc_limit.maxCoeff();
+    const hrp::dvector estimated_times_from_vel_limit = (hrp::getRobotStateVec(_robot) - hrp::getRobotStateVec(_robot_safe)).array().abs() / avg_q_vel.array();
+    const hrp::dvector estimated_times_from_acc_limit = ans_state_vel.array().abs() / avg_q_acc.array();
+    const double longest_estimated_time_from_vel_limit = estimated_times_from_vel_limit.maxCoeff();
+    const double longest_estimated_time_from_acc_limit = estimated_times_from_acc_limit.maxCoeff();
     goal_time = hrp::Vector3(longest_estimated_time_from_vel_limit, longest_estimated_time_from_acc_limit, min_goal_time_offset).maxCoeff();
 
     q_ip->setGoal(hrp::getRobotStateVec(_robot).data(), goal_time, true);

@@ -382,7 +382,7 @@ class WBMSCore{
                 auto_com_foot_move_detect_height    = 0.03;
                 base_to_hand_min_distance           = 0.5;
                 capture_point_extend_ratio          = 1.0;
-                com_filter_cutoff_hz                = 0.5;
+                com_filter_cutoff_hz                = 1.5;
                 foot_collision_avoidance_distance   = 0.16;
                 human_to_robot_ratio                = 1.0;//human 1.1m vs jaxon 1.06m
                 max_double_support_width            = 0.4;
@@ -464,20 +464,11 @@ class WBMSCore{
             convertHumanToRobot                 (hp_wld_raw, rp_ref_out);
             setAutoCOMMode                      (hp_wld_raw, rp_ref_out_old, rp_ref_out);
 
-            ///// COMだけはフィルターいるか・・・
-            if(is_initial_loop || wp.com_filter_cutoff_hz != com_filter_cutoff_hz_old){
-                com_filter.setParameter(wp.com_filter_cutoff_hz, HZ, Q_NOOVERSHOOT);
-                com_filter.reset(rp_ref_out.tgt[com].abs.p);
-                com_filter_cutoff_hz_old = wp.com_filter_cutoff_hz;
-            }
-            rp_ref_out.tgt[com].abs.p = com_filter.passFilter(rp_ref_out.tgt[com].abs.p);
-
             lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
             limitEEWorkspace                    (rp_ref_out_old, rp_ref_out);
             setFootContactPoseByGoContact       (rp_ref_out_old, rp_ref_out);
             limitFootVelNearGround              (rp_ref_out_old, rp_ref_out);
             avoidFootSinkIntoFloor              (rp_ref_out);
-
 
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
@@ -490,6 +481,15 @@ class WBMSCore{
             applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);//結局STに送るZMPは最終段で計算するからこれ意味ない
             H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
             rp_ref_out_old = rp_ref_out;
+
+            ///// COMだけはフィルターいるか・・・
+            if(is_initial_loop || wp.com_filter_cutoff_hz != com_filter_cutoff_hz_old){
+                com_filter.setParameter(wp.com_filter_cutoff_hz, HZ, Q_NOOVERSHOOT);
+                com_filter.reset(rp_ref_out.tgt[com].abs.p);
+                com_filter_cutoff_hz_old = wp.com_filter_cutoff_hz;
+            }
+            rp_ref_out.tgt[com].abs.p = com_filter.passFilter(rp_ref_out.tgt[com].abs.p);
+
             loop++;
             is_initial_loop = false;
         }
