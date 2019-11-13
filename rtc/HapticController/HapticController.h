@@ -152,11 +152,11 @@ class HapticController : public RTC::DataFlowComponentBase{
                 baselink_height_from_floor          = 1.5;// will be overwrited
                 dqAct_filter_cutoff_hz              = 500;// 10以下で確実に位相遅れによる振動
                 ee_vel_filter_cutoff_hz             = 500;// 10以下で確実に位相遅れによる振動
-                ex_gravity_compensation_ratio_lower = 0.9;
-                ex_gravity_compensation_ratio_upper = 1.1;
-                foot_min_distance                   = 0.3;
+                ex_gravity_compensation_ratio_lower = 1.1;
+                ex_gravity_compensation_ratio_upper = 0.9;
+                foot_min_distance                   = 0.25;
                 force_feedback_ratio                = 0.2;
-                gravity_compensation_ratio          = 0.9;
+                gravity_compensation_ratio          = 1.0;
                 q_friction_coeff                    = 0;
                 q_ref_output_ratio_goal             = 0;
                 wrench_hpf_cutoff_hz                = 20;
