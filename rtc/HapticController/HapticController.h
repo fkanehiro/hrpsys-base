@@ -78,17 +78,21 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::InPort<RTC::TimedDoubleSeq> m_qActIn;
         RTC::TimedDoubleSeq m_dqAct;
         RTC::InPort<RTC::TimedDoubleSeq> m_dqActIn;
-        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
         typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
+        std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
         std::map<std::string, ITDS_Ptr> m_slaveEEWrenchesIn;
         RTC::TimedDoubleSeq m_tau;
         RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
         RTC::TimedPose3D m_teleopOdom;
         RTC::OutPort<RTC::TimedPose3D> m_teleopOdomOut;
         RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
-        std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
+        std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         std::map<std::string, OTP3_Ptr> m_masterTgtPosesOut;
+        //debug
+        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
+        std::map<std::string, RTC::TimedDoubleSeq> m_masterEEWrenches;
+        std::map<std::string, OTDS_Ptr> m_masterEEWrenchesOut;
         RTC::TimedDoubleSeq m_debugData;
         RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
         RTC::CorbaPort m_HapticControllerServicePort;

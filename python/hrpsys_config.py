@@ -931,6 +931,17 @@ class HrpsysConfigurator(object):
         if self.hc != None:
             self.connectLoggerPort(self.hc, 'tau')
             self.connectLoggerPort(self.hc, 'debugData')
+            self.connectLoggerPort(self.hc, 'master_rleg_pose')
+            self.connectLoggerPort(self.hc, 'master_lleg_pose')
+            self.connectLoggerPort(self.hc, 'master_rarm_pose')
+            self.connectLoggerPort(self.hc, 'master_larm_pose')
+            self.connectLoggerPort(self.hc, 'master_com_pose')
+            self.connectLoggerPort(self.hc, 'master_head_pose')
+            self.connectLoggerPort(self.hc, 'master_rleg_wrench_dbg')
+            self.connectLoggerPort(self.hc, 'master_lleg_wrench_dbg')
+            self.connectLoggerPort(self.hc, 'master_rarm_wrench_dbg')
+            self.connectLoggerPort(self.hc, 'master_larm_wrench_dbg')
+
         if self.wbms != None:
             self.connectLoggerPort(self.wbms, 'q')
             self.connectLoggerPort(self.wbms, 'basePosOut')

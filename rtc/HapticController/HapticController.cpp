@@ -119,6 +119,15 @@ RTC::ReturnCode_t HapticController::onInitialize(){
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
 
+    //debug : This won't be send to slave
+    for ( int i=0; i<ee_names.size(); i++) {
+        std::string n = "master_"+ee_names[i]+"_wrench_dbg";
+        m_masterEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee_names[i]]));
+        registerOutPort(n.c_str(), *m_masterEEWrenchesOut[ee_names[i]]);
+        m_masterEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
+        RTC_INFO_STREAM(" registerOutPort " << n );
+    }
+
     m_tau.data = hrp::to_DoubleSeq(hrp::dvector::Zero(m_robot->numJoints()));
 
     loop = 0;
@@ -187,8 +196,6 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     // write
     m_qOut.write();
     m_tauOut.write();
-    m_teleopOdomOut.write();
-
     loop ++;
     return RTC::RTC_OK;
 }
@@ -314,6 +321,8 @@ void HapticController::calcTorque(){
 //        if(loop%500==0)dbgv(hrp::getUAll(m_robot));
 //    }
 
+    std::map<std::string, hrp::dvector6> masterEEWrenches;
+    for (int i=0; i<ee_names.size(); i++){ masterEEWrenches[ee_names[i]].fill(0); }
 
     std::map<std::string, bool> is_contact_to_floor;
     {
@@ -330,6 +339,7 @@ void HapticController::calcTorque(){
             LIMIT_NORM_V(wrench.tail(3), 50);
             hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
             for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+            masterEEWrenches[tgt[i]] += wrench;
         }
 
         ///// virtual floor
@@ -343,6 +353,7 @@ void HapticController::calcTorque(){
                 LIMIT_NORM_V(wrench, 1000);
                 const hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[tgt[i]] += wrench;
             }
             is_contact_to_floor[tgt[i]] = (foot_h_from_floor < 0 + 0.05);
         }
@@ -356,6 +367,7 @@ void HapticController::calcTorque(){
                 LIMIT_NORM_V(wrench, 100);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[tgt[i]] += wrench;
             }
         }
 
@@ -367,6 +379,7 @@ void HapticController::calcTorque(){
                 LIMIT_NORM_V(wrench, 50);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[tgt[i]] += wrench;
             }
         }
 
@@ -380,6 +393,7 @@ void HapticController::calcTorque(){
                 LIMIT_NORM_V(wrench, 1000);
                 hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
                 for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[tgt[i]] += wrench;
             }
         }else{
             locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
@@ -452,6 +466,7 @@ void HapticController::calcTorque(){
         hrp::dvector tq_from_feedbackWrench = J_base_to_ee.transpose() * wrench_used[ee_names[i]];
         for (int j = 0; j < jp.numJoints(); j++) jp.joint(j)->u += tq_from_feedbackWrench(j);
         if(loop%1000==0)dbgv(wrench_used[ee_names[i]]);
+        masterEEWrenches[ee_names[i]] += wrench_used[ee_names[i]];
     }
 
 
@@ -505,6 +520,12 @@ void HapticController::calcTorque(){
     if(loop%1000==0)dbgv(hrp::getUAll(m_robot));
 
 
+    // for debug plot
+    for (int i=0; i<ee_names.size(); i++){
+        m_masterEEWrenches[ee_names[i]].tm = m_qRef.tm;
+        m_masterEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(masterEEWrenches[ee_names[i]]);
+        m_masterEEWrenchesOut[ee_names[i]]->write();
+    }
 
 
 
