@@ -191,7 +191,8 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     }
 
 
-    m_tau.data = hrp::to_DoubleSeq(hrp::getUAll(m_robot) * output_ratio);
+    m_tau.tm    = m_qRef.tm;
+    m_tau.data  = hrp::to_DoubleSeq(hrp::getUAll(m_robot) * output_ratio);
 
     // write
     m_qOut.write();
@@ -245,6 +246,13 @@ void HapticController::calcCurrentState(){
     hrp::Vector3 f_base_wld, t_base_wld;
     calcRootLinkWrenchFromInverseDynamics(m_robot, idsb, f_base_wld, t_base_wld); // torque (m_robot->joint(i)->u) set
     updateInvDynStateBuffer(idsb);
+    for(int i=0; i<m_robot->numJoints(); i++){
+        if(m_robot->joint(i)->name.find("LEG_JOINT") != std::string::npos){
+            m_robot->joint(i)->u *= hcp.ex_gravity_compensation_ratio_lower;
+        }else if(m_robot->joint(i)->name.find("ARM_JOINT") != std::string::npos){
+            m_robot->joint(i)->u *= hcp.ex_gravity_compensation_ratio_upper;
+        }
+    }
 
     ///// calc end effector position and velocity
     for(int i=0; i<ee_names.size();i++){
@@ -397,6 +405,15 @@ void HapticController::calcTorque(){
             }
         }else{
             locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+        }
+
+        ///// ex
+        for (int i=0; i<ee_names.size();i++){
+            hrp::dvector6 wrench = hcp.ex_ee_ref_wrench[ee_names[i]];
+            LIMIT_NORM_V(wrench, 500);
+            hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
+            for (int j=0; j<jpath_ee[ee_names[i]].numJoints(); j++){ jpath_ee[ee_names[i]].joint(j)->u += tq_tmp(j); }
+            masterEEWrenches[ee_names[i]] += wrench;
         }
 
 
@@ -612,26 +629,37 @@ namespace hrp{
     hrp::Vector2 to_Vector2(const OpenHRP::HapticControllerService::DblSequence2& in){ return (hrp::Vector2()<< in[0],in[1]).finished(); }
     OpenHRP::HapticControllerService::DblSequence2 to_DblSequence2(const hrp::Vector2& in){
         OpenHRP::HapticControllerService::DblSequence2 ret; ret.length(2); ret[0] = in(0); ret[1] = in(1); return ret; }
+    OpenHRP::HapticControllerService::DblSequence6 to_DblSequence6(const hrp::dvector6& in){
+        OpenHRP::HapticControllerService::DblSequence6 ret;
+        ret.length(6);  for(int i=0; i<6; i++){ ret[i] = in(i); }   return ret;
+    }
 }
 
 bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param){
     RTC_INFO_STREAM("setHapticControllerParam");
-    hcp.baselink_height_from_floor  = i_param.baselink_height_from_floor;
-    hcp.dqAct_filter_cutoff_hz      = i_param.dqAct_filter_cutoff_hz;
-    hcp.ee_vel_filter_cutoff_hz     = i_param.ee_vel_filter_cutoff_hz;
-    hcp.foot_min_distance           = i_param.foot_min_distance;
-    hcp.force_feedback_ratio        = i_param.force_feedback_ratio;
-    hcp.gravity_compensation_ratio  = i_param.gravity_compensation_ratio;
-    hcp.q_friction_coeff            = i_param.q_friction_coeff;
-    hcp.q_ref_output_ratio_goal     = i_param.q_ref_output_ratio_goal;
-    hcp.wrench_hpf_cutoff_hz        = i_param.wrench_hpf_cutoff_hz;
-    hcp.wrench_lpf_cutoff_hz        = i_param.wrench_lpf_cutoff_hz;
-    hcp.wrench_hpf_gain             = i_param.wrench_hpf_gain;
-    hcp.wrench_lpf_gain             = i_param.wrench_lpf_gain;
-    hcp.ee_pos_rot_friction_coeff   = hrp::to_Vector2(i_param.ee_pos_rot_friction_coeff);
-    hcp.floor_pd_gain               = hrp::to_Vector2(i_param.floor_pd_gain);
-    hcp.foot_horizontal_pd_gain     = hrp::to_Vector2(i_param.foot_horizontal_pd_gain);
-    hcp.q_ref_pd_gain               = hrp::to_Vector2(i_param.q_ref_pd_gain);
+    hcp.baselink_height_from_floor          = i_param.baselink_height_from_floor;
+    hcp.dqAct_filter_cutoff_hz              = i_param.dqAct_filter_cutoff_hz;
+    hcp.ee_vel_filter_cutoff_hz             = i_param.ee_vel_filter_cutoff_hz;
+    hcp.ex_gravity_compensation_ratio_lower = i_param.ex_gravity_compensation_ratio_lower;
+    hcp.ex_gravity_compensation_ratio_upper = i_param.ex_gravity_compensation_ratio_upper;
+    hcp.foot_min_distance                   = i_param.foot_min_distance;
+    hcp.force_feedback_ratio                = i_param.force_feedback_ratio;
+    hcp.gravity_compensation_ratio          = i_param.gravity_compensation_ratio;
+    hcp.q_friction_coeff                    = i_param.q_friction_coeff;
+    hcp.q_ref_output_ratio_goal             = i_param.q_ref_output_ratio_goal;
+    hcp.wrench_hpf_cutoff_hz                = i_param.wrench_hpf_cutoff_hz;
+    hcp.wrench_lpf_cutoff_hz                = i_param.wrench_lpf_cutoff_hz;
+    hcp.wrench_hpf_gain                     = i_param.wrench_hpf_gain;
+    hcp.wrench_lpf_gain                     = i_param.wrench_lpf_gain;
+    hcp.ee_pos_rot_friction_coeff           = hrp::to_Vector2(i_param.ee_pos_rot_friction_coeff);
+    hcp.floor_pd_gain                       = hrp::to_Vector2(i_param.floor_pd_gain);
+    hcp.foot_horizontal_pd_gain             = hrp::to_Vector2(i_param.foot_horizontal_pd_gain);
+    hcp.q_ref_pd_gain                       = hrp::to_Vector2(i_param.q_ref_pd_gain);
+    for(int i=0;i<ee_names.size();i++){
+        for(int j=0;j<6;j++){
+            hcp.ex_ee_ref_wrench[ee_names[i]](j) =  i_param.ex_ee_ref_wrench[i][j];
+        }
+    }
     ///// update process if required
     q_ref_ip->setGoal(&hcp.q_ref_output_ratio_goal, 5.0, true);
     baselink_h_ip->setGoal(&hcp.baselink_height_from_floor, 5.0, true);
@@ -651,22 +679,32 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
 
 bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControllerParam& i_param){
     RTC_INFO_STREAM("getHapticControllerParam");
-    i_param.baselink_height_from_floor  = hcp.baselink_height_from_floor;
-    i_param.dqAct_filter_cutoff_hz      = hcp.dqAct_filter_cutoff_hz;
-    i_param.ee_vel_filter_cutoff_hz     = hcp.ee_vel_filter_cutoff_hz;
-    i_param.foot_min_distance           = hcp.foot_min_distance;
-    i_param.force_feedback_ratio        = hcp.force_feedback_ratio;
-    i_param.gravity_compensation_ratio  = hcp.gravity_compensation_ratio;
-    i_param.q_friction_coeff            = hcp.q_friction_coeff;
-    i_param.q_ref_output_ratio_goal     = hcp.q_ref_output_ratio_goal;
-    i_param.wrench_hpf_cutoff_hz        = hcp.wrench_hpf_cutoff_hz;
-    i_param.wrench_lpf_cutoff_hz        = hcp.wrench_lpf_cutoff_hz;
-    i_param.wrench_hpf_gain             = hcp.wrench_hpf_gain;
-    i_param.wrench_lpf_gain             = hcp.wrench_lpf_gain;
-    i_param.ee_pos_rot_friction_coeff   = hrp::to_DblSequence2(hcp.ee_pos_rot_friction_coeff);
-    i_param.floor_pd_gain               = hrp::to_DblSequence2(hcp.floor_pd_gain);
-    i_param.foot_horizontal_pd_gain     = hrp::to_DblSequence2(hcp.foot_horizontal_pd_gain);
-    i_param.q_ref_pd_gain               = hrp::to_DblSequence2(hcp.q_ref_pd_gain);
+    i_param.baselink_height_from_floor          = hcp.baselink_height_from_floor;
+    i_param.dqAct_filter_cutoff_hz              = hcp.dqAct_filter_cutoff_hz;
+    i_param.ee_vel_filter_cutoff_hz             = hcp.ee_vel_filter_cutoff_hz;
+    i_param.ex_gravity_compensation_ratio_lower = hcp.ex_gravity_compensation_ratio_lower;
+    i_param.ex_gravity_compensation_ratio_upper = hcp.ex_gravity_compensation_ratio_upper;
+    i_param.foot_min_distance                   = hcp.foot_min_distance;
+    i_param.force_feedback_ratio                = hcp.force_feedback_ratio;
+    i_param.gravity_compensation_ratio          = hcp.gravity_compensation_ratio;
+    i_param.q_friction_coeff                    = hcp.q_friction_coeff;
+    i_param.q_ref_output_ratio_goal             = hcp.q_ref_output_ratio_goal;
+    i_param.wrench_hpf_cutoff_hz                = hcp.wrench_hpf_cutoff_hz;
+    i_param.wrench_lpf_cutoff_hz                = hcp.wrench_lpf_cutoff_hz;
+    i_param.wrench_hpf_gain                     = hcp.wrench_hpf_gain;
+    i_param.wrench_lpf_gain                     = hcp.wrench_lpf_gain;
+    i_param.ee_pos_rot_friction_coeff           = hrp::to_DblSequence2(hcp.ee_pos_rot_friction_coeff);
+    i_param.floor_pd_gain                       = hrp::to_DblSequence2(hcp.floor_pd_gain);
+    i_param.foot_horizontal_pd_gain             = hrp::to_DblSequence2(hcp.foot_horizontal_pd_gain);
+    i_param.q_ref_pd_gain                       = hrp::to_DblSequence2(hcp.q_ref_pd_gain);
+
+    i_param.ex_ee_ref_wrench.length(4);
+    for(int i=0;i<ee_names.size();i++){
+        i_param.ex_ee_ref_wrench[i].length(6);
+        for(int j=0;j<6;j++){
+            i_param.ex_ee_ref_wrench[i][j] = hcp.ex_ee_ref_wrench[ee_names[i]](j);
+        }
+    }
     return true;
 }
 

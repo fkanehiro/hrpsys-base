@@ -132,6 +132,8 @@ class HapticController : public RTC::DataFlowComponentBase{
                 double default_baselink_h_from_floor;
                 double dqAct_filter_cutoff_hz;
                 double ee_vel_filter_cutoff_hz;
+                double ex_gravity_compensation_ratio_lower;
+                double ex_gravity_compensation_ratio_upper;
                 double foot_min_distance;
                 double force_feedback_ratio;
                 double gravity_compensation_ratio;
@@ -145,23 +147,30 @@ class HapticController : public RTC::DataFlowComponentBase{
                 hrp::Vector2 floor_pd_gain;
                 hrp::Vector2 foot_horizontal_pd_gain;
                 hrp::Vector2 q_ref_pd_gain;
+                std::map<std::string, hrp::dvector6> ex_ee_ref_wrench;
             HCParams(){
-                baselink_height_from_floor  = 1.5;// will be overwrited
-                dqAct_filter_cutoff_hz      = 500;// 10以下で確実に位相遅れによる振動
-                ee_vel_filter_cutoff_hz     = 500;// 10以下で確実に位相遅れによる振動
-                foot_min_distance           = 0.3;
-                force_feedback_ratio        = 0.2;
-                gravity_compensation_ratio  = 0.9;
-                q_friction_coeff            = 0;
-                q_ref_output_ratio_goal     = 0;
-                wrench_hpf_cutoff_hz        = 20;
-                wrench_lpf_cutoff_hz        = 0.3;
-                wrench_hpf_gain             = 1;
-                wrench_lpf_gain             = 0.2;
-                ee_pos_rot_friction_coeff   << 0, 0; // 1, 0.1
-                floor_pd_gain               << 10000, 500;
-                foot_horizontal_pd_gain     << 300, 30;
-                q_ref_pd_gain               << 50, 0;
+                baselink_height_from_floor          = 1.5;// will be overwrited
+                dqAct_filter_cutoff_hz              = 500;// 10以下で確実に位相遅れによる振動
+                ee_vel_filter_cutoff_hz             = 500;// 10以下で確実に位相遅れによる振動
+                ex_gravity_compensation_ratio_lower = 0.9;
+                ex_gravity_compensation_ratio_upper = 1.1;
+                foot_min_distance                   = 0.3;
+                force_feedback_ratio                = 0.2;
+                gravity_compensation_ratio          = 0.9;
+                q_friction_coeff                    = 0;
+                q_ref_output_ratio_goal             = 0;
+                wrench_hpf_cutoff_hz                = 20;
+                wrench_lpf_cutoff_hz                = 0.3;
+                wrench_hpf_gain                     = 1;
+                wrench_lpf_gain                     = 0.2;
+                ee_pos_rot_friction_coeff           << 0, 0; // 1, 0.1
+                floor_pd_gain                       << 10000, 500;
+                foot_horizontal_pd_gain             << 300, 30;
+                q_ref_pd_gain                       << 50, 0;
+                ex_ee_ref_wrench["rleg"]            = hrp::dvector6::Zero();
+                ex_ee_ref_wrench["lleg"]            = hrp::dvector6::Zero();
+                ex_ee_ref_wrench["rarm"]            = hrp::dvector6::Zero();
+                ex_ee_ref_wrench["larm"]            = hrp::dvector6::Zero();
             }
         } hcp;
 
