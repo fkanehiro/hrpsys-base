@@ -478,11 +478,6 @@ void HapticController::calcTorque(){
             m_debugData.data = hrp::to_DoubleSeq((hrp::dvector(6+6+6+6)<<wrench_raw,wrench_shaped[ee_names[i]],w_hpf,w_lpf).finished());
             m_debugData.tm = m_qRef.tm;
             m_debugDataOut.write();
-            if(loop%1000==0){
-                dbgv(ee_vel_filtered["rarm"]);
-                dbgv(hcp.ee_pos_rot_friction_coeff);
-                dbg(hcp.ee_vel_filter_cutoff_hz);
-            }
         }
 
         hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee_names[i]].target_link_name));
@@ -519,7 +514,6 @@ void HapticController::calcTorque(){
          LIMIT_MINMAX(friction_tq(i), -10, 10);
          m_robot->joint(i)->u += friction_tq(i);
         }
-        if(loop%1000==0)dbgv(friction_tq);
     }
 
 
