@@ -70,6 +70,10 @@ class HapticController : public RTC::DataFlowComponentBase{
         bool resumeHapticController();
         bool setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param);
         bool getParams(OpenHRP::HapticControllerService::HapticControllerParam& i_param);
+        typedef boost::shared_ptr<RTC::InPort   <RTC::TimedPose3D>      > ITP3_Ptr;
+        typedef boost::shared_ptr<RTC::InPort   <RTC::TimedDoubleSeq>   > ITDS_Ptr;
+        typedef boost::shared_ptr<RTC::OutPort  <RTC::TimedPose3D>      > OTP3_Ptr;
+        typedef boost::shared_ptr<RTC::OutPort  <RTC::TimedDoubleSeq>   > OTDS_Ptr;
 
     protected:
         RTC::TimedDoubleSeq m_qRef;
@@ -78,7 +82,6 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::InPort<RTC::TimedDoubleSeq> m_qActIn;
         RTC::TimedDoubleSeq m_dqAct;
         RTC::InPort<RTC::TimedDoubleSeq> m_dqActIn;
-        typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
         std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
         std::map<std::string, ITDS_Ptr> m_slaveEEWrenchesIn;
         RTC::TimedDoubleSeq m_tau;
@@ -86,13 +89,13 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::TimedPose3D m_teleopOdom;
         RTC::OutPort<RTC::TimedPose3D> m_teleopOdomOut;
         RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
-        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
         std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
         std::map<std::string, OTP3_Ptr> m_masterTgtPosesOut;
-        //debug
-        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
+        // sub usage
         std::map<std::string, RTC::TimedDoubleSeq> m_masterEEWrenches;
         std::map<std::string, OTDS_Ptr> m_masterEEWrenchesOut;
+        std::map<std::string, RTC::TimedPose3D> m_slaveTgtPoses;
+        std::map<std::string, ITP3_Ptr> m_slaveTgtPosesIn;
         RTC::TimedDoubleSeq m_debugData;
         RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
         RTC::CorbaPort m_HapticControllerServicePort;

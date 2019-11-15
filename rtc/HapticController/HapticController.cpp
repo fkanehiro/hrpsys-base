@@ -112,6 +112,8 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     tgt_names = ee_names;
     tgt_names.push_back("com");
     tgt_names.push_back("head");
+    tgt_names.push_back("rhand");
+    tgt_names.push_back("lhand");
     for ( int i=0; i<tgt_names.size(); i++) {
         std::string n = "master_"+tgt_names[i]+"_pose";
         m_masterTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
@@ -119,13 +121,19 @@ RTC::ReturnCode_t HapticController::onInitialize(){
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
 
-    //debug : This won't be send to slave
+    // sub usage
     for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "master_"+ee_names[i]+"_wrench_dbg";
+        std::string n = "master_"+ee_names[i]+"_wrench";
         m_masterEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee_names[i]]));
         registerOutPort(n.c_str(), *m_masterEEWrenchesOut[ee_names[i]]);
         m_masterEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
         RTC_INFO_STREAM(" registerOutPort " << n );
+    }
+    for ( int i=0; i<tgt_names.size(); i++) {
+        std::string n = "slave_"+tgt_names[i]+"_pose";
+        m_slaveTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt_names[i]]));
+        registerInPort(n.c_str(), *m_slaveTgtPosesIn[tgt_names[i]]);
+        RTC_INFO_STREAM(" registerInPort " << n );
     }
 
     m_tau.data = hrp::to_DoubleSeq(hrp::dvector::Zero(m_robot->numJoints()));
@@ -549,17 +557,12 @@ void HapticController::calcTorque(){
     }
 
 
-
+    m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot->calcCM(), hrp::Matrix33::Identity()));
+    for (int i=0; i<ee_names.size(); i++){
+        m_masterTgtPoses[ee_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
+    }
     for (int i=0; i<tgt_names.size(); i++){
-        if(tgt_names[i] == "com"){
-            m_masterTgtPoses[tgt_names[i]].data = hrp::to_Pose3D(hrp::Pose3(m_robot->calcCM(), hrp::Matrix33::Identity()));
-        }else if(tgt_names[i] == "head"){
-            // dummy
-        }else{
-            m_masterTgtPoses[tgt_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
-        }
         m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
-//        m_masterTgtPoses[tgt_names[i]].tm = m_qAct.tm;
         m_masterTgtPosesOut[tgt_names[i]]->write();
     }
 

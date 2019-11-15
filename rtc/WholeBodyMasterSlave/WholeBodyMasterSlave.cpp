@@ -159,6 +159,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     to_enum["com"] =  com;
     to_enum["head"] = head;
 
+    tgt_names = ee_names;
+    tgt_names.push_back("com");
+    tgt_names.push_back("head");
+    tgt_names.push_back("rhand");
+    tgt_names.push_back("lhand");
+
     for ( int i=0; i<ee_names.size(); i++) {
         std::string n = "slave_"+ee_names[i]+"_wrench";
         m_slaveEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
@@ -166,17 +172,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
     for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "local_"+ee_names[i]+"_wrench";
-        m_localEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee_names[i]]));
-        registerInPort(n.c_str(), *m_localEEWrenchesIn[ee_names[i]]);
+        std::string n = "master_"+ee_names[i]+"_wrench";
+        m_masterEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee_names[i]]));
+        registerInPort(n.c_str(), *m_masterEEWrenchesIn[ee_names[i]]);
         RTC_INFO_STREAM(" registerInPort " << n);
     }
-
-    tgt_names = ee_names;
-    tgt_names.push_back("com");
-    tgt_names.push_back("head");
-    tgt_names.push_back("rhand");
-    tgt_names.push_back("lhand");
+    ///////////////////
     for ( int i=0; i<tgt_names.size(); i++) {
         std::string n = "master_"+tgt_names[i]+"_pose";
         m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
@@ -188,6 +189,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         m_slaveTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt_names[i]]));
         registerOutPort(n.c_str(), *m_slaveTgtPosesOut[tgt_names[i]]);
         RTC_INFO_STREAM(" registerOutPort " << n);
+    }
+    //////////////
+    for ( int i=0; i<ee_names.size(); i++) {
+        std::string n = "local_"+ee_names[i]+"_wrench";
+        m_localEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee_names[i]]));
+        registerInPort(n.c_str(), *m_localEEWrenchesIn[ee_names[i]]);
+        RTC_INFO_STREAM(" registerInPort " << n);
     }
 
     RTC_INFO_STREAM("onInitialize() OK");

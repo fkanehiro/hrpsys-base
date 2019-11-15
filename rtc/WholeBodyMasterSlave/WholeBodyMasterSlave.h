@@ -91,21 +91,24 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         RTC::InPort<RTC::TimedPoint3D> m_zmpIn;
         RTC::TimedDoubleSeq m_optionalData;
         RTC::InPort<RTC::TimedDoubleSeq> m_optionalDataIn;
+        typedef boost::shared_ptr<RTC::InPort   <RTC::TimedPose3D>      > ITP3_Ptr;
+        typedef boost::shared_ptr<RTC::InPort   <RTC::TimedDoubleSeq>   > ITDS_Ptr;
+        typedef boost::shared_ptr<RTC::OutPort  <RTC::TimedPose3D>      > OTP3_Ptr;
+        typedef boost::shared_ptr<RTC::OutPort  <RTC::TimedDoubleSeq>   > OTDS_Ptr;
 
         std::map<std::string, RTC::TimedPose3D> m_masterTgtPoses;
-        typedef boost::shared_ptr<RTC::InPort<RTC::TimedPose3D> > ITP3_Ptr;
         std::map<std::string, ITP3_Ptr> m_masterTgtPosesIn;
 
+        std::map<std::string, RTC::TimedDoubleSeq> m_masterEEWrenches;
+        std::map<std::string, ITDS_Ptr> m_masterEEWrenchesIn;
+
         std::map<std::string, RTC::TimedDoubleSeq> m_slaveEEWrenches;
-        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedDoubleSeq> > OTDS_Ptr;
         std::map<std::string, OTDS_Ptr> m_slaveEEWrenchesOut;
 
         std::map<std::string, RTC::TimedPose3D> m_slaveTgtPoses;
-        typedef boost::shared_ptr<RTC::OutPort<RTC::TimedPose3D> > OTP3_Ptr;
         std::map<std::string, OTP3_Ptr> m_slaveTgtPosesOut;
 
         std::map<std::string, RTC::TimedDoubleSeq> m_localEEWrenches;
-        typedef boost::shared_ptr<RTC::InPort<RTC::TimedDoubleSeq> > ITDS_Ptr;
         std::map<std::string, ITDS_Ptr> m_localEEWrenchesIn;
 
         RTC::Time m_delayCheckPacket;
