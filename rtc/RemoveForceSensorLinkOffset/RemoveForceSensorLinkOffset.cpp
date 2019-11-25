@@ -115,6 +115,11 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
     m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
   }
   max_sensor_offset_calib_counter = static_cast<int>(8.0/m_dt); // 8.0[s] by default
+
+  if (prop["forcemoment_offset_params"] != "") {
+    loadForceMomentOffsetParams(prop["forcemoment_offset_params"]);
+  }
+
   return RTC::RTC_OK;
 }
 
