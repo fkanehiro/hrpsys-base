@@ -241,9 +241,12 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
 {
     if ( ! serial ) return true;
 
-    int id[servo_id.size()];
-    double tms[servo_id.size()];
-    double rad[servo_id.size()];
+    int* id;
+    id = new int[servo_id.size()];
+    double* tms;
+    tms = new double[servo_id.size()];
+    double* rad;
+    rad = new double[servo_id.size()];
     for( unsigned int i = 0; i < servo_id.size(); i++ ) {
         id[i] = servo_id[i];
         tms[i] = tm;
@@ -254,6 +257,9 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
         return false;
     }
     serial->setPositions(servo_id.size(), id, rad, tms);
+    delete[] id;
+    delete[] tms;
+    delete[] rad;
     return true;
 }
 
@@ -318,9 +324,12 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
             std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << len << std::endl;
             return false;
         }
-        int id[len];
-        double tms[len];
-        double rad[len];
+        int* id;
+        id = new int[len];
+        double* tms;
+        tms = new double[len];
+        double* rad;
+        rad = new double[len];
         for( unsigned int i = 0; i < len; i++ ) {
             id[i] = joint_groups[gname][i];
             tms[i] = tm;
@@ -334,6 +343,9 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
             rad[i] = (angles.get_buffer()[i])*dir+offset;
         }
         serial->setPositions(servo_id.size(), id, rad, tms);
+        delete[] id;
+        delete[] tms;
+        delete[] rad;
     }
     return true;
 }
