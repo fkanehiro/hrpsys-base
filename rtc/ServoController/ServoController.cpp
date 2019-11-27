@@ -254,6 +254,9 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
     }
     if ( angles.length() != servo_id.size() ) {
         std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << servo_id.size() << std::endl;
+        delete[] id;
+        delete[] tms;
+        delete[] rad;
         return false;
     }
     serial->setPositions(servo_id.size(), id, rad, tms);
