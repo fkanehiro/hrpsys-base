@@ -19,8 +19,11 @@ module OpenHRP
     struct WholeBodyMasterSlaveParam
     {
         boolean auto_com_mode;
+        boolean auto_foor_h_mode;
         double additional_double_support_time;
         double auto_com_foot_move_detect_height;
+        double auto_floor_h_detect_fz;
+        double auto_floor_h_reset_fz;
         double base_to_hand_min_distance;
         double capture_point_extend_ratio;
         double com_filter_cutoff_hz;

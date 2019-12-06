@@ -246,6 +246,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if(m_optionalDataIn.isNew()             ){ m_optionalDataIn.read(); }
     if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
     for(int i=0; i<ee_names.size(); i++){ if(m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
+    wbms->act_rs.act_foot_wrench[0] = hrp::to_dvector(m_localEEWrenches["rleg"].data);
+    wbms->act_rs.act_foot_wrench[1] = hrp::to_dvector(m_localEEWrenches["lleg"].data);
+    wbms->act_rs.act_foot_pose[0] = ee_ikc_map["rleg"].getCurrentTargetPose(m_robot_vsafe);
+    wbms->act_rs.act_foot_pose[1] = ee_ikc_map["lleg"].getCurrentTargetPose(m_robot_vsafe);
 
     // button func
     hrp::dvector ex_data;
@@ -323,8 +327,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 //        ref_zmp = ref_zmp_filter.passFilter(ref_zmp);
         com_old_old = com_old;
         com_old = com;
-        wbms->act_rs.com = com;
-        wbms->act_rs.zmp = ref_zmp;
+        wbms->act_rs.ref_com = com;
+        wbms->act_rs.ref_zmp = ref_zmp;
         wbms->act_rs.st_zmp = m_robot_vsafe->rootLink()->p + m_robot_vsafe->rootLink()->R * rel_act_zmp;
 
 //            if(wbms->rp_ref_out.tgt[rf].is_contact && !wbms->rp_ref_out.tgt[lf].is_contact){
@@ -747,6 +751,8 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
     wbms->wp.auto_com_mode                      = i_param.auto_com_mode;
     wbms->wp.additional_double_support_time     = i_param.additional_double_support_time;
     wbms->wp.auto_com_foot_move_detect_height   = i_param.auto_com_foot_move_detect_height;
+    wbms->wp.auto_floor_h_detect_fz             = i_param.auto_floor_h_detect_fz;
+    wbms->wp.auto_floor_h_reset_fz              = i_param.auto_floor_h_reset_fz;
     wbms->wp.base_to_hand_min_distance          = i_param.base_to_hand_min_distance;
     wbms->wp.capture_point_extend_ratio         = i_param.capture_point_extend_ratio;
     wbms->wp.com_filter_cutoff_hz               = i_param.com_filter_cutoff_hz;
@@ -770,6 +776,8 @@ bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::Whole
     i_param.auto_com_mode                       = wbms->wp.auto_com_mode;
     i_param.additional_double_support_time      = wbms->wp.additional_double_support_time;
     i_param.auto_com_foot_move_detect_height    = wbms->wp.auto_com_foot_move_detect_height;
+    i_param.auto_floor_h_detect_fz              = wbms->wp.auto_floor_h_detect_fz;
+    i_param.auto_floor_h_reset_fz               = wbms->wp.auto_floor_h_reset_fz;
     i_param.base_to_hand_min_distance           = wbms->wp.base_to_hand_min_distance;
     i_param.capture_point_extend_ratio          = wbms->wp.capture_point_extend_ratio;
     i_param.com_filter_cutoff_hz                = wbms->wp.com_filter_cutoff_hz;
