@@ -58,15 +58,16 @@ class LIP_model{
 class PoseTGT{
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        hrp::Pose3 abs, offs;
+        hrp::Pose3 abs, offs, cnt;
         hrp::dvector6 w;
         bool go_contact;
         PoseTGT(){ reset(); }
         ~PoseTGT(){}
-        void reset(){ abs.reset(); offs.reset(); w.fill(0); go_contact = false;}
+        void reset(){ abs.reset(); offs.reset(); cnt.reset(); w.fill(0); go_contact = false;}
         bool is_contact(){
             const double contact_threshold = 0.005;
-            return ((abs.p(Z) - offs.p(Z)) < contact_threshold);
+            // return ((abs.p(Z) - offs.p(Z)) < contact_threshold);
+            return ((abs.p(Z) - cnt.p(Z)) < contact_threshold);
         }
 };
 
@@ -360,8 +361,11 @@ class WBMSCore{
         class WBMSParams {
             public:
                 bool auto_com_mode;
+                bool auto_foor_h_mode;
                 double additional_double_support_time;
                 double auto_com_foot_move_detect_height;
+                double auto_floor_h_detect_fz;
+                double auto_floor_h_reset_fz;
                 double base_to_hand_min_distance;
                 double capture_point_extend_ratio;
                 double com_filter_cutoff_hz;
@@ -378,11 +382,14 @@ class WBMSCore{
                 std::vector<std::string> use_targets;
             WBMSParams(){
                 auto_com_mode                       = false;
+                auto_foor_h_mode                         = true;
                 additional_double_support_time      = 0.5;
                 auto_com_foot_move_detect_height    = 0.03;
+                auto_floor_h_detect_fz              = 50;
+                auto_floor_h_reset_fz               = 30;
                 base_to_hand_min_distance           = 0.5;
                 capture_point_extend_ratio          = 1.0;
-                com_filter_cutoff_hz                = 1.5;
+                com_filter_cutoff_hz                = 1.2;
                 foot_collision_avoidance_distance   = 0.16;
                 human_to_robot_ratio                = 1.0;//human 1.1m vs jaxon 1.06m
                 max_double_support_width            = 0.4;
@@ -395,7 +402,9 @@ class WBMSCore{
             }
         } wp;
         struct ActualRobotState {
-            hrp::Vector3 com, zmp, st_zmp;
+            hrp::Vector3 ref_com, ref_zmp, st_zmp;
+            hrp::dvector6 act_foot_wrench[LR];
+            hrp::Pose3 act_foot_pose[LR];
         } act_rs;
 
         WBMSCore(const double& dt){
@@ -441,10 +450,13 @@ class WBMSCore{
             const int human_l_names[4] = {rf,lf,rh,lh};
             for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
                 if(_ee_ikc_map.count(robot_l_names[i])){
-                    rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs = _ee_ikc_map[robot_l_names[i]].getCurrentTargetPose(robot_in);//          fik_in->getEndEffectorPos(robot_l_names[i]);
+                    rp_ref_out.tgt[human_l_names[i]].abs =
+                    rp_ref_out.tgt[human_l_names[i]].offs = 
+                    rp_ref_out.tgt[human_l_names[i]].cnt = 
+                    _ee_ikc_map[robot_l_names[i]].getCurrentTargetPose(robot_in);//          fik_in->getEndEffectorPos(robot_l_names[i]);
                 }
             }
-            rp_ref_out.tgt[com].offs.p = act_rs.com = act_rs.zmp = act_rs.st_zmp = robot_in->calcCM();
+            rp_ref_out.tgt[com].offs.p = act_rs.ref_com = act_rs.ref_zmp = act_rs.st_zmp = robot_in->calcCM();
             com_CP_ref_old = rp_ref_out.tgt[com].offs.p;
             rp_ref_out.tgt[com].offs.R = robot_in->rootLink()->R;
             rp_ref_out.tgt[zmp].offs.p.head(XY) = rp_ref_out.tgt[com].offs.p.head(XY);
@@ -495,7 +507,7 @@ class WBMSCore{
         }
 
     private:
-        void convertHumanToRobot(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をcp_decしてゆく
+        void convertHumanToRobot(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
             //      out = in;//ダメゼッタイ
             for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
                 out.tgt[l[i]].abs.p = wp.human_to_robot_ratio * (in.tgt[l[i]].abs.p - in.tgt[l[i]].offs.p) + out.tgt[l[i]].offs.p;
@@ -523,11 +535,11 @@ class WBMSCore{
                 to_opposite_foot[lr] = old.foot(OPPOSITE(lr)).abs.p.head(XY) - old.foot(lr).abs.p.head(XY);
                 if(to_opposite_foot[lr].norm() < 1e-3){ std::cerr << "to_opposite_foot[lr].norm() < 1e-3 :" << to_opposite_foot[lr].transpose()<<std::endl; }
                 ///// lock by ref_zmp
-                ref_zmp_from_foot[lr] = act_rs.zmp.head(XY) - old.foot(lr).abs.p.head(XY);
+                ref_zmp_from_foot[lr] = act_rs.ref_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
                 out.foot(OPPOSITE(lr)).go_contact |= ( ref_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance );
                 ///// lock by acts_zmp
                 act_zmp_from_foot[lr] = act_rs.st_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
-                if( act_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance ){
+                if( act_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance*9999 ){
                     zmp_force_go_contact_count[OPPOSITE(lr)] = 1;
                 }else if(zmp_force_go_contact_count[OPPOSITE(lr)] > 0 && zmp_force_go_contact_count[OPPOSITE(lr)] < HZ * wp.additional_double_support_time ){
                     zmp_force_go_contact_count[OPPOSITE(lr)]++;
@@ -562,10 +574,28 @@ class WBMSCore{
             }
         }
         void setFootContactPoseByGoContact(const HumanPose& old, HumanPose& out){
+            static bool is_locked[LR] = {false};
+            static int cnt_for_clear[LR] ={0};
             for(int lr=0; lr<LR; lr++){
+                if(wp.auto_foor_h_mode){
+                    // judge act contact height
+                    if(!is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) > wp.auto_floor_h_detect_fz){
+                        out.foot(lr).cnt.p(Z) = act_rs.act_foot_pose[lr].p(Z);
+                        is_locked[lr] = true;
+                    }
+                    if(is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) < wp.auto_floor_h_reset_fz){
+                        if(cnt_for_clear[lr]++ > 1000){
+                            out.foot(lr).cnt.p(Z) = out.foot(lr).offs.p(Z);
+                            is_locked[lr] = false;
+                            cnt_for_clear[lr] = 0;
+                        }
+                    }
+                }
+
                 if(out.foot(lr).go_contact){
                     out.foot(lr).abs.p.head(XY) = old.foot(lr).abs.p.head(XY);
-                    out.foot(lr).abs.p(Z) = out.foot(lr).offs.p(Z);
+                    // out.foot(lr).abs.p(Z) = out.foot(lr).offs.p(Z);
+                    out.foot(lr).abs.p(Z) = out.foot(lr).cnt.p(Z);
                     out.foot(lr).abs.setRpy(0, 0, old.foot(lr).abs.rpy()(y));
                     /////着地時に足を広げすぎないよう制限
                     const hrp::Vector2 support_to_swing = out.foot(lr).abs.p.head(XY) - old.foot(OPPOSITE(lr)).abs.p.head(XY);
@@ -573,7 +603,17 @@ class WBMSCore{
                         out.foot(lr).abs.p.head(XY) = old.foot(OPPOSITE(lr)).abs.p.head(XY) + support_to_swing.normalized() * wp.max_double_support_width;
                     }
                 }else{
-                    LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).offs.p(Z)+wp.swing_foot_height_offset);
+                    out.foot(lr).cnt.p.head(XY) = out.foot(lr).abs.p.head(XY);  
+                    out.foot(lr).cnt.R = hrp::rotFromRpy(0, 0, hrp::rpyFromRot(out.foot(lr).abs.R)(y));  
+                    // LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).offs.p(Z)+wp.swing_foot_height_offset);
+                    LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).cnt.p(Z)+wp.swing_foot_height_offset);
+                }
+                if(loop%500){
+                    dbg(lr);
+                    dbg(is_locked[lr]);
+                    dbg(out.foot(lr).cnt.p(Z));
+                    dbg(out.foot(lr).abs.p(Z));
+                    dbg(act_rs.act_foot_pose[lr].p(Z));
                 }
             }
         }
