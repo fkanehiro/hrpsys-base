@@ -371,6 +371,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     to_sname["larm"] = "lhsensor";
     to_sname["rarm"] = "rhsensor";
     hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
+    m_robot_act->rootLink()->p = hrp::to_Vector3(m_basePos.data);
+    m_robot_act->rootLink()->R = hrp::rotFromRpy(hrp::to_Vector3(m_baseRpy.data));
     m_robot_act->calcForwardKinematics();
     for(int i=0;i<ee_names.size();i++){
         hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee_names[i]]);
