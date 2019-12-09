@@ -398,37 +398,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
     wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
 
-
-    std::map<std::string, std::string> to_sname;
-    to_sname["lleg"] = "lfsensor";
-    to_sname["rleg"] = "rfsensor";
-    to_sname["larm"] = "lhsensor";
-    to_sname["rarm"] = "rhsensor";
-    hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
-    m_robot_act->rootLink()->p = hrp::to_Vector3(m_basePos.data);
-    m_robot_act->rootLink()->R = hrp::rotFromRpy(hrp::to_Vector3(m_baseRpy.data));
-    m_robot_act->calcForwardKinematics();
-    for(int i=0;i<ee_names.size();i++){
-        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee_names[i]]);
-        hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
-        hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
-        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
-        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
-
-        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[ee_names[i]].getCurrentTargetPos(m_robot_act) - sensor->link->p;
-
-        const hrp::Vector3 f_ee_wld = f_sensor_wld;
-        const hrp::Vector3 t_ee_wld = t_sensor_wld - sensor_to_ee_vec_wld.cross(f_sensor_wld);
-        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
-        m_slaveEEWrenches[ee_names[i]].tm = m_qRef.tm;
-        m_slaveEEWrenchesOut[ee_names[i]]->write();
-        m_slaveTgtPoses[ee_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot_act));
-        m_slaveTgtPoses[ee_names[i]].tm = m_qRef.tm;
-        m_slaveTgtPosesOut[ee_names[i]]->write();
-    }
-    m_slaveTgtPoses["com"].data = hrp::to_Pose3D( (hrp::dvector6()<<m_robot_act->calcCM(),0,0,0).finished());
-    m_slaveTgtPoses["com"].tm = m_qRef.tm;
-    m_slaveTgtPosesOut["com"]->write();
     // write
     m_qOut.write();
     m_basePosOut.write();
