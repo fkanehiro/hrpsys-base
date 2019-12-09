@@ -160,7 +160,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
 
         hrp::InvDynStateBuffer idsb;
         BiquadIIRFilterVec ref_zmp_filter;
-        IIRFilter ref_ee_vel_v_filter;
+        std::map<std::string, BiquadIIRFilterVec> ee_f_filter;
 
         HumanPose raw_pose;
 
@@ -177,6 +177,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         enum cp_enum{ CP_IDLE, CP_LF, CP_RF, CP_STATIC};
         struct timespec startT, endT;
         std::string time_report_str;
+
+        hrp::Vector3 static_balancing_com_offset;
 
         std::vector<std::string> ee_names;
         std::vector<std::string> tgt_names;

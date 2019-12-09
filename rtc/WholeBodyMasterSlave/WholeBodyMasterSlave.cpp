@@ -198,6 +198,11 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
         RTC_INFO_STREAM(" registerInPort " << n);
     }
 
+    for(auto een : ee_names){
+        ee_f_filter[een].resize(XYZ);
+        ee_f_filter[een].setParameter(1, 1/m_dt, Q_BUTTERWORTH);
+    }
+
     RTC_INFO_STREAM("onInitialize() OK");
     loop = 0;
     return RTC::RTC_OK;
@@ -250,6 +255,39 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     wbms->act_rs.act_foot_wrench[1] = hrp::to_dvector(m_localEEWrenches["lleg"].data);
     wbms->act_rs.act_foot_pose[0] = ee_ikc_map["rleg"].getCurrentTargetPose(m_robot_vsafe);
     wbms->act_rs.act_foot_pose[1] = ee_ikc_map["lleg"].getCurrentTargetPose(m_robot_vsafe);
+
+    // calc actual state
+    std::map<std::string, std::string> to_sname{{"lleg", "lfsensor"}, {"rleg", "rfsensor"}, {"larm", "lhsensor"}, {"rarm", "rhsensor"}};
+    hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
+    m_robot_act->calcForwardKinematics();
+    for(auto een : ee_names){
+        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[een]);
+        hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
+        hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
+        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[een].data).head(3);
+        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[een].data).tail(3);
+        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[een].getCurrentTargetPos(m_robot_act) - sensor->link->p;
+        const hrp::Vector3 f_ee_wld = f_sensor_wld;
+        const hrp::Vector3 t_ee_wld = t_sensor_wld - sensor_to_ee_vec_wld.cross(f_sensor_wld);
+        m_slaveEEWrenches[een].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
+        m_slaveEEWrenches[een].tm = m_qRef.tm;
+        m_slaveEEWrenchesOut[een]->write();
+        m_slaveTgtPoses[een].data = hrp::to_Pose3D(ee_ikc_map[een].getCurrentTargetPose(m_robot_act));
+        m_slaveTgtPoses[een].tm = m_qRef.tm;
+        m_slaveTgtPosesOut[een]->write();
+    }
+
+    static_balancing_com_offset.fill(0);
+    for(std::string een : {"larm","rarm"}){
+        const hrp::Vector3 use_f = hrp::Vector3::UnitZ() * m_slaveEEWrenches[een].data[Z];
+        hrp::Vector3 use_f_filtered = ee_f_filter[een].passFilter(use_f);
+        const hrp::Vector3 ee_pos_from_com = ee_ikc_map[een].getCurrentTargetPos(m_robot_vsafe) - wbms->rp_ref_out.tgt[com].abs.p;
+        static_balancing_com_offset.head(XY) += - ee_pos_from_com.head(XY) * use_f_filtered(Z) / (-m_robot_vsafe->totalMass() * G);
+    }
+    if(loop%500==0)dbgv(static_balancing_com_offset);
+    m_slaveTgtPoses["com"].data = hrp::to_Pose3D( (hrp::dvector6()<<m_robot_act->calcCM(),0,0,0).finished());
+    m_slaveTgtPoses["com"].tm = m_qRef.tm;
+    m_slaveTgtPosesOut["com"]->write();
 
     // button func
     hrp::dvector ex_data;
@@ -323,6 +361,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         static hrp::Vector3 com_old_old = com_old;
         hrp::Vector3 com_acc = (com - 2*com_old + com_old_old)/(m_dt*m_dt);
         hrp::Vector3 ref_zmp; ref_zmp << com.head(XY)-(com(Z)/G)*com_acc.head(XY), 0;
+        ref_zmp.head(XY) -= static_balancing_com_offset.head(XY);
 //        if(mode.isInitialize()){ ref_zmp_filter.reset(ref_zmp); }
 //        ref_zmp = ref_zmp_filter.passFilter(ref_zmp);
         com_old_old = com_old;
@@ -330,15 +369,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         wbms->act_rs.ref_com = com;
         wbms->act_rs.ref_zmp = ref_zmp;
         wbms->act_rs.st_zmp = m_robot_vsafe->rootLink()->p + m_robot_vsafe->rootLink()->R * rel_act_zmp;
-
-//            if(wbms->rp_ref_out.tgt[rf].is_contact && !wbms->rp_ref_out.tgt[lf].is_contact){
-//                ref_zmp.head(XY) = m_robot_vsafe->link(ee_ikc_map["rleg"].target_link_name)->p.head(XY);
-////                ref_zmp(X) + 0.05;
-//            }
-//            if(wbms->rp_ref_out.tgt[lf].is_contact && !wbms->rp_ref_out.tgt[rf].is_contact){
-//                ref_zmp.head(XY) = m_robot_vsafe->link(ee_ikc_map["lleg"].target_link_name)->p.head(XY);
-////                ref_zmp(X) + 0.05;
-//            }
 
         // qRef
         for (int i = 0; i < m_qRef.data.length(); i++ ){
@@ -369,34 +399,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
 
 
-    std::map<std::string, std::string> to_sname;
-    to_sname["lleg"] = "lfsensor";
-    to_sname["rleg"] = "rfsensor";
-    to_sname["larm"] = "lhsensor";
-    to_sname["rarm"] = "rhsensor";
-    hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
-    m_robot_act->calcForwardKinematics();
-    for(int i=0;i<ee_names.size();i++){
-        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee_names[i]]);
-        hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
-        hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
-        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).head(3);
-        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee_names[i]].data).tail(3);
-
-        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[ee_names[i]].getCurrentTargetPos(m_robot_act) - sensor->link->p;
-
-        const hrp::Vector3 f_ee_wld = f_sensor_wld;
-        const hrp::Vector3 t_ee_wld = t_sensor_wld - sensor_to_ee_vec_wld.cross(f_sensor_wld);
-        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
-        m_slaveEEWrenches[ee_names[i]].tm = m_qRef.tm;
-        m_slaveEEWrenchesOut[ee_names[i]]->write();
-        m_slaveTgtPoses[ee_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot_act));
-        m_slaveTgtPoses[ee_names[i]].tm = m_qRef.tm;
-        m_slaveTgtPosesOut[ee_names[i]]->write();
-    }
-    m_slaveTgtPoses["com"].data = hrp::to_Pose3D( (hrp::dvector6()<<m_robot_act->calcCM(),0,0,0).finished());
-    m_slaveTgtPoses["com"].tm = m_qRef.tm;
-    m_slaveTgtPosesOut["com"]->write();
     // write
     m_qOut.write();
     m_basePosOut.write();
@@ -599,7 +601,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
         tmp.target_link_name = "COM";
         tmp.localPos = hrp::Vector3::Zero();
         tmp.localR = hrp::Matrix33::Identity();
-        tmp.targetPos = com_ref.p;// COM height will not be constraint
+        tmp.targetPos = com_ref.p + static_balancing_com_offset;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
         tmp.constraint_weight << 3,3,0.01,0,0,0;
         ikc_list.push_back(tmp);

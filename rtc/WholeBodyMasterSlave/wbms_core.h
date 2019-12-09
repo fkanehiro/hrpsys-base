@@ -608,7 +608,7 @@ class WBMSCore{
                     // LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).offs.p(Z)+wp.swing_foot_height_offset);
                     LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).cnt.p(Z)+wp.swing_foot_height_offset);
                 }
-                if(loop%500){
+                if(loop%500==0){
                     dbg(lr);
                     dbg(is_locked[lr]);
                     dbg(out.foot(lr).cnt.p(Z));
