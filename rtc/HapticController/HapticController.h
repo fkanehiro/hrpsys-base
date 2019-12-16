@@ -120,9 +120,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, IKConstraint> ee_ikc_map;
         std::map<std::string, BiquadIIRFilterVec> ee_vel_filter;
         std::map<std::string, BiquadIIRFilterVec> wrench_lpf_for_hpf, wrench_lpf;
-        std::map<std::string, hrp::dvector6> wrench_shaped, wrench_used;
-        std::map<std::string, hrp::Pose3> ee_pose, ee_pose_old;
-        std::map<std::string, hrp::dvector6> ee_vel, ee_vel_filtered; // = twist
+        std::map<std::string, hrp::Pose3> master_ee_pose, master_ee_pose_old, slave_ee_pose, slave_ee_pose_old;
+        std::map<std::string, hrp::dvector6> master_ee_vel, master_ee_vel_filtered, slave_ee_vel; // = twist
         std::map<std::string, hrp::JointPath> jpath_ee;
         std::map<std::string, hrp::dmatrix> J_ee;
 
@@ -141,7 +140,7 @@ class HapticController : public RTC::DataFlowComponentBase{
                 double force_feedback_ratio;
                 double gravity_compensation_ratio;
                 double q_friction_coeff;
-                double q_ref_output_ratio_goal;
+                double q_ref_max_torque_ratio;
                 double wrench_hpf_cutoff_hz;
                 double wrench_lpf_cutoff_hz;
                 double wrench_hpf_gain;
@@ -149,6 +148,7 @@ class HapticController : public RTC::DataFlowComponentBase{
                 hrp::Vector2 ee_pos_rot_friction_coeff;
                 hrp::Vector2 floor_pd_gain;
                 hrp::Vector2 foot_horizontal_pd_gain;
+                hrp::Vector2 force_feedback_limit_ft;
                 hrp::Vector2 q_ref_pd_gain;
                 std::map<std::string, hrp::dvector6> ex_ee_ref_wrench;
             HCParams(){
@@ -161,14 +161,15 @@ class HapticController : public RTC::DataFlowComponentBase{
                 force_feedback_ratio                = 0.2;
                 gravity_compensation_ratio          = 1.0;
                 q_friction_coeff                    = 0;
-                q_ref_output_ratio_goal             = 0;
+                q_ref_max_torque_ratio              = 0.1;
                 wrench_hpf_cutoff_hz                = 20;
                 wrench_lpf_cutoff_hz                = 0.3;
-                wrench_hpf_gain                     = 1;
-                wrench_lpf_gain                     = 0.2;
-                ee_pos_rot_friction_coeff           << 0, 0; // 1, 0.1
+                wrench_hpf_gain                     = 0.8;
+                wrench_lpf_gain                     = 0;
+                ee_pos_rot_friction_coeff           << 10, 0.1;
                 floor_pd_gain                       << 10000, 500;
                 foot_horizontal_pd_gain             << 300, 30;
+                force_feedback_limit_ft             << 100, 10;
                 q_ref_pd_gain                       << 50, 0;
                 ex_ee_ref_wrench["rleg"]            = hrp::dvector6::Zero();
                 ex_ee_ref_wrench["lleg"]            = hrp::dvector6::Zero();

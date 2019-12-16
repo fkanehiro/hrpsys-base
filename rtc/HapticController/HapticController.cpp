@@ -89,23 +89,23 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     dqAct_filter = BiquadIIRFilterVec(m_robot->numJoints());
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
-    for ( int i=0; i<ee_names.size(); i++) {
-        ee_vel_filter[ee_names[i]] = BiquadIIRFilterVec(6);
-        ee_vel_filter[ee_names[i]].setParameter(hcp.ee_vel_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        ee_vel_filter[ee_names[i]].reset(0);
-        wrench_lpf_for_hpf[ee_names[i]] = BiquadIIRFilterVec(6);
-        wrench_lpf_for_hpf[ee_names[i]].setParameter(hcp.wrench_hpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        wrench_lpf_for_hpf[ee_names[i]].reset(0);
-        wrench_lpf[ee_names[i]] = BiquadIIRFilterVec(6);
-        wrench_lpf[ee_names[i]].setParameter(hcp.wrench_lpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        wrench_lpf[ee_names[i]].reset(0);
+    for (auto ee : ee_names){
+        ee_vel_filter[ee] = BiquadIIRFilterVec(6);
+        ee_vel_filter[ee].setParameter(hcp.ee_vel_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        ee_vel_filter[ee].reset(0);
+        wrench_lpf_for_hpf[ee] = BiquadIIRFilterVec(6);
+        wrench_lpf_for_hpf[ee].setParameter(hcp.wrench_hpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        wrench_lpf_for_hpf[ee].reset(0);
+        wrench_lpf[ee] = BiquadIIRFilterVec(6);
+        wrench_lpf[ee].setParameter(hcp.wrench_lpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        wrench_lpf[ee].reset(0);
     }
 
-    for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "slave_"+ee_names[i]+"_wrench";
-        m_slaveEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
-        registerInPort(n.c_str(), *m_slaveEEWrenchesIn[ee_names[i]]);
-        m_slaveEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
+    for (auto ee : ee_names){
+        std::string n = "slave_"+ee+"_wrench";
+        m_slaveEEWrenchesIn[ee] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee]));
+        registerInPort(n.c_str(), *m_slaveEEWrenchesIn[ee]);
+        m_slaveEEWrenches[ee].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
         RTC_INFO_STREAM(" registerInPort " << n );
     }
 
@@ -114,25 +114,25 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     tgt_names.push_back("head");
     tgt_names.push_back("rhand");
     tgt_names.push_back("lhand");
-    for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "master_"+tgt_names[i]+"_pose";
-        m_masterTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
-        registerOutPort(n.c_str(), *m_masterTgtPosesOut[tgt_names[i]]);
+    for (auto tgt : tgt_names){
+        std::string n = "master_"+tgt+"_pose";
+        m_masterTgtPosesOut[tgt] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt]));
+        registerOutPort(n.c_str(), *m_masterTgtPosesOut[tgt]);
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
 
     // sub usage
-    for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "master_"+ee_names[i]+"_wrench";
-        m_masterEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee_names[i]]));
-        registerOutPort(n.c_str(), *m_masterEEWrenchesOut[ee_names[i]]);
-        m_masterEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
+    for (auto ee : ee_names){
+        std::string n = "master_"+ee+"_wrench";
+        m_masterEEWrenchesOut[ee] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee]));
+        registerOutPort(n.c_str(), *m_masterEEWrenchesOut[ee]);
+        m_masterEEWrenches[ee].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
         RTC_INFO_STREAM(" registerOutPort " << n );
     }
-    for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "slave_"+tgt_names[i]+"_pose";
-        m_slaveTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt_names[i]]));
-        registerInPort(n.c_str(), *m_slaveTgtPosesIn[tgt_names[i]]);
+    for (auto tgt : tgt_names){
+        std::string n = "slave_"+tgt+"_pose";
+        m_slaveTgtPosesIn[tgt] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt]));
+        registerInPort(n.c_str(), *m_slaveTgtPosesIn[tgt]);
         RTC_INFO_STREAM(" registerInPort " << n );
     }
 
@@ -180,9 +180,9 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     if(m_qActIn.isNew()                     ){ m_qActIn.read(); }
     if(m_dqActIn.isNew()                    ){ m_dqActIn.read(); }
     if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
-    for (int i=0; i<ee_names.size(); i++) {
-        if ( m_slaveEEWrenchesIn[ee_names[i]]->isNew() ) { m_slaveEEWrenchesIn[ee_names[i]]->read(); }
-    }
+    for(auto port : m_slaveEEWrenchesIn){   if( port.second->isNew() ) { port.second->read(); } }
+    for(auto port : m_slaveTgtPosesIn){     if( port.second->isNew() ) { port.second->read(); } }
+    
     mode.update();
     processTransition();
 
@@ -263,21 +263,26 @@ void HapticController::calcCurrentState(){
     }
 
     ///// calc end effector position and velocity
-    for(int i=0; i<ee_names.size();i++){
-        ee_pose[ee_names[i]] = ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot);
+    for(auto ee : ee_names){
+        master_ee_pose[ee] = ee_ikc_map[ee].getCurrentTargetPose(m_robot);
+        slave_ee_pose[ee] = hrp::to_Pose3(m_slaveTgtPoses[ee].data);
     }
-    if(ee_pose_old.size()==0){ ee_pose_old = ee_pose; } //init
-    for(int i=0; i<ee_names.size();i++){
-        ee_vel[ee_names[i]].head(3) = (ee_pose[ee_names[i]].p - ee_pose_old[ee_names[i]].p) / m_dt;// rawは廃止したほうがいい？
-        ee_vel[ee_names[i]].tail(3) = ee_pose_old[ee_names[i]].R * hrp::omegaFromRot(ee_pose_old[ee_names[i]].R.transpose() * ee_pose[ee_names[i]].R) / m_dt; // world angular velocity
-        ee_vel_filtered[ee_names[i]] = ee_vel_filter[ee_names[i]].passFilter(ee_vel[ee_names[i]]);
+    if(master_ee_pose_old.size()==0 ){ master_ee_pose_old = master_ee_pose; } //init
+    if(slave_ee_pose_old.size()==0  ){ slave_ee_pose_old = slave_ee_pose; } //init
+    for(auto ee : ee_names){
+        master_ee_vel[ee].head(3) = (master_ee_pose[ee].p - master_ee_pose_old[ee].p) / m_dt;
+        master_ee_vel[ee].tail(3) = master_ee_pose_old[ee].R * hrp::omegaFromRot(master_ee_pose_old[ee].R.transpose() * master_ee_pose[ee].R) / m_dt; // world angular velocity
+        master_ee_vel_filtered[ee] = ee_vel_filter[ee].passFilter(master_ee_vel[ee]);
+        slave_ee_vel[ee].head(3) = (slave_ee_pose[ee].p - slave_ee_pose_old[ee].p) / m_dt;
+        slave_ee_vel[ee].tail(3) = slave_ee_pose_old[ee].R * hrp::omegaFromRot(slave_ee_pose_old[ee].R.transpose() * slave_ee_pose[ee].R) / m_dt; // world angular velocity
     }
-    ee_pose_old = ee_pose;
+    master_ee_pose_old  = master_ee_pose;
+    slave_ee_pose_old   = slave_ee_pose;
 
-    ///// calc base tp end effector Jacobian
-    for(int i=0; i<ee_names.size();i++){
-        hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee_names[i]].target_link_name));
-        jp.calcJacobian(J_ee[ee_names[i]], ee_ikc_map[ee_names[i]].localPos);
+    ///// calc base to end effector Jacobian
+    for(auto ee : ee_names){
+        hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee].target_link_name));
+        jp.calcJacobian(J_ee[ee], ee_ikc_map[ee].localPos);
     }
 }
 
@@ -338,93 +343,89 @@ void HapticController::calcTorque(){
 //    }
 
     std::map<std::string, hrp::dvector6> masterEEWrenches;
-    for (int i=0; i<ee_names.size(); i++){ masterEEWrenches[ee_names[i]].fill(0); }
+    for (auto ee : ee_names){ masterEEWrenches[ee].fill(0); }
 
     std::map<std::string, bool> is_contact_to_floor;
     {
-        std::vector<std::string> tgt;
-        tgt.push_back("lleg");
-        tgt.push_back("rleg");
+        const std::vector<std::string> legs = {"lleg", "rleg"};
 
         ///// fix ee rot horizontal
-        for (int i=0; i<tgt.size();i++){
+        for (auto leg : legs){
             hrp::Vector3 diff_rot;
-            rats::difference_rotation(diff_rot, ee_pose[tgt[i]].R, hrp::Matrix33::Identity());
-            const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - ee_vel_filtered[tgt[i]].tail(3);
+            rats::difference_rotation(diff_rot, master_ee_pose[leg].R, hrp::Matrix33::Identity());
+            const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - master_ee_vel_filtered[leg].tail(3);
             hrp::dvector6 wrench = (hrp::dvector6()<< 0,0,0, diff_rot * hcp.foot_horizontal_pd_gain(0) + diff_rot_vel * hcp.foot_horizontal_pd_gain(1)).finished();
             LIMIT_NORM_V(wrench.tail(3), 50);
-            hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
-            for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-            masterEEWrenches[tgt[i]] += wrench;
+            hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
+            for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
+            masterEEWrenches[leg] += wrench;
         }
 
         ///// virtual floor
-        for (int i=0; i<tgt.size();i++){
-            const double foot_h_from_floor = ee_pose[tgt[i]].p(Z);
-            if(loop%1000==0){
-                dbg(foot_h_from_floor);
-            }
+        for (auto leg : legs){
+            const double foot_h_from_floor = master_ee_pose[leg].p(Z);
             if(foot_h_from_floor < 0){
-                hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-ee_vel_filtered[tgt[i]](fz))*hcp.floor_pd_gain(1));
+                hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
                 LIMIT_NORM_V(wrench, 1000);
-                const hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-                masterEEWrenches[tgt[i]] += wrench;
+                const hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
+                for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[leg] += wrench;
             }
-            is_contact_to_floor[tgt[i]] = (foot_h_from_floor < 0 + 0.03);
+            is_contact_to_floor[leg] = (foot_h_from_floor < 0 + 0.03);
+            if(loop%1000==0){ dbg(foot_h_from_floor); }
         }
 
         ///// virtual back wall
-        for (int i=0; i<tgt.size();i++){
+        for (auto leg : legs){
             const double wall_x_rel_base = -0.1;
-            const double current_x = ee_pose[tgt[i]].p(X) - m_robot->rootLink()->p(X);
+            const double current_x = master_ee_pose[leg].p(X) - m_robot->rootLink()->p(X);
             if(current_x < wall_x_rel_base){
                 hrp::dvector6 wrench = (hrp::dvector6()<< (wall_x_rel_base - current_x) * 1000,0,0, 0,0,0).finished();
                 LIMIT_NORM_V(wrench, 100);
-                hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for(int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-                masterEEWrenches[tgt[i]] += wrench;
+                hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
+                for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[leg] += wrench;
             }
         }
 
         ///// keep apart each other
-        const double current_dist = ee_pose["lleg"].p(Y) - ee_pose["rleg"].p(Y);
+        const double current_dist = master_ee_pose["lleg"].p(Y) - master_ee_pose["rleg"].p(Y);
         if(current_dist < hcp.foot_min_distance){
-            for (int i=0; i<tgt.size();i++){
-                hrp::dvector6 wrench = (hrp::dvector6()<< 0, (tgt[i]=="lleg" ? 1:-1) * (hcp.foot_min_distance - current_dist) * 1000, 0,0,0,0).finished();
+            for (auto leg : legs){
+                hrp::dvector6 wrench = (hrp::dvector6()<< 0, (leg=="lleg" ? 1:-1) * (hcp.foot_min_distance - current_dist) * 1000, 0,0,0,0).finished();
                 LIMIT_NORM_V(wrench, 50);
-                hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-                masterEEWrenches[tgt[i]] += wrench;
+                hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
+                for (int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[leg] += wrench;
             }
         }
 
         ///// virtual floor, leg constraint
-        static hrp::Vector3 locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+        static hrp::Vector3 locked_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
         if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"]){
-            for (int i=0; i<tgt.size();i++){
-                hrp::Vector3 cur_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+            for (auto leg : legs){
+                hrp::Vector3 cur_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
                 hrp::Vector2 rleg_wrench = (locked_rel_pos - cur_rel_pos).head(XY) * 1000;
-                hrp::dvector6 wrench = (hrp::dvector6()<< (tgt[i]=="rleg" ? 1:-1) * rleg_wrench, 0,0,0,0).finished();
+                hrp::dvector6 wrench = (hrp::dvector6()<< (leg=="rleg" ? 1:-1) * rleg_wrench, 0,0,0,0).finished();
                 LIMIT_NORM_V(wrench, 1000);
-                hrp::dvector tq_tmp = J_ee[tgt[i]].transpose() * wrench;
-                for (int j=0; j<jpath_ee[tgt[i]].numJoints(); j++){ jpath_ee[tgt[i]].joint(j)->u += tq_tmp(j); }
-                masterEEWrenches[tgt[i]] += wrench;
+                hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
+                for (int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
+                masterEEWrenches[leg] += wrench;
             }
         }else{
-            locked_rel_pos = ee_pose["rleg"].p - ee_pose["lleg"].p;
+            locked_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
         }
 
         ///// ex
-        for (int i=0; i<ee_names.size();i++){
-            hrp::dvector6 wrench = hcp.ex_ee_ref_wrench[ee_names[i]];
+        for (auto ee : ee_names){
+            hrp::dvector6 wrench = hcp.ex_ee_ref_wrench[ee];
             LIMIT_NORM_V(wrench, 500);
-            hrp::dvector tq_tmp = J_ee[ee_names[i]].transpose() * wrench;
-            for (int j=0; j<jpath_ee[ee_names[i]].numJoints(); j++){ jpath_ee[ee_names[i]].joint(j)->u += tq_tmp(j); }
-            masterEEWrenches[ee_names[i]] += wrench;
+            hrp::dvector tq_tmp = J_ee[ee].transpose() * wrench;
+            for (int j=0; j<jpath_ee[ee].numJoints(); j++){ jpath_ee[ee].joint(j)->u += tq_tmp(j); }
+            masterEEWrenches[ee] += wrench;
         }
 
-
+        ///// calc odometry
         static std::map<std::string, hrp::Vector2> leg_pos_from_floor_origin;
         hrp::Vector2 baselink_pos_from_floor_origin;
         if(loop==0){
@@ -433,77 +434,64 @@ void HapticController::calcTorque(){
             baselink_pos_from_floor_origin << 0,0;
         }
         if(is_contact_to_floor["lleg"] && !is_contact_to_floor["rleg"] ){ // when lleg has contact to floor, each value can be calculated from lleg
-            leg_pos_from_floor_origin["rleg"]   = (ee_pose["rleg"].p        - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
+            leg_pos_from_floor_origin["rleg"]   = (master_ee_pose["rleg"].p        - master_ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
         }
         else if(!is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when rleg has contact to floor, each value can be calculated from rleg
-            leg_pos_from_floor_origin["lleg"]   = (ee_pose["lleg"].p        - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+            leg_pos_from_floor_origin["lleg"]   = (master_ee_pose["lleg"].p        - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
         }
         else if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when both has contact to floor, baselink may be calculated from rleg or lleg
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
         }
         else{ // when both in the air, both feet pos won't be update, only baselink will be update
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p - ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
+            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
         }
-
         //update base link pos from world
         m_robot->rootLink()->p << baselink_pos_from_floor_origin, baselink_h_from_floor;
-
         m_teleopOdom.data = (RTC::Pose3D){m_robot->rootLink()->p(X),m_robot->rootLink()->p(Y),m_robot->rootLink()->p(Z), 0,0,0};
         m_teleopOdom.tm = m_qRef.tm;
         m_teleopOdomOut.write();
-
-
     }
 
 
-
     // calc real robot feedback force
-    for (int i=0; i<ee_names.size(); i++){
-        if(ee_names[i] == "lleg" || ee_names[i] == "rleg" ) continue; // skip leg force feedback
-        const hrp::dvector6 wrench_raw = hrp::to_dvector(m_slaveEEWrenches[ee_names[i]].data);
-        const hrp::dvector6 w_hpf = wrench_raw - wrench_lpf_for_hpf[ee_names[i]].passFilter( wrench_raw );
-        const hrp::dvector6 w_lpf = wrench_lpf[ee_names[i]].passFilter( wrench_raw );
-        wrench_shaped[ee_names[i]] = w_hpf * hcp.wrench_hpf_gain + w_lpf * hcp.wrench_lpf_gain;
+    for (auto ee : ee_names){
+        hrp::dvector6 slave_w_raw = hrp::to_dvector(m_slaveEEWrenches[ee].data);
+        if(ee == "lleg" || ee == "rleg" ){ slave_w_raw.tail(4).fill(0); }// disable Fz Tx Ty Tz
+        const hrp::dvector6 slave_w_hp = slave_w_raw - wrench_lpf_for_hpf[ee].passFilter( slave_w_raw );
+        const hrp::dvector6 slave_w_lp = wrench_lpf[ee].passFilter( slave_w_raw );
+        const hrp::dvector6 slave_w_shaped = slave_w_raw * hcp.force_feedback_ratio 
+                                            + slave_w_hp * hcp.wrench_hpf_gain 
+                                            + slave_w_lp * hcp.wrench_lpf_gain;
 
-        wrench_used[ee_names[i]] = wrench_shaped[ee_names[i]];
-        LIMIT_NORM_V(wrench_used[ee_names[i]].head(3),50);
-        LIMIT_NORM_V(wrench_used[ee_names[i]].tail(3),5);
+        // F_master + v_master * a = F_slave + v_slave * a
+        hrp::dvector6 coeff_v;
+        coeff_v.head(XYZ).fill(hcp.ee_pos_rot_friction_coeff(0));
+        coeff_v.tail(XYZ).fill(hcp.ee_pos_rot_friction_coeff(1));
+        hrp::dvector6 master_w_ans = slave_w_shaped + slave_ee_vel[ee].cwiseProduct(coeff_v) - master_ee_vel[ee].cwiseProduct(coeff_v);
+        LIMIT_NORM_V(master_w_ans.head(3), hcp.force_feedback_limit_ft(0));
+        LIMIT_NORM_V(master_w_ans.tail(3), hcp.force_feedback_limit_ft(1));
 
-        hrp::Vector3 friction_f = - hcp.ee_pos_rot_friction_coeff(0) * ee_vel_filtered[ee_names[i]].head(3);
-        hrp::Vector3 friction_t = - hcp.ee_pos_rot_friction_coeff(1) * ee_vel_filtered[ee_names[i]].tail(3);
-
-        if(ee_names[i] == "rarm"){
-            m_debugData.data = hrp::to_DoubleSeq((hrp::dvector(6+6+6+6)<<wrench_raw,wrench_shaped[ee_names[i]],w_hpf,w_lpf).finished());
-            m_debugData.tm = m_qRef.tm;
-            m_debugDataOut.write();
-        }
-
-        hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee_names[i]].target_link_name));
-        hrp::dmatrix J_base_to_ee;
-        jp.calcJacobian(J_base_to_ee, ee_ikc_map[ee_names[i]].localPos);
-        hrp::dvector tq_from_feedbackWrench = J_base_to_ee.transpose() * wrench_used[ee_names[i]];
+        hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee].target_link_name));
+        hrp::dvector tq_from_feedbackWrench = J_ee[ee].transpose() * master_w_ans;
         for (int j = 0; j < jp.numJoints(); j++) jp.joint(j)->u += tq_from_feedbackWrench(j);
-        if(loop%1000==0)dbgv(wrench_used[ee_names[i]]);
-        masterEEWrenches[ee_names[i]] += wrench_used[ee_names[i]];
+        masterEEWrenches[ee] += master_w_ans;
+        if(loop%1000==0)dbg(ee);
+        if(loop%1000==0)dbgv(master_w_ans);
     }
 
 
     {
         // soft joint limit
-        m_robot->link("RARM_JOINT1")->ulimit = deg2rad(-10);
-        m_robot->link("LARM_JOINT1")->llimit = deg2rad(10);
+        m_robot->link("RARM_JOINT1")->ulimit = deg2rad(0);// hotfix
+        m_robot->link("LARM_JOINT1")->llimit = deg2rad(0);
         for(int i=0;i<m_robot->numJoints();i++){
             const double soft_ulimit = m_robot->joint(i)->ulimit - deg2rad(15);
             const double soft_llimit = m_robot->joint(i)->llimit + deg2rad(15);
             double soft_jlimit_tq = 0;
-            if(m_qAct.data[i] > soft_ulimit){
-                soft_jlimit_tq = 100 * (soft_ulimit - m_qAct.data[i]) + 0 * (0 - dqAct_filtered(i));
-            }
-            if(m_qAct.data[i] < soft_llimit){
-                soft_jlimit_tq = 100 * (soft_llimit - m_qAct.data[i]) + 0 * (0 - dqAct_filtered(i));
-            }
+            if(m_qAct.data[i] > soft_ulimit){ soft_jlimit_tq = 100 * (soft_ulimit - m_qAct.data[i]) + 0 * (0 - dqAct_filtered(i)); }
+            if(m_qAct.data[i] < soft_llimit){ soft_jlimit_tq = 100 * (soft_llimit - m_qAct.data[i]) + 0 * (0 - dqAct_filtered(i)); }
             m_robot->joint(i)->u += soft_jlimit_tq;
         }
     }
@@ -521,43 +509,38 @@ void HapticController::calcTorque(){
     hrp::dvector j_power_coeff = max_torque/max_torque.maxCoeff(); // reduce gain of light inertia joint
 
     {// calc qref pd control torque
-        hrp::dvector q_diff = hrp::to_dvector(m_qRef.data) - hrp::to_dvector(m_qAct.data);
-        hrp::dvector dq_diff = - dqAct_filtered;
+        const hrp::dvector q_diff = hrp::to_dvector(m_qRef.data) - hrp::to_dvector(m_qAct.data);
+        const hrp::dvector dq_diff = - dqAct_filtered;
         hrp::dvector torque = (q_diff * hcp.q_ref_pd_gain(0) + dq_diff * hcp.q_ref_pd_gain(1)) * j_power_coeff;
         for (int i=0; i<m_robot->numJoints(); i++){
-            LIMIT_NORM(torque(i), max_torque(i)/5);// pd torque will be limited to 1/5 max torque
+            LIMIT_NORM(torque(i), max_torque(i) * hcp.q_ref_max_torque_ratio);// pd torque will be limited to 1/5 max torque
             m_robot->joint(i)->u += torque(i);
         }
     }
 
-
-
-
-
-
+    // torque limit
     for(int i=0;i<m_robot->numJoints();i++){
         LIMIT_NORM(m_robot->joint(i)->u, max_torque(i)*2);// up to x2 max torque
 //        double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;////?????
     }
-
     if(loop%1000==0)dbgv(hrp::getUAll(m_robot));
 
 
     // for debug plot
-    for (int i=0; i<ee_names.size(); i++){
-        m_masterEEWrenches[ee_names[i]].tm = m_qRef.tm;
-        m_masterEEWrenches[ee_names[i]].data = hrp::to_DoubleSeq(masterEEWrenches[ee_names[i]]);
-        m_masterEEWrenchesOut[ee_names[i]]->write();
+    for (auto ee : ee_names){
+        m_masterEEWrenches[ee].tm = m_qRef.tm;
+        m_masterEEWrenches[ee].data = hrp::to_DoubleSeq(masterEEWrenches[ee]);
+        m_masterEEWrenchesOut[ee]->write();
     }
 
 
     m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot->calcCM(), hrp::Matrix33::Identity()));
-    for (int i=0; i<ee_names.size(); i++){
-        m_masterTgtPoses[ee_names[i]].data = hrp::to_Pose3D(ee_ikc_map[ee_names[i]].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
+    for (auto ee : ee_names){
+        m_masterTgtPoses[ee].data = hrp::to_Pose3D(ee_ikc_map[ee].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
     }
-    for (int i=0; i<tgt_names.size(); i++){
-        m_masterTgtPoses[tgt_names[i]].tm = m_qRef.tm;
-        m_masterTgtPosesOut[tgt_names[i]]->write();
+    for (auto tgt : tgt_names){
+        m_masterTgtPoses[tgt].tm = m_qRef.tm;
+        m_masterTgtPosesOut[tgt]->write();
     }
 
 
@@ -643,7 +626,7 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
     hcp.force_feedback_ratio                = i_param.force_feedback_ratio;
     hcp.gravity_compensation_ratio          = i_param.gravity_compensation_ratio;
     hcp.q_friction_coeff                    = i_param.q_friction_coeff;
-    hcp.q_ref_output_ratio_goal             = i_param.q_ref_output_ratio_goal;
+    hcp.q_ref_max_torque_ratio              = i_param.q_ref_max_torque_ratio;
     hcp.wrench_hpf_cutoff_hz                = i_param.wrench_hpf_cutoff_hz;
     hcp.wrench_lpf_cutoff_hz                = i_param.wrench_lpf_cutoff_hz;
     hcp.wrench_hpf_gain                     = i_param.wrench_hpf_gain;
@@ -651,24 +634,24 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
     hcp.ee_pos_rot_friction_coeff           = hrp::to_Vector2(i_param.ee_pos_rot_friction_coeff);
     hcp.floor_pd_gain                       = hrp::to_Vector2(i_param.floor_pd_gain);
     hcp.foot_horizontal_pd_gain             = hrp::to_Vector2(i_param.foot_horizontal_pd_gain);
+    hcp.force_feedback_limit_ft             = hrp::to_Vector2(i_param.force_feedback_limit_ft);
     hcp.q_ref_pd_gain                       = hrp::to_Vector2(i_param.q_ref_pd_gain);
-    for(int i=0;i<ee_names.size();i++){
+    for (int i=0; i<ee_names.size(); i++){//順番気をつけないと危険．confファイルに書いたend_effectorの順
         for(int j=0;j<6;j++){
             hcp.ex_ee_ref_wrench[ee_names[i]](j) =  i_param.ex_ee_ref_wrench[i][j];
         }
     }
     ///// update process if required
-    q_ref_ip->setGoal(&hcp.q_ref_output_ratio_goal, 5.0, true);
     baselink_h_ip->setGoal(&hcp.baselink_height_from_floor, 5.0, true);
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
-    for(int i=0;i<ee_names.size();i++){
-        ee_vel_filter[ee_names[i]].setParameter(hcp.ee_vel_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        ee_vel_filter[ee_names[i]].reset(0);
-        wrench_lpf_for_hpf[ee_names[i]].setParameter(hcp.wrench_hpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        wrench_lpf_for_hpf[ee_names[i]].reset(0);
-        wrench_lpf[ee_names[i]].setParameter(hcp.wrench_lpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
-        wrench_lpf[ee_names[i]].reset(0);
+    for (auto ee : ee_names){
+        ee_vel_filter[ee].setParameter(hcp.ee_vel_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        ee_vel_filter[ee].reset(0);
+        wrench_lpf_for_hpf[ee].setParameter(hcp.wrench_hpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        wrench_lpf_for_hpf[ee].reset(0);
+        wrench_lpf[ee].setParameter(hcp.wrench_lpf_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
+        wrench_lpf[ee].reset(0);
     }
     return true;
 }
@@ -685,7 +668,7 @@ bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControl
     i_param.force_feedback_ratio                = hcp.force_feedback_ratio;
     i_param.gravity_compensation_ratio          = hcp.gravity_compensation_ratio;
     i_param.q_friction_coeff                    = hcp.q_friction_coeff;
-    i_param.q_ref_output_ratio_goal             = hcp.q_ref_output_ratio_goal;
+    i_param.q_ref_max_torque_ratio              = hcp.q_ref_max_torque_ratio;
     i_param.wrench_hpf_cutoff_hz                = hcp.wrench_hpf_cutoff_hz;
     i_param.wrench_lpf_cutoff_hz                = hcp.wrench_lpf_cutoff_hz;
     i_param.wrench_hpf_gain                     = hcp.wrench_hpf_gain;
@@ -693,12 +676,13 @@ bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControl
     i_param.ee_pos_rot_friction_coeff           = hrp::to_DblSequence2(hcp.ee_pos_rot_friction_coeff);
     i_param.floor_pd_gain                       = hrp::to_DblSequence2(hcp.floor_pd_gain);
     i_param.foot_horizontal_pd_gain             = hrp::to_DblSequence2(hcp.foot_horizontal_pd_gain);
+    i_param.force_feedback_limit_ft             = hrp::to_DblSequence2(hcp.force_feedback_limit_ft);
     i_param.q_ref_pd_gain                       = hrp::to_DblSequence2(hcp.q_ref_pd_gain);
 
     i_param.ex_ee_ref_wrench.length(4);
-    for(int i=0;i<ee_names.size();i++){
+    for (int i=0; i<ee_names.size(); i++){//順番気をつけないと危険．confファイルに書いたend_effectorの順
         i_param.ex_ee_ref_wrench[i].length(6);
-        for(int j=0;j<6;j++){
+        for(int j=0;j<ft_xyz;j++){
             i_param.ex_ee_ref_wrench[i][j] = hcp.ex_ee_ref_wrench[ee_names[i]](j);
         }
     }
