@@ -45,6 +45,7 @@ module OpenHRP
     boolean stopHapticController();
     boolean pauseHapticController();
     boolean resumeHapticController();
+    void resetOdom();
     void setParams(in HapticControllerParam i_param);
     void getParams(out HapticControllerParam i_param);
   };

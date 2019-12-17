@@ -68,6 +68,7 @@ class HapticController : public RTC::DataFlowComponentBase{
         bool stopHapticController();
         bool pauseHapticController();
         bool resumeHapticController();
+        void resetOdom();
         bool setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param);
         bool getParams(OpenHRP::HapticControllerService::HapticControllerParam& i_param);
         typedef boost::shared_ptr<RTC::InPort   <RTC::TimedPose3D>      > ITP3_Ptr;
@@ -109,7 +110,7 @@ class HapticController : public RTC::DataFlowComponentBase{
         double m_dt;
         unsigned int loop;
         unsigned int m_debugLevel;
-        hrp::BodyPtr m_robot;
+        hrp::BodyPtr m_robot, m_robot_odom;
 
         double output_ratio, q_ref_output_ratio, baselink_h_from_floor, default_baselink_h_from_floor;
         interpolator *t_ip, *q_ref_ip, *baselink_h_ip;
@@ -124,6 +125,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, hrp::dvector6> master_ee_vel, master_ee_vel_filtered, slave_ee_vel; // = twist
         std::map<std::string, hrp::JointPath> jpath_ee;
         std::map<std::string, hrp::dmatrix> J_ee;
+        std::map<std::string, bool> is_contact_to_floor;
+        bool resetOdom_request;
 
         ControlMode mode;
 
@@ -181,6 +184,7 @@ class HapticController : public RTC::DataFlowComponentBase{
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
         void calcCurrentState();
         void calcTorque();
+        void calcOdometry();
         void processTransition();
 };
 

@@ -58,6 +58,15 @@ namespace hrp{
             void setRpy(const double _r, const double _p, const double _y)                                                      { R = rotFromRpy(_r,_p,_y); }
             void setRpy(const hrp::Vector3& _rpy)                                                                               { R = rotFromRpy(_rpy); }
     };
+    inline Pose3 calcRelPose3(const Pose3& from, const Pose3& to){
+        return Pose3( from.R.transpose() * (to.p - from.p), from.R.transpose() * to.R );
+    }
+    inline Pose3 applyRelPose3(const Pose3& tgt, const Pose3& transform){
+        return Pose3( tgt.p + tgt.R * transform.p, tgt.R * transform.R);
+    }
+    inline Pose3 to_2DPlanePose3(const Pose3& in){
+        return Pose3(in.p(X), in.p(Y), 0, 0, 0, in.rpy()(y));
+    }
 
     inline hrp::Vector3         to_Vector3      (const RTC::Point3D& in)        { return hrp::Vector3(in.x, in.y, in.z); }
     inline hrp::Vector3         to_Vector3      (const RTC::Orientation3D& in)  { return hrp::Vector3(in.r, in.p, in.y); }
@@ -73,6 +82,8 @@ namespace hrp{
     inline OpenHRP::Wrench      to_Wrench       (const hrp::dvector6& in)       { return (OpenHRP::Wrench){in(X),in(Y),in(Z),in(r),in(p),in(y)}; }
     inline RTC::TimedDoubleSeq::_data_seq   to_DoubleSeq    (const hrp::dvector& in)    { RTC::TimedDoubleSeq::_data_seq out; out.length(in.size()); hrp::dvector::Map(out.get_buffer(), in.size()) = in; return out; }
 
+    inline hrp::Pose3   getLinkPose3    (const hrp::Link* _link)                { return hrp::Pose3(_link->p, _link->R);  }
+    inline void         setLinkPose3    (hrp::Link* _link, const hrp::Pose3& val){ _link->p = val.p; _link->R = val.R;     }
     inline hrp::dvector getQAll         (const hrp::BodyPtr _robot){ hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->q; } return tmp; }
     inline void         setQAll         (hrp::BodyPtr       _robot, const hrp::dvector& in){ assert(in.size() <= _robot->numJoints()); for(int i=0;i<in.size();i++){ _robot->joint(i)->q = in(i); } }
     inline hrp::dvector getRobotStateVec(const hrp::BodyPtr _robot){ return (hrp::dvector(_robot->numJoints()+6) << getQAll(_robot), _robot->rootLink()->p, hrp::rpyFromRot(_robot->rootLink()->R)).finished(); }

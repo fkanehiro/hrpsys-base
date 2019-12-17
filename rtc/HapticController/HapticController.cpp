@@ -65,6 +65,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
         RTC_WARN_STREAM("failed to load model[" << prop["model"] << "]");
         return RTC::RTC_ERROR;
     }
+    m_robot_odom = hrp::BodyPtr(new hrp::Body(*m_robot)); //copy
 
     setupEEIKConstraintFromConf(ee_ikc_map, m_robot, prop);
     RTC_INFO_STREAM("setupEEIKConstraintFromConf finished");
@@ -139,6 +140,7 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     m_tau.data = hrp::to_DoubleSeq(hrp::dvector::Zero(m_robot->numJoints()));
 
     loop = 0;
+    resetOdom_request = false;
     RTC_INFO_STREAM("onInitialize() OK");
     return RTC::RTC_OK;
 }
@@ -188,6 +190,7 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
 
     calcCurrentState();
     calcTorque();
+    calcOdometry();
 
     if (mode.isRunning()) {
         if(mode.isInitialize()){
@@ -344,8 +347,6 @@ void HapticController::calcTorque(){
 
     std::map<std::string, hrp::dvector6> masterEEWrenches;
     for (auto ee : ee_names){ masterEEWrenches[ee].fill(0); }
-
-    std::map<std::string, bool> is_contact_to_floor;
     {
         const std::vector<std::string> legs = {"lleg", "rleg"};
 
@@ -355,6 +356,7 @@ void HapticController::calcTorque(){
             rats::difference_rotation(diff_rot, master_ee_pose[leg].R, hrp::Matrix33::Identity());
             const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - master_ee_vel_filtered[leg].tail(3);
             hrp::dvector6 wrench = (hrp::dvector6()<< 0,0,0, diff_rot * hcp.foot_horizontal_pd_gain(0) + diff_rot_vel * hcp.foot_horizontal_pd_gain(1)).finished();
+            wrench(tz) = 0;
             LIMIT_NORM_V(wrench.tail(3), 50);
             hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
             for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
@@ -363,7 +365,9 @@ void HapticController::calcTorque(){
 
         ///// virtual floor
         for (auto leg : legs){
-            const double foot_h_from_floor = master_ee_pose[leg].p(Z);
+            const double floor_h_wld = m_robot->rootLink()->p(Z) - baselink_h_from_floor;
+            const double foot_h_from_floor = master_ee_pose[leg].p(Z) - floor_h_wld;
+            // const double foot_h_from_floor = baselink_h_from_floor - (m_robot->rootLink()->p(Z) - master_ee_pose[leg].p(Z));
             if(foot_h_from_floor < 0){
                 hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
                 LIMIT_NORM_V(wrench, 1000);
@@ -401,19 +405,22 @@ void HapticController::calcTorque(){
         }
 
         ///// virtual floor, leg constraint
-        static hrp::Vector3 locked_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
+        static hrp::Pose3 locked_l2r_pose = hrp::calcRelPose3(master_ee_pose["lleg"], master_ee_pose["rleg"]);
         if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"]){
+            hrp::Pose3 cur_l2r_pose = hrp::calcRelPose3(master_ee_pose["lleg"], master_ee_pose["rleg"]);
+            hrp::Vector3 diff_pos, diff_rot;
+            diff_pos = locked_l2r_pose.p - cur_l2r_pose.p;
+            rats::difference_rotation(diff_rot, cur_l2r_pose.R, locked_l2r_pose.R);
+            hrp::dvector6 rleg_wrench = (hrp::dvector6()<< diff_pos * 1000, diff_rot * 100).finished();
+            LIMIT_NORM_V(rleg_wrench, 1000);
             for (auto leg : legs){
-                hrp::Vector3 cur_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
-                hrp::Vector2 rleg_wrench = (locked_rel_pos - cur_rel_pos).head(XY) * 1000;
-                hrp::dvector6 wrench = (hrp::dvector6()<< (leg=="rleg" ? 1:-1) * rleg_wrench, 0,0,0,0).finished();
-                LIMIT_NORM_V(wrench, 1000);
+                hrp::dvector6 wrench = (leg=="rleg" ? 1:-1) *  rleg_wrench;
                 hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
                 for (int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
                 masterEEWrenches[leg] += wrench;
             }
         }else{
-            locked_rel_pos = master_ee_pose["rleg"].p - master_ee_pose["lleg"].p;
+            locked_l2r_pose = hrp::calcRelPose3(master_ee_pose["lleg"], master_ee_pose["rleg"]);
         }
 
         ///// ex
@@ -424,36 +431,7 @@ void HapticController::calcTorque(){
             for (int j=0; j<jpath_ee[ee].numJoints(); j++){ jpath_ee[ee].joint(j)->u += tq_tmp(j); }
             masterEEWrenches[ee] += wrench;
         }
-
-        ///// calc odometry
-        static std::map<std::string, hrp::Vector2> leg_pos_from_floor_origin;
-        hrp::Vector2 baselink_pos_from_floor_origin;
-        if(loop==0){
-            leg_pos_from_floor_origin["lleg"] << 0, 0.15;
-            leg_pos_from_floor_origin["rleg"] << 0,- 0.15;
-            baselink_pos_from_floor_origin << 0,0;
-        }
-        if(is_contact_to_floor["lleg"] && !is_contact_to_floor["rleg"] ){ // when lleg has contact to floor, each value can be calculated from lleg
-            leg_pos_from_floor_origin["rleg"]   = (master_ee_pose["rleg"].p        - master_ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["lleg"].p).head(XY) + leg_pos_from_floor_origin["lleg"];
-        }
-        else if(!is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when rleg has contact to floor, each value can be calculated from rleg
-            leg_pos_from_floor_origin["lleg"]   = (master_ee_pose["lleg"].p        - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];
-        }
-        else if(is_contact_to_floor["lleg"] && is_contact_to_floor["rleg"] ){ // when both has contact to floor, baselink may be calculated from rleg or lleg
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p   - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
-        }
-        else{ // when both in the air, both feet pos won't be update, only baselink will be update
-            baselink_pos_from_floor_origin      = (m_robot->rootLink()->p - master_ee_pose["rleg"].p).head(XY) + leg_pos_from_floor_origin["rleg"];// for example
-        }
-        //update base link pos from world
-        m_robot->rootLink()->p << baselink_pos_from_floor_origin, baselink_h_from_floor;
-        m_teleopOdom.data = (RTC::Pose3D){m_robot->rootLink()->p(X),m_robot->rootLink()->p(Y),m_robot->rootLink()->p(Z), 0,0,0};
-        m_teleopOdom.tm = m_qRef.tm;
-        m_teleopOdomOut.write();
     }
-
 
     // calc real robot feedback force
     for (auto ee : ee_names){
@@ -532,18 +510,43 @@ void HapticController::calcTorque(){
         m_masterEEWrenches[ee].data = hrp::to_DoubleSeq(masterEEWrenches[ee]);
         m_masterEEWrenchesOut[ee]->write();
     }
+}
 
 
-    m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot->calcCM(), hrp::Matrix33::Identity()));
+
+void HapticController::calcOdometry(){
+    // m_robotの軸足-ベースリンク間の相対姿勢を使って, m_robot_odomの世界座標でのベースリンク絶対姿勢を更新
+    // しゃがんでる時の運足はなかったことにしてもいいかなと思っている
+    static std::map<std::string, hrp::Pose3> leg_pose_from_floor_origin;
+    if(mode.now() != MODE_HC || resetOdom_request){ // reset odom
+        for (auto leg : {"rleg", "lleg"}){ leg_pose_from_floor_origin[leg] = hrp::to_2DPlanePose3(master_ee_pose[leg]); }
+        if(resetOdom_request){ resetOdom_request = false; }
+    }
+    const std::string   parent_leg          = (master_ee_pose["rleg"].p(Z) < master_ee_pose["lleg"].p(Z))   ? "rleg" : "lleg"; // choose lower height leg for odom parent
+    const std::string   child_leg           = (parent_leg == "rleg")                                        ? "lleg" : "rleg";
+    const hrp::Pose3    cur_base_pose       = hrp::getLinkPose3 (m_robot->rootLink());
+    const hrp::Pose3    pleg_to_base        = hrp::calcRelPose3 ( hrp::to_2DPlanePose3(master_ee_pose[parent_leg]),             hrp::to_2DPlanePose3(cur_base_pose)             );
+    const hrp::Pose3    pleg_to_cleg        = hrp::calcRelPose3 ( hrp::to_2DPlanePose3(master_ee_pose[parent_leg]),             hrp::to_2DPlanePose3(master_ee_pose[child_leg]) );
+    hrp::Pose3 base_pose_from_floor_origin  = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_base)              );
+    base_pose_from_floor_origin.p(Z)        = m_robot->rootLink()->p(Z) - std::min(master_ee_pose["rleg"].p(Z), master_ee_pose["lleg"].p(Z)); // ajust lower foot on to the z=0 in the world.
+    leg_pose_from_floor_origin[child_leg]   = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_cleg)              );
+
+    //update base link pos from world
+    hrp::setLinkPose3   (m_robot_odom->rootLink(),  base_pose_from_floor_origin);
+    hrp::setQAll        (m_robot_odom,              hrp::getQAll(m_robot));
+    m_robot_odom->calcForwardKinematics();
+
+    m_teleopOdom.data   = hrp::to_Pose3D(hrp::getLinkPose3(m_robot_odom->rootLink()));
+    m_teleopOdom.tm     = m_qRef.tm;
+    m_teleopOdomOut.write();
+    m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot_odom->calcCM(), hrp::Matrix33::Identity()));
     for (auto ee : ee_names){
-        m_masterTgtPoses[ee].data = hrp::to_Pose3D(ee_ikc_map[ee].getCurrentTargetPose(m_robot));//四肢揃ってないと危険
+        m_masterTgtPoses[ee].data = hrp::to_Pose3D(ee_ikc_map[ee].getCurrentTargetPose(m_robot_odom));//四肢揃ってないと危険
     }
     for (auto tgt : tgt_names){
         m_masterTgtPoses[tgt].tm = m_qRef.tm;
         m_masterTgtPosesOut[tgt]->write();
     }
-
-
 }
 
 void HapticController::processTransition(){
@@ -603,6 +606,12 @@ bool HapticController::stopHapticController(){
         RTC_WARN_STREAM("Invalid context to stopHapticController");
         return false;
     }
+}
+
+
+void HapticController::resetOdom(){
+    resetOdom_request = true;
+    RTC_INFO_STREAM("resetOdom");
 }
 
 namespace hrp{

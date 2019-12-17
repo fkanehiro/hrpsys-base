@@ -20,6 +20,7 @@ public:
   CORBA::Boolean stopHapticController();
   CORBA::Boolean pauseHapticController();
   CORBA::Boolean resumeHapticController();
+  void resetOdom();
   void setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param);
   void getParams(OpenHRP::HapticControllerService::HapticControllerParam_out i_param);
   //

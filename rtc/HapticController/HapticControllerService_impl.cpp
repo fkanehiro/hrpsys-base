@@ -33,6 +33,10 @@ CORBA::Boolean HapticControllerService_impl::resumeHapticController()
 {
     return m_hapticcontroller->resumeHapticController();
 };
+void HapticControllerService_impl::resetOdom()
+{
+  m_hapticcontroller->resetOdom();
+};
 //
 void HapticControllerService_impl::setParams(const OpenHRP::HapticControllerService::HapticControllerParam& i_param)
 {
