@@ -411,6 +411,7 @@ void HapticController::calcTorque(){
             diff_pos = locked_l2r_pose.p - cur_l2r_pose.p;
             rats::difference_rotation(diff_rot, cur_l2r_pose.R, locked_l2r_pose.R);
             hrp::dvector6 rleg_wrench = (hrp::dvector6()<< diff_pos * 1000, diff_rot * 100).finished();
+            rleg_wrench(fz) = 0;
             LIMIT_NORM_V(rleg_wrench, 1000);
             for (auto leg : legs){
                 hrp::dvector6 wrench = (leg=="rleg" ? 1:-1) *  rleg_wrench;
