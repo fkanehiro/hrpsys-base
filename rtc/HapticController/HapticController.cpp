@@ -367,7 +367,6 @@ void HapticController::calcTorque(){
         for (auto leg : legs){
             const double floor_h_wld = m_robot->rootLink()->p(Z) - baselink_h_from_floor;
             const double foot_h_from_floor = master_ee_pose[leg].p(Z) - floor_h_wld;
-            // const double foot_h_from_floor = baselink_h_from_floor - (m_robot->rootLink()->p(Z) - master_ee_pose[leg].p(Z));
             if(foot_h_from_floor < 0){
                 hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
                 LIMIT_NORM_V(wrench, 1000);
@@ -384,7 +383,7 @@ void HapticController::calcTorque(){
             const double wall_x_rel_base = -0.1;
             const double current_x = master_ee_pose[leg].p(X) - m_robot->rootLink()->p(X);
             if(current_x < wall_x_rel_base){
-                hrp::dvector6 wrench = (hrp::dvector6()<< (wall_x_rel_base - current_x) * 1000,0,0, 0,0,0).finished();
+                hrp::dvector6 wrench = (wall_x_rel_base - current_x) * 1000 * hrp::dvector6::Unit(fx);
                 LIMIT_NORM_V(wrench, 100);
                 hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
                 for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
@@ -396,7 +395,7 @@ void HapticController::calcTorque(){
         const double current_dist = master_ee_pose["lleg"].p(Y) - master_ee_pose["rleg"].p(Y);
         if(current_dist < hcp.foot_min_distance){
             for (auto leg : legs){
-                hrp::dvector6 wrench = (hrp::dvector6()<< 0, (leg=="lleg" ? 1:-1) * (hcp.foot_min_distance - current_dist) * 1000, 0,0,0,0).finished();
+                hrp::dvector6 wrench = (leg=="lleg" ? 1:-1) * (hcp.foot_min_distance - current_dist) * 1000 * hrp::dvector6::Unit(fy);
                 LIMIT_NORM_V(wrench, 50);
                 hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
                 for (int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
