@@ -1,0 +1,90 @@
+name: Package hrpsys-base
+
+# This workflow only runs when pushing to master
+#
+# It will:
+# - Build packages for selected Debian/Ubuntu distro
+# - Upload the packages to https://dl.bintray.com/gergondet/multi-contact-head
+# - Upload the packages to https://dl.bintray.com/gergondet/multi-contact
+#
+
+on:
+  push:
+    branches:
+      - debian
+
+jobs:
+  # This job build binary packages for Ubuntu
+  build-packages:
+    strategy:
+      fail-fast: true
+      matrix:
+        dist: [xenial, bionic]
+        arch: [i386, amd64]
+        exclude:
+          - dist: focal
+            arch: i386
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build package
+      uses: jrl-umi3218/github-actions/build-package-native@master
+      with:
+        dist: ${{ matrix.dist }}
+        arch: ${{ matrix.arch }}
+        other-mirrors: "https://dl.bintray.com/gergondet/multi-contact-release"
+        other-gpg-keys: "0x892EA6EE273707C6495A6FB6220D644C64666806"
+    - uses: actions/upload-artifact@v1
+      with:
+        name: packages-${{ matrix.dist }}-${{ matrix.arch }}
+        path: /tmp/packages-${{ matrix.dist }}-${{ matrix.arch }}/
+  # This job upload binary packages for Ubuntu
+  upload-packages:
+    needs: build-packages
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        dist: [xenial, bionic]
+        arch: [i386, amd64]
+        exclude:
+          - dist: focal
+            arch: i386
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Download packages
+      uses: actions/download-artifact@v1
+      with:
+        name: packages-${{ matrix.dist }}-${{ matrix.arch }}
+    - name: Upload to multi-contact-head
+      uses: jrl-umi3218/github-actions/upload-package@master
+      with:
+        dist: ${{ matrix.dist }}
+        arch: ${{ matrix.arch }}
+        subject: gergondet
+        repo: multi-contact-head
+        package: |
+          name: hrpsys-base
+          desc: "Basic RT components and utilities to control robots using OpenRTM"
+          licenses: [EPL-1.0]
+          vcs_url: https://github.com/fkanehiro/hrpsys-base
+        version: 3.1.9
+        path: packages-${{ matrix.dist }}-${{ matrix.arch }}
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    - name: Upload to multi-contact-release
+      uses: jrl-umi3218/github-actions/upload-package@master
+      with:
+        dist: ${{ matrix.dist }}
+        arch: ${{ matrix.arch }}
+        subject: gergondet
+        repo: multi-contact-release
+        package: |
+          name: hrpsys-base
+          desc: "Basic RT components and utilities to control robots using OpenRTM"
+          licenses: [EPL-1.0]
+          vcs_url: https://github.com/fkanehiro/hrpsys-base
+        version: 3.1.9
+        path: packages-${{ matrix.dist }}-${{ matrix.arch }}
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

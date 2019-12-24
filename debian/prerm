@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+if [ "$1" = "remove" ]; then
+  PYTHON_VER=`python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"`
+  DEST_DIR=/usr/lib/python$PYTHON_VER/dist-packages/hrpsys
+  cd $DEST_DIR
+  rm -f *_idl.py
+  rm -rf OpenHRP
+  rm -rf Img
+  rm -rf PointCloudTypes
+  rm -rf RTM
+  rm -rf RTC
+  rm -rf OpenRTM
+  rm -rf SDOPackage
+  rm -rf *__POA
+  find . -name '*.pyc' -delete
+fi

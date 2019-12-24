@@ -1,0 +1,12 @@
+Source: hrpsys-base
+Section: science
+Priority: extra
+Maintainer: Fumio KANEHIRO <f-kanehiro@aist.go.jp>
+Build-Depends: debhelper (>= 7.5), cmake(>= 2.4.0), pkg-config (>= 0.22), openrtm-aist (>= 1.0.0), openrtm-aist-dev (>= 1.0.0), jython (>= 2.2.0), libboost-all-dev (>= 1.40.0), liblapack-dev (>= 3.2.1), libeigen3-dev (>= 3.0.1), libjpeg-dev, libpng12-dev (>= 1.2.42), openjdk-6-jdk, doxygen (>=1.6.3), libxml2-dev (>= 2.7.6), libf2c2-dev, libgl1-mesa-dev, libxext-dev, libomniorb4-dev, collada-dom-dev, omniidl, uuid-dev, openhrp, libsdl-dev, libglew-dev, libqhull-dev, freeglut3-dev, libxmu-dev, libcv-dev, libcvaux-dev, libhighgui-dev
+Standards-Version: 3.9.2
+Homepage: http://code.google.com/p/hrpsys-base
+
+Package: hrpsys-base
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, openrtm-aist-dev, ipython, jython, openrtm-aist-python, omniidl-python, python-tk
+Description: Basic RT components and utilities to control robots using OpenRTM

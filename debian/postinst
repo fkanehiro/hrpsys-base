@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+if [ "$1" = "configure" ]; then
+  PYTHON_VER=`python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"`
+  DEST_DIR=/usr/lib/python$PYTHON_VER/dist-packages
+  mkdir -p $DEST_DIR
+  cd /usr/share/hrpsys/idl
+  # remove old stubs generated directly under dist-packages (just for
+  # historical reason, and this code should be removed once all user
+  # complete updating the old package)
+  for f in `ls *.idl`; do
+      if [ -f $DEST_DIR/${f%.*}_idl.py ]; then
+         rm $DEST_DIR/${f%.*}_idl.py
+      fi
+      if [ -f $DEST_DIR/${f%.*}_idl.pyc ]; then
+         rm $DEST_DIR/${f%.*}_idl.pyc
+      fi
+  done
+  omniidl -bpython -C$DEST_DIR -Wbpackage=hrpsys -Wbinline -I/usr/include/openrtm-1.1/rtm/idl *.idl
+  cd /usr/share/OpenHRP-3.1/idl/OpenHRP
+  omniidl -bpython -C$DEST_DIR -Wbpackage=hrpsys -Wbinline -I/usr/include/openrtm-1.1/rtm/idl *.idl
+  cd /usr/include/openrtm-1.1/rtm/idl
+  omniidl -bpython -C$DEST_DIR -Wbpackage=hrpsys -Wbinline *.idl
+  cd $DEST_DIR
+  python -m compileall hrpsys
+fi
