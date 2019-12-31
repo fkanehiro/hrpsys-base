@@ -1,4 +1,10 @@
-hrpsys-base (315.15.0-1ubuntu2) UNRELEASED; urgency=medium
+hrpsys-base (315.15.0-1ubuntu3) unstable; urgency=medium
+
+  * Add omniidl-python to build dependencies
+
+ -- Pierre Gergondet <pierre.gergondet+ppa@gmail.com>  Tue, 31 Dec 2019 10:39:07 +0800
+
+hrpsys-base (315.15.0-1ubuntu2) unstable; urgency=medium
 
   * Remove postinst scripts
 
