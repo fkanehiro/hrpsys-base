@@ -362,6 +362,8 @@ class WBMSCore{
             public:
                 bool auto_com_mode;
                 bool auto_foor_h_mode;
+                bool auto_foot_landing_by_act_cp;
+                bool auto_foot_landing_by_act_zmp;
                 double additional_double_support_time;
                 double auto_com_foot_move_detect_height;
                 double auto_floor_h_detect_fz;
@@ -383,6 +385,8 @@ class WBMSCore{
             WBMSParams(){
                 auto_com_mode                       = true;
                 auto_foor_h_mode                    = true;
+                auto_foot_landing_by_act_cp         = false;
+                auto_foot_landing_by_act_zmp        = true;
                 additional_double_support_time      = 0.5;
                 auto_com_foot_move_detect_height    = 0.03;
                 auto_floor_h_detect_fz              = 50;
@@ -544,16 +548,18 @@ class WBMSCore{
                 ///// lock by ref_zmp
                 ref_zmp_from_foot[lr] = act_rs.ref_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
                 out.foot(OPPOSITE(lr)).go_contact |= ( ref_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance );
-                ///// lock by acts_zmp
-                act_zmp_from_foot[lr] = act_rs.st_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
-                if( act_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance*9999 ){
-                    zmp_force_go_contact_count[OPPOSITE(lr)] = 1;
-                }else if(zmp_force_go_contact_count[OPPOSITE(lr)] > 0 && zmp_force_go_contact_count[OPPOSITE(lr)] < HZ * wp.additional_double_support_time ){
-                    zmp_force_go_contact_count[OPPOSITE(lr)]++;
-                }else{
-                    zmp_force_go_contact_count[OPPOSITE(lr)] = 0;
+                ///// lock by act_zmp
+                if(wp.auto_foot_landing_by_act_zmp){
+                    act_zmp_from_foot[lr] = act_rs.st_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
+                    if( act_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance ){
+                        zmp_force_go_contact_count[OPPOSITE(lr)] = 1;
+                    }else if(zmp_force_go_contact_count[OPPOSITE(lr)] > 0 && zmp_force_go_contact_count[OPPOSITE(lr)] < HZ * wp.additional_double_support_time ){
+                        zmp_force_go_contact_count[OPPOSITE(lr)]++;
+                    }else{
+                        zmp_force_go_contact_count[OPPOSITE(lr)] = 0;
+                    }
+                    out.foot(OPPOSITE(lr)).go_contact |= (zmp_force_go_contact_count[OPPOSITE(lr)] > 0);
                 }
-                out.foot(OPPOSITE(lr)).go_contact |= (zmp_force_go_contact_count[OPPOSITE(lr)] > 0);
                 ///// lock by ref cp
                 out.foot(OPPOSITE(lr)).go_contact |= cp_force_go_contact[OPPOSITE(lr)];
             }

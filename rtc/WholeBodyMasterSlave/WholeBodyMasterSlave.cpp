@@ -392,16 +392,16 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact();
         addTimeReport("SetOutPut");
 
-        // send back aut detected floor height
-        for(std::string lr : {"l","r"}){
-            const hrp::Vector3 floor_pos = wbms->rp_ref_out.tgt_by_str(lr+"leg").cnt.p - wbms->rp_ref_out.tgt_by_str(lr+"leg").offs.p;
-            m_slaveTgtPoses[lr+"floor"].data    = hrp::to_Pose3D( (hrp::dvector6()<<floor_pos,0,0,0).finished());
-            m_slaveTgtPoses[lr+"floor"].tm      = m_qRef.tm;
-            m_slaveTgtPosesOut[lr+"floor"]->write();
-        }
     }
     wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
     wbms->baselinkpose.R = fik->m_robot->rootLink()->R;
+    // send back auto detected floor height
+    for(std::string lr : {"l","r"}){
+        const hrp::Vector3 floor_pos = wbms->rp_ref_out.tgt_by_str(lr+"leg").cnt.p - wbms->rp_ref_out.tgt_by_str(lr+"leg").offs.p;
+        m_slaveTgtPoses[lr+"floor"].data    = hrp::to_Pose3D( (hrp::dvector6()<<floor_pos,0,0,0).finished());
+        m_slaveTgtPoses[lr+"floor"].tm      = m_qRef.tm;
+        m_slaveTgtPosesOut[lr+"floor"]->write();
+    }
 
     // write
     m_qOut.write();
@@ -755,6 +755,9 @@ namespace hrp{
 bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTC_INFO_STREAM("setWholeBodyMasterSlaveParam");
     wbms->wp.auto_com_mode                      = i_param.auto_com_mode;
+    wbms->wp.auto_foor_h_mode                   = i_param.auto_foor_h_mode;
+    wbms->wp.auto_foot_landing_by_act_cp        = i_param.auto_foot_landing_by_act_cp;
+    wbms->wp.auto_foot_landing_by_act_zmp       = i_param.auto_foot_landing_by_act_zmp;
     wbms->wp.additional_double_support_time     = i_param.additional_double_support_time;
     wbms->wp.auto_com_foot_move_detect_height   = i_param.auto_com_foot_move_detect_height;
     wbms->wp.auto_floor_h_detect_fz             = i_param.auto_floor_h_detect_fz;
@@ -780,6 +783,9 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
 bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTC_INFO_STREAM("getWholeBodyMasterSlaveParam");
     i_param.auto_com_mode                       = wbms->wp.auto_com_mode;
+    i_param.auto_foor_h_mode                    = wbms->wp.auto_foor_h_mode;
+    i_param.auto_foot_landing_by_act_cp         = wbms->wp.auto_foot_landing_by_act_cp;
+    i_param.auto_foot_landing_by_act_zmp        = wbms->wp.auto_foot_landing_by_act_zmp;
     i_param.additional_double_support_time      = wbms->wp.additional_double_support_time;
     i_param.auto_com_foot_move_detect_height    = wbms->wp.auto_com_foot_move_detect_height;
     i_param.auto_floor_h_detect_fz              = wbms->wp.auto_floor_h_detect_fz;

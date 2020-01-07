@@ -20,6 +20,8 @@ module OpenHRP
     {
         boolean auto_com_mode;
         boolean auto_foor_h_mode;
+        boolean auto_foot_landing_by_act_cp;
+        boolean auto_foot_landing_by_act_zmp;
         double additional_double_support_time;
         double auto_com_foot_move_detect_height;
         double auto_floor_h_detect_fz;
