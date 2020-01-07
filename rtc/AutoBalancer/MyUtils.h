@@ -39,6 +39,9 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define LIMIT_MIN_V(v,minv)         (v= v.cwiseMax(minv))
 #define LIMIT_MAX_V(v,maxv)         (v= v.cwiseMin(maxv))
 #define LIMIT_MINMAX_V(v,minv,maxv) (v= v.cwiseMin(minv).cwiseMax(maxv))
+#define MIN_LIMITED(x,min)          ( x<min ? min : x )
+#define MAX_LIMITED(x,max)          ( x>max ? max : x )
+#define MINMAX_LIMITED(x,min,max)   ( x<min ? min : ( x>max ? max : x ))
 
 
 namespace hrp{

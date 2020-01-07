@@ -381,8 +381,8 @@ class WBMSCore{
                 std::vector<std::string> use_joints;
                 std::vector<std::string> use_targets;
             WBMSParams(){
-                auto_com_mode                       = false;
-                auto_foor_h_mode                         = true;
+                auto_com_mode                       = true;
+                auto_foor_h_mode                    = true;
                 additional_double_support_time      = 0.5;
                 auto_com_foot_move_detect_height    = 0.03;
                 auto_floor_h_detect_fz              = 50;
@@ -509,24 +509,31 @@ class WBMSCore{
     private:
         void convertHumanToRobot(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
             //      out = in;//ダメゼッタイ
-            for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
-                out.tgt[l[i]].abs.p = wp.human_to_robot_ratio * (in.tgt[l[i]].abs.p - in.tgt[l[i]].offs.p) + out.tgt[l[i]].offs.p;
-                out.tgt[l[i]].abs.R = in.tgt[l[i]].abs.R * in.tgt[l[i]].offs.R.transpose() * out.tgt[l[i]].offs.R;
+            for(auto l : {com,rf,lf,rh,lh,head}){
+                out.tgt[l].abs.p = wp.human_to_robot_ratio * (in.tgt[l].abs.p - in.tgt[l].offs.p) + out.tgt[l].offs.p;
+                out.tgt[l].abs.R = in.tgt[l].abs.R * in.tgt[l].offs.R.transpose() * out.tgt[l].offs.R;
             }
-            for(int i=0, l[4]={rf,lf,rh,lh}; i<4; i++){
-                out.tgt[l[i]].w = in.tgt[l[i]].w;
-                out.tgt[l[i]].go_contact = in.tgt[l[i]].go_contact;
+            for(auto l : {rf,lf,rh,lh}){
+                out.tgt[l].w = in.tgt[l].w;
+                out.tgt[l].go_contact = in.tgt[l].go_contact;
             }
             out.tgt[com].abs.p += wp.com_offset;
             out.tgt[zmp].abs = in.tgt[zmp].abs;//最近使わない
         }
         void setAutoCOMMode(const HumanPose& human, const HumanPose& old, HumanPose& out){
+            // if(wp.auto_com_mode){
+            //     const bool rf_is_up = (human.tgt[rf].abs.p(Z) - human.tgt[rf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
+            //     const bool lf_is_up = (human.tgt[lf].abs.p(Z) - human.tgt[lf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
+            //     if      ( rf_is_up && !lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
+            //     else if (!rf_is_up &&  lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
+            //     else                            { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
+            // }
             if(wp.auto_com_mode){
-                const bool rf_is_up = (human.tgt[rf].abs.p(Z) - human.tgt[rf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
-                const bool lf_is_up = (human.tgt[lf].abs.p(Z) - human.tgt[lf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
-                if      ( rf_is_up && !lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
-                else if (!rf_is_up &&  lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
-                else                            { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
+                const double rf_h_from_floor = human.tgt[rf].abs.p(Z) - old.tgt[rf].cnt.p(Z);
+                const double lf_h_from_floor = human.tgt[lf].abs.p(Z) - old.tgt[lf].cnt.p(Z);
+                if      ( rf_h_from_floor - lf_h_from_floor >  wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
+                else if ( rf_h_from_floor - lf_h_from_floor < -wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
+                else                       { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
             }
         }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){

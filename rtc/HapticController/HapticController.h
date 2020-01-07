@@ -126,6 +126,7 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, hrp::JointPath> jpath_ee;
         std::map<std::string, hrp::dmatrix> J_ee;
         std::map<std::string, bool> is_contact_to_floor;
+        std::map<std::string, double> foot_h_from_floor;
         bool resetOdom_request;
 
         ControlMode mode;
@@ -178,6 +179,23 @@ class HapticController : public RTC::DataFlowComponentBase{
                 ex_ee_ref_wrench["lleg"]            = hrp::dvector6::Zero();
                 ex_ee_ref_wrench["rarm"]            = hrp::dvector6::Zero();
                 ex_ee_ref_wrench["larm"]            = hrp::dvector6::Zero();
+                CheckSafeLimit();
+            }
+            void CheckSafeLimit(){
+                LIMIT_MINMAX(baselink_height_from_floor          , 0.5, 3);
+                LIMIT_MINMAX(dqAct_filter_cutoff_hz              , 0, 500);
+                LIMIT_MINMAX(ee_vel_filter_cutoff_hz             , 0, 500);
+                LIMIT_MINMAX(ex_gravity_compensation_ratio_lower , -1, 2);
+                LIMIT_MINMAX(ex_gravity_compensation_ratio_upper , -1, 2);
+                LIMIT_MINMAX(foot_min_distance                   , 0, 1);
+                LIMIT_MINMAX(force_feedback_ratio                , 0, 2);
+                LIMIT_MINMAX(gravity_compensation_ratio          , 0, 2);
+                LIMIT_MINMAX(q_friction_coeff                    , 0, 0.1);
+                LIMIT_MINMAX(q_ref_max_torque_ratio              , 0, 1);
+                LIMIT_MINMAX(wrench_hpf_cutoff_hz                , 0, 500);
+                LIMIT_MINMAX(wrench_lpf_cutoff_hz                , 0, 500);
+                LIMIT_MINMAX(wrench_hpf_gain                     , 0, 2);
+                LIMIT_MINMAX(wrench_lpf_gain                     , 0, 2);
             }
         } hcp;
 

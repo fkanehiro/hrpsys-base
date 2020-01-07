@@ -148,59 +148,50 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     ref_zmp_filter.resize(XYZ);
     ref_zmp_filter.setParameter(100, 1/m_dt, Q_BUTTERWORTH);
 
-    cp_flag = -1;
-    lt.fill(0);
-    rt.fill(0);
-
-    to_enum["lleg"] = lf;
-    to_enum["rleg"] = rf;
-    to_enum["larm"] = lh;
-    to_enum["rarm"] = rh;
-    to_enum["com"] =  com;
-    to_enum["head"] = head;
-
     tgt_names = ee_names;
     tgt_names.push_back("com");
     tgt_names.push_back("head");
     tgt_names.push_back("rhand");
     tgt_names.push_back("lhand");
+    tgt_names.push_back("rfloor");
+    tgt_names.push_back("lfloor");
 
-    for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "slave_"+ee_names[i]+"_wrench";
-        m_slaveEEWrenchesOut[ee_names[i]] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee_names[i]]));
-        registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[ee_names[i]]);
+    for (auto ee : ee_names) {
+        const std::string n = "slave_"+ee+"_wrench";
+        m_slaveEEWrenchesOut[ee] = OTDS_Ptr(new RTC::OutPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee]));
+        registerOutPort(n.c_str(), *m_slaveEEWrenchesOut[ee]);
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
-    for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "master_"+ee_names[i]+"_wrench";
-        m_masterEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee_names[i]]));
-        registerInPort(n.c_str(), *m_masterEEWrenchesIn[ee_names[i]]);
+    for (auto ee : ee_names) {
+        const std::string n = "master_"+ee+"_wrench";
+        m_masterEEWrenchesIn[ee] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_masterEEWrenches[ee]));
+        registerInPort(n.c_str(), *m_masterEEWrenchesIn[ee]);
         RTC_INFO_STREAM(" registerInPort " << n);
     }
     ///////////////////
-    for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "master_"+tgt_names[i]+"_pose";
-        m_masterTgtPosesIn[tgt_names[i]] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt_names[i]]));
-        registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt_names[i]]);
+    for (auto tgt : tgt_names) {
+        const std::string n = "master_"+tgt+"_pose";
+        m_masterTgtPosesIn[tgt] = ITP3_Ptr(new RTC::InPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt]));
+        registerInPort(n.c_str(), *m_masterTgtPosesIn[tgt]);
         RTC_INFO_STREAM(" registerInPort " << n);
     }
-    for ( int i=0; i<tgt_names.size(); i++) {
-        std::string n = "slave_"+tgt_names[i]+"_pose";
-        m_slaveTgtPosesOut[tgt_names[i]] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt_names[i]]));
-        registerOutPort(n.c_str(), *m_slaveTgtPosesOut[tgt_names[i]]);
+    for (auto tgt : tgt_names) {
+        const std::string n = "slave_"+tgt+"_pose";
+        m_slaveTgtPosesOut[tgt] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_slaveTgtPoses[tgt]));
+        registerOutPort(n.c_str(), *m_slaveTgtPosesOut[tgt]);
         RTC_INFO_STREAM(" registerOutPort " << n);
     }
     //////////////
-    for ( int i=0; i<ee_names.size(); i++) {
-        std::string n = "local_"+ee_names[i]+"_wrench";
-        m_localEEWrenchesIn[ee_names[i]] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee_names[i]]));
-        registerInPort(n.c_str(), *m_localEEWrenchesIn[ee_names[i]]);
+    for (auto ee : ee_names) {
+        const std::string n = "local_"+ee+"_wrench";
+        m_localEEWrenchesIn[ee] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_localEEWrenches[ee]));
+        registerInPort(n.c_str(), *m_localEEWrenchesIn[ee]);
         RTC_INFO_STREAM(" registerInPort " << n);
     }
 
-    for(auto een : ee_names){
-        ee_f_filter[een].resize(XYZ);
-        ee_f_filter[een].setParameter(1, 1/m_dt, Q_BUTTERWORTH);
+    for(auto ee : ee_names){
+        ee_f_filter[ee].resize(XYZ);
+        ee_f_filter[ee].setParameter(1, 1/m_dt, Q_BUTTERWORTH);
     }
 
     RTC_INFO_STREAM("onInitialize() OK");
@@ -250,7 +241,9 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if(m_zmpIn.isNew()                      ){ m_zmpIn.read(); }
     if(m_optionalDataIn.isNew()             ){ m_optionalDataIn.read(); }
     if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
-    for(int i=0; i<ee_names.size(); i++){ if(m_localEEWrenchesIn[ee_names[i]]->isNew()){ m_localEEWrenchesIn[ee_names[i]]->read(); } }
+    for (auto ee : ee_names) {
+        if(m_localEEWrenchesIn[ee]->isNew()){ m_localEEWrenchesIn[ee]->read(); }
+    }
     wbms->act_rs.act_foot_wrench[0] = hrp::to_dvector(m_localEEWrenches["rleg"].data);
     wbms->act_rs.act_foot_wrench[1] = hrp::to_dvector(m_localEEWrenches["lleg"].data);
     wbms->act_rs.act_foot_pose[0] = ee_ikc_map["rleg"].getCurrentTargetPose(m_robot_vsafe);
@@ -260,28 +253,28 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     std::map<std::string, std::string> to_sname{{"lleg", "lfsensor"}, {"rleg", "rfsensor"}, {"larm", "lhsensor"}, {"rarm", "rhsensor"}};
     hrp::setQAll(m_robot_act, hrp::to_dvector(m_qAct.data));
     m_robot_act->calcForwardKinematics();
-    for(auto een : ee_names){
-        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[een]);
+    for(auto ee : ee_names){
+        hrp::ForceSensor* sensor = m_robot_act->sensor<hrp::ForceSensor>(to_sname[ee]);
         hrp::Matrix33 sensorR_wld = sensor->link->R * sensor->localR;
         hrp::Matrix33 sensorR_from_base = m_robot_act->rootLink()->R.transpose() * sensorR_wld;
-        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[een].data).head(3);
-        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[een].data).tail(3);
-        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[een].getCurrentTargetPos(m_robot_act) - sensor->link->p;
+        const hrp::Vector3 f_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee].data).head(3);
+        const hrp::Vector3 t_sensor_wld = sensorR_from_base * hrp::to_dvector(m_localEEWrenches[ee].data).tail(3);
+        const hrp::Vector3 sensor_to_ee_vec_wld = ee_ikc_map[ee].getCurrentTargetPos(m_robot_act) - sensor->link->p;
         const hrp::Vector3 f_ee_wld = f_sensor_wld;
         const hrp::Vector3 t_ee_wld = t_sensor_wld - sensor_to_ee_vec_wld.cross(f_sensor_wld);
-        m_slaveEEWrenches[een].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
-        m_slaveEEWrenches[een].tm = m_qRef.tm;
-        m_slaveEEWrenchesOut[een]->write();
-        m_slaveTgtPoses[een].data = hrp::to_Pose3D(ee_ikc_map[een].getCurrentTargetPose(m_robot_act));
-        m_slaveTgtPoses[een].tm = m_qRef.tm;
-        m_slaveTgtPosesOut[een]->write();
+        m_slaveEEWrenches[ee].data = hrp::to_DoubleSeq( (hrp::dvector6()<<f_ee_wld,t_ee_wld).finished());
+        m_slaveEEWrenches[ee].tm = m_qRef.tm;
+        m_slaveEEWrenchesOut[ee]->write();
+        m_slaveTgtPoses[ee].data = hrp::to_Pose3D(ee_ikc_map[ee].getCurrentTargetPose(m_robot_act));
+        m_slaveTgtPoses[ee].tm = m_qRef.tm;
+        m_slaveTgtPosesOut[ee]->write();
     }
 
     static_balancing_com_offset.fill(0);
-    for(std::string een : {"larm","rarm"}){
-        const hrp::Vector3 use_f = hrp::Vector3::UnitZ() * m_slaveEEWrenches[een].data[Z];
-        hrp::Vector3 use_f_filtered = ee_f_filter[een].passFilter(use_f);
-        const hrp::Vector3 ee_pos_from_com = ee_ikc_map[een].getCurrentTargetPos(m_robot_vsafe) - wbms->rp_ref_out.tgt[com].abs.p;
+    for(auto ee : {"larm","rarm"}){
+        const hrp::Vector3 use_f = hrp::Vector3::UnitZ() * m_slaveEEWrenches[ee].data[Z];
+        hrp::Vector3 use_f_filtered = ee_f_filter[ee].passFilter(use_f);
+        const hrp::Vector3 ee_pos_from_com = ee_ikc_map[ee].getCurrentTargetPos(m_robot_vsafe) - wbms->rp_ref_out.tgt[com].abs.p;
         static_balancing_com_offset.head(XY) += - ee_pos_from_com.head(XY) * use_f_filtered(Z) / (-m_robot_vsafe->totalMass() * G);
     }
     if(loop%500==0)dbgv(static_balancing_com_offset);
@@ -301,17 +294,21 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         ex_data_index = hrp::to_string_vector(m_exDataIndex.data);
     }
 
-
-
     if( mode.now() != MODE_PAUSE ){ // stop updating input when MODE_PAUSE
-        for(int i=0; i<tgt_names.size(); i++){
-            if (m_masterTgtPosesIn[tgt_names[i]]->isNew()){
-                m_masterTgtPosesIn[tgt_names[i]]->read();
-                if(tgt_names[i] == "lhand" || tgt_names[i] == "rhand"){
-                    // nothind
+        for (auto tgt : tgt_names){
+            if (m_masterTgtPosesIn[tgt]->isNew()){
+                m_masterTgtPosesIn[tgt]->read();
+                if(tgt == "lhand" || tgt == "rhand" || tgt == "lfloor" || tgt == "rfloor" ){
+                    // nothing
                 }else{
-                    wbms->hp_wld_raw.tgt_by_str(tgt_names[i]).abs = hrp::to_Pose3(m_masterTgtPoses[tgt_names[i]].data);
+                    wbms->hp_wld_raw.tgt_by_str(tgt).abs = hrp::to_Pose3(m_masterTgtPoses[tgt].data);
                 }
+            }
+        }
+        for (auto ee : ee_names){
+            if (m_masterEEWrenchesIn[ee]->isNew()){
+                m_masterEEWrenchesIn[ee]->read();
+                wbms->hp_wld_raw.tgt_by_str(ee).w = hrp::to_dvector(m_masterEEWrenches[ee].data);
             }
         }
         if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
@@ -394,6 +391,14 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = wbms->rp_ref_out.tgt[rf].is_contact();
         m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact();
         addTimeReport("SetOutPut");
+
+        // send back aut detected floor height
+        for(std::string lr : {"l","r"}){
+            const hrp::Vector3 floor_pos = wbms->rp_ref_out.tgt_by_str(lr+"leg").cnt.p - wbms->rp_ref_out.tgt_by_str(lr+"leg").offs.p;
+            m_slaveTgtPoses[lr+"floor"].data    = hrp::to_Pose3D( (hrp::dvector6()<<floor_pos,0,0,0).finished());
+            m_slaveTgtPoses[lr+"floor"].tm      = m_qRef.tm;
+            m_slaveTgtPosesOut[lr+"floor"]->write();
+        }
     }
     wbms->baselinkpose.p = fik->m_robot->rootLink()->p;
     wbms->baselinkpose.R = fik->m_robot->rootLink()->R;

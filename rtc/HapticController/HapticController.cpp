@@ -102,6 +102,14 @@ RTC::ReturnCode_t HapticController::onInitialize(){
         wrench_lpf[ee].reset(0);
     }
 
+    tgt_names = ee_names;
+    tgt_names.push_back("com");
+    tgt_names.push_back("head");
+    tgt_names.push_back("rhand");
+    tgt_names.push_back("lhand");
+    tgt_names.push_back("rfloor");
+    tgt_names.push_back("lfloor");
+
     for (auto ee : ee_names){
         std::string n = "slave_"+ee+"_wrench";
         m_slaveEEWrenchesIn[ee] = ITDS_Ptr(new RTC::InPort<RTC::TimedDoubleSeq>(n.c_str(), m_slaveEEWrenches[ee]));
@@ -109,12 +117,6 @@ RTC::ReturnCode_t HapticController::onInitialize(){
         m_slaveEEWrenches[ee].data = hrp::to_DoubleSeq(hrp::dvector6::Zero()); // avoid non-zero initial input
         RTC_INFO_STREAM(" registerInPort " << n );
     }
-
-    tgt_names = ee_names;
-    tgt_names.push_back("com");
-    tgt_names.push_back("head");
-    tgt_names.push_back("rhand");
-    tgt_names.push_back("lhand");
     for (auto tgt : tgt_names){
         std::string n = "master_"+tgt+"_pose";
         m_masterTgtPosesOut[tgt] = OTP3_Ptr(new RTC::OutPort<RTC::TimedPose3D>(n.c_str(), m_masterTgtPoses[tgt]));
@@ -182,8 +184,8 @@ RTC::ReturnCode_t HapticController::onExecute(RTC::UniqueId ec_id){
     if(m_qActIn.isNew()                     ){ m_qActIn.read(); }
     if(m_dqActIn.isNew()                    ){ m_dqActIn.read(); }
     if(m_delayCheckPacketInboundIn.isNew()  ){ m_delayCheckPacketInboundIn.read(); m_delayCheckPacketOutboundOut.write();}
-    for(auto port : m_slaveEEWrenchesIn){   if( port.second->isNew() ) { port.second->read(); } }
-    for(auto port : m_slaveTgtPosesIn){     if( port.second->isNew() ) { port.second->read(); } }
+    for(auto p : m_slaveEEWrenchesIn){   if( p.second->isNew() ) { p.second->read(); } }
+    for(auto p : m_slaveTgtPosesIn){     if( p.second->isNew() ) { p.second->read(); } }
     
     mode.update();
     processTransition();
@@ -287,6 +289,13 @@ void HapticController::calcCurrentState(){
         hrp::JointPath jp(m_robot->rootLink(), m_robot->link(ee_ikc_map[ee].target_link_name));
         jp.calcJacobian(J_ee[ee], ee_ikc_map[ee].localPos);
     }
+
+    for(auto leg : {"rleg","lleg"}){ //m_robot->rootLink()->p(Z)は0付近で更新されないのでworld座標系におけるfloor_hは-1.0とからへん
+        const double slave_act_floor_z = MINMAX_LIMITED(m_slaveTgtPoses[(leg=="lleg" ? "lfloor" : "rfloor")].data.position.z, 0, 0.3);
+        const double basic_floor_h_wld = m_robot->rootLink()->p(Z) - baselink_h_from_floor;
+        foot_h_from_floor[leg] = master_ee_pose[leg].p(Z) - (basic_floor_h_wld + slave_act_floor_z);
+    }
+
 }
 
 
@@ -365,17 +374,15 @@ void HapticController::calcTorque(){
 
         ///// virtual floor
         for (auto leg : legs){
-            const double floor_h_wld = m_robot->rootLink()->p(Z) - baselink_h_from_floor;
-            const double foot_h_from_floor = master_ee_pose[leg].p(Z) - floor_h_wld;
-            if(foot_h_from_floor < 0){
-                hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
+            if(foot_h_from_floor[leg] < 0){
+                hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor[leg]*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
                 LIMIT_NORM_V(wrench, 1000);
                 const hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
                 for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
                 masterEEWrenches[leg] += wrench;
             }
-            is_contact_to_floor[leg] = (foot_h_from_floor < 0 + 0.03);
-            if(loop%1000==0){ dbg(foot_h_from_floor); }
+            is_contact_to_floor[leg] = (foot_h_from_floor[leg] < 0 + 0.03);
+            if(loop%1000==0){ dbg(foot_h_from_floor[leg]); }
         }
 
         ///// virtual back wall
@@ -528,7 +535,8 @@ void HapticController::calcOdometry(){
     const hrp::Pose3    pleg_to_base        = hrp::calcRelPose3 ( hrp::to_2DPlanePose3(master_ee_pose[parent_leg]),             hrp::to_2DPlanePose3(cur_base_pose)             );
     const hrp::Pose3    pleg_to_cleg        = hrp::calcRelPose3 ( hrp::to_2DPlanePose3(master_ee_pose[parent_leg]),             hrp::to_2DPlanePose3(master_ee_pose[child_leg]) );
     hrp::Pose3 base_pose_from_floor_origin  = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_base)              );
-    base_pose_from_floor_origin.p(Z)        = m_robot->rootLink()->p(Z) - std::min(master_ee_pose["rleg"].p(Z), master_ee_pose["lleg"].p(Z)); // ajust lower foot on to the z=0 in the world.
+    const double floating_h                 = MIN_LIMITED(std::min(foot_h_from_floor["rleg"], foot_h_from_floor["lleg"]), 0); 
+    base_pose_from_floor_origin.p(Z)        = baselink_h_from_floor - floating_h; // ajust not to float with both feet.
     leg_pose_from_floor_origin[child_leg]   = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_cleg)              );
 
     //update base link pos from world
@@ -539,7 +547,7 @@ void HapticController::calcOdometry(){
     m_teleopOdom.data   = hrp::to_Pose3D(hrp::getLinkPose3(m_robot_odom->rootLink()));
     m_teleopOdom.tm     = m_qRef.tm;
     m_teleopOdomOut.write();
-    m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot_odom->calcCM(), hrp::Matrix33::Identity()));
+    m_masterTgtPoses["com"].data = hrp::to_Pose3D(hrp::Pose3(m_robot_odom->calcCM(), m_robot_odom->rootLink()->R));
     for (auto ee : ee_names){
         m_masterTgtPoses[ee].data = hrp::to_Pose3D(ee_ikc_map[ee].getCurrentTargetPose(m_robot_odom));//四肢揃ってないと危険
     }
@@ -650,6 +658,7 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
             hcp.ex_ee_ref_wrench[ee_names[i]](j) =  i_param.ex_ee_ref_wrench[i][j];
         }
     }
+    hcp.CheckSafeLimit();
     ///// update process if required
     baselink_h_ip->setGoal(&hcp.baselink_height_from_floor, 5.0, true);
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);

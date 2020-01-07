@@ -134,8 +134,6 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
 
         WholeBodyMasterSlaveService_impl m_service0;
 
-        std::map<std::string, int> to_enum;
-
         RTC::CorbaPort m_AutoBalancerServicePort;
         RTC::CorbaPort m_StabilizerServicePort;
         RTC::CorbaConsumer<OpenHRP::AutoBalancerService> m_AutoBalancerServiceConsumer;
@@ -172,9 +170,6 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
 
         hrp::Vector3 rel_act_cp;
         hrp::Vector3 rel_act_zmp;
-        int cp_flag;
-        hrp::Vector3 lt,rt;
-        enum cp_enum{ CP_IDLE, CP_LF, CP_RF, CP_STATIC};
         struct timespec startT, endT;
         std::string time_report_str;
 
