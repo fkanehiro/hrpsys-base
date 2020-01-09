@@ -30,6 +30,7 @@ module OpenHRP
         double capture_point_extend_ratio;
         double com_filter_cutoff_hz;
         double foot_collision_avoidance_distance;
+        double foot_landing_vel;
         double human_to_robot_ratio;
         double max_double_support_width;
         double upper_body_rmc_ratio;

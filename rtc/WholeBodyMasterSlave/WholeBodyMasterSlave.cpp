@@ -787,6 +787,7 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
     wbms->wp.capture_point_extend_ratio         = i_param.capture_point_extend_ratio;
     wbms->wp.com_filter_cutoff_hz               = i_param.com_filter_cutoff_hz;
     wbms->wp.foot_collision_avoidance_distance  = i_param.foot_collision_avoidance_distance;
+    wbms->wp.foot_landing_vel                   = i_param.foot_landing_vel;
     wbms->wp.human_to_robot_ratio               = i_param.human_to_robot_ratio;
     wbms->wp.max_double_support_width           = i_param.max_double_support_width;
     wbms->wp.upper_body_rmc_ratio               = i_param.upper_body_rmc_ratio;
@@ -797,6 +798,7 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
     wbms->wp.safety_foot_vert_fbio              = hrp::Vector4::Map(i_param.safety_foot_vert_fbio.get_buffer());
     wbms->wp.use_joints                         = hrp::to_string_vector(i_param.use_joints);
     wbms->wp.use_targets                        = hrp::to_string_vector(i_param.use_targets);
+    wbms->wp.CheckSafeLimit();
     return true;
 }
 
@@ -815,6 +817,7 @@ bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::Whole
     i_param.capture_point_extend_ratio          = wbms->wp.capture_point_extend_ratio;
     i_param.com_filter_cutoff_hz                = wbms->wp.com_filter_cutoff_hz;
     i_param.foot_collision_avoidance_distance   = wbms->wp.foot_collision_avoidance_distance;
+    i_param.foot_landing_vel                    = wbms->wp.foot_landing_vel;
     i_param.human_to_robot_ratio                = wbms->wp.human_to_robot_ratio;
     i_param.max_double_support_width            = wbms->wp.max_double_support_width;
     i_param.upper_body_rmc_ratio                = wbms->wp.upper_body_rmc_ratio;

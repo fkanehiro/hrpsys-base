@@ -372,6 +372,7 @@ class WBMSCore{
                 double capture_point_extend_ratio;
                 double com_filter_cutoff_hz;
                 double foot_collision_avoidance_distance;
+                double foot_landing_vel;
                 double human_to_robot_ratio;
                 double max_double_support_width;
                 double upper_body_rmc_ratio;
@@ -387,7 +388,7 @@ class WBMSCore{
                 auto_foor_h_mode                    = true;
                 auto_foot_landing_by_act_cp         = false;
                 auto_foot_landing_by_act_zmp        = true;
-                additional_double_support_time      = 0.5;
+                additional_double_support_time      = 0.2;
                 auto_com_foot_move_detect_height    = 0.03;
                 auto_floor_h_detect_fz              = 50;
                 auto_floor_h_reset_fz               = 30;
@@ -395,6 +396,7 @@ class WBMSCore{
                 capture_point_extend_ratio          = 1.0;
                 com_filter_cutoff_hz                = 1.2;
                 foot_collision_avoidance_distance   = 0.16;
+                foot_landing_vel                    = 0.4;
                 human_to_robot_ratio                = 1.0;//human 1.1m vs jaxon 1.06m
                 max_double_support_width            = 0.4;
                 upper_body_rmc_ratio                = 0.0;
@@ -403,6 +405,23 @@ class WBMSCore{
                 com_offset                          << 0, 0, 0;
                 actual_foot_vert_fbio               << 0.13, -0.10,  0.06, -0.08;
                 safety_foot_vert_fbio               << 0.02, -0.02,  0.02,  0.01;
+                CheckSafeLimit();
+            }
+            void CheckSafeLimit(){
+                LIMIT_MINMAX(additional_double_support_time      , 0, 9);
+                LIMIT_MINMAX(auto_com_foot_move_detect_height    , 0, 1);
+                LIMIT_MINMAX(auto_floor_h_detect_fz              , 0, 1000);
+                LIMIT_MINMAX(auto_floor_h_reset_fz               , 0, 1000);
+                LIMIT_MINMAX(base_to_hand_min_distance           , 0, 1);
+                LIMIT_MINMAX(capture_point_extend_ratio          , 0, 10);
+                LIMIT_MINMAX(com_filter_cutoff_hz                , 0, 500);
+                LIMIT_MINMAX(foot_collision_avoidance_distance   , 0, 1);
+                LIMIT_MINMAX(foot_landing_vel                    , 0.01, 2);
+                LIMIT_MINMAX(human_to_robot_ratio                , 0, 10);
+                LIMIT_MINMAX(max_double_support_width            , 0, 2);
+                LIMIT_MINMAX(upper_body_rmc_ratio                , 0, 1);
+                LIMIT_MINMAX(single_foot_zmp_safety_distance     , 0, 0.2);
+                LIMIT_MINMAX(swing_foot_height_offset            , 0, 0.1);
             }
         } wp;
         struct ActualRobotState {
@@ -525,13 +544,6 @@ class WBMSCore{
             out.tgt[zmp].abs = in.tgt[zmp].abs;//最近使わない
         }
         void setAutoCOMMode(const HumanPose& human, const HumanPose& old, HumanPose& out){
-            // if(wp.auto_com_mode){
-            //     const bool rf_is_up = (human.tgt[rf].abs.p(Z) - human.tgt[rf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
-            //     const bool lf_is_up = (human.tgt[lf].abs.p(Z) - human.tgt[lf].offs.p(Z) > wp.auto_com_foot_move_detect_height);
-            //     if      ( rf_is_up && !lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
-            //     else if (!rf_is_up &&  lf_is_up){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
-            //     else                            { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
-            // }
             if(wp.auto_com_mode){
                 const double rf_h_from_floor = human.tgt[rf].abs.p(Z) - old.tgt[rf].cnt.p(Z);
                 const double lf_h_from_floor = human.tgt[lf].abs.p(Z) - old.tgt[lf].cnt.p(Z);
@@ -618,7 +630,6 @@ class WBMSCore{
                 }else{
                     out.foot(lr).cnt.p.head(XY) = out.foot(lr).abs.p.head(XY);  
                     out.foot(lr).cnt.R = hrp::rotFromRpy(0, 0, hrp::rpyFromRot(out.foot(lr).abs.R)(y));  
-                    // LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).offs.p(Z)+wp.swing_foot_height_offset);
                     LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).cnt.p(Z)+wp.swing_foot_height_offset);
                 }
                 if(loop%500==0){
@@ -632,21 +643,21 @@ class WBMSCore{
         }
         void limitFootVelNearGround(const HumanPose& old, HumanPose& out){
             for(int lr=0; lr<LR; lr++){
-                const double fheight = old.foot(lr).abs.p(Z) - old.foot(lr).offs.p(Z);
+                const double fheight = old.foot(lr).abs.p(Z) - old.foot(lr).cnt.p(Z);
                 const double horizontal_max_vel = 0 + fheight * 20;
                 for(int j=0; j<XY; j++){
                     LIMIT_MINMAX( out.foot(lr).abs.p(j), old.foot(lr).abs.p(j) - horizontal_max_vel * DT, old.foot(lr).abs.p(j) + horizontal_max_vel * DT);
                 }
-                const double vertical_max_vel = 0 + fheight * 10;
-                LIMIT_MIN( out.foot(lr).abs.p(Z), old.foot(lr).abs.p(Z) - vertical_max_vel * DT);
+                // const double vertical_max_vel = 0 + fheight * 10;
+                LIMIT_MIN( out.foot(lr).abs.p(Z), old.foot(lr).abs.p(Z) - wp.foot_landing_vel * DT);
             }
         }
         void avoidFootSinkIntoFloor(HumanPose& out){
             for(int lr=0; lr<LR; lr++){
                 hrp::dmatrix act_sole_vert_abs = (out.foot(lr).abs.R * make_rect_3d(act_foot_vert_fblr[lr])).colwise() + out.foot(lr).abs.p;// translate and rotate each cols
                 const double min_height = act_sole_vert_abs.row(Z).minCoeff(); // pick up min Z height
-                if(min_height < out.foot(lr).offs.p(Z)){
-                    out.foot(lr).abs.p(Z) += (out.foot(lr).offs.p(Z) - min_height);
+                if(min_height < out.foot(lr).cnt.p(Z)){
+                    out.foot(lr).abs.p(Z) += (out.foot(lr).cnt.p(Z) - min_height);
                 }
             }
         }
@@ -661,35 +672,29 @@ class WBMSCore{
             com_ans = com_in;
             if (is_initial_loop)com_ans_old = com_in;
             hrp::Vector3 com_vel = (com_in - com_ans_old)/DT;
-            hrp::dmatrix hull_dcp = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(safe_foot_vert_fblr[R], 0.001),    offset_fblr(safe_foot_vert_fblr[L], 0.001));
-            hrp::dmatrix hull_acp = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(safe_foot_vert_fblr[R], 0.01),     offset_fblr(safe_foot_vert_fblr[L], 0.01));
-            hrp::Vector2 com_vel_ans_2d = regulateCOMVelocityByCapturePointVec( com_ans_old.head(XY), com_vel.head(XY), hull_dcp, hull_acp);
+            hrp::dmatrix hull_dcm = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(safe_foot_vert_fblr[R], 0.001),    offset_fblr(safe_foot_vert_fblr[L], 0.001));
+            hrp::dmatrix hull_ccm = createSupportRegionByFootPos(rfin_abs, lfin_abs, offset_fblr(safe_foot_vert_fblr[R], 0.01),     offset_fblr(safe_foot_vert_fblr[L], 0.01));
+            hrp::Vector2 com_vel_ans_2d = regulateCOMVelocityByCapturePointVec( com_ans_old.head(XY), com_vel.head(XY), hull_dcm, hull_ccm);
             com_ans.head(XY) = com_ans_old.head(XY) + com_vel_ans_2d * DT;
             com_ans_old = com_ans;
             cp_dec.head(XY) = com_ans.head(XY) + com_vel_ans_2d * sqrt( H_cur / G );
             cp_acc.head(XY) = com_ans.head(XY) - com_vel_ans_2d * sqrt( H_cur / G );
             return true;
         }
-        hrp::Vector2 regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const hrp::dmatrix& hull_d, const hrp::dmatrix& hull_a){
+        hrp::Vector2 regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const hrp::dmatrix& hull_d, const hrp::dmatrix& hull_ccm){
             hrp::Vector2 com_vel_decel_ok, com_vel_accel_ok;
             com_vel_decel_ok = com_vel_accel_ok = com_vel;
 
-            const double foot_ave_vel = 2.0;
-            double lf_landing_delay = (rp_ref_out.tgt[lf].abs.p[Z] - rp_ref_out.tgt[lf].offs.p[Z]) / foot_ave_vel;
-            double rf_landing_delay = (rp_ref_out.tgt[rf].abs.p[Z] - rp_ref_out.tgt[rf].offs.p[Z]) / foot_ave_vel;
-            if(com_vel(Y)>0 ){ rf_landing_delay = 0; }
+            double lf_landing_delay = (rp_ref_out.tgt[lf].abs.p[Z] - rp_ref_out.tgt[lf].cnt.p[Z]) / wp.foot_landing_vel;
+            double rf_landing_delay = (rp_ref_out.tgt[rf].abs.p[Z] - rp_ref_out.tgt[rf].cnt.p[Z]) / wp.foot_landing_vel;
+            if(com_vel(Y)>0 ){ rf_landing_delay = 0; }//怪しい
             if(com_vel(Y)<0 ){ lf_landing_delay = 0; }
             double foot_landing_delay = std::max(rf_landing_delay, lf_landing_delay);
             //減速CP条件(現在のCPを常に両足裏で頭打ち)
-            //      hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);//TODO implement
-            //      if(com_vel(Y)>1e-5 || fabs(com_vel(Y))<=1e-5 ){
-            //        foot_landing_delay = 0;
-            //      }
-            hrp::Vector2 cp_dec_ragulated = com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay);
-            cp_dec_ragulated *= wp.capture_point_extend_ratio;
-            if(!isPointInHull2D(cp_dec_ragulated, hull_d)){
-                calcCrossPointOnHull(com_pos, cp_dec_ragulated, hull_d, cp_dec_ragulated);
-                com_vel_decel_ok = (cp_dec_ragulated - com_pos) / ( sqrt( H_cur / G ) + foot_landing_delay);
+            hrp::Vector2  dcm_ragulated = (com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay)) * wp.capture_point_extend_ratio;
+            if(!isPointInHull2D(dcm_ragulated, hull_d)){
+                calcCrossPointOnHull(com_pos, dcm_ragulated, hull_d, dcm_ragulated);
+                com_vel_decel_ok = (dcm_ragulated - com_pos) / ( sqrt( H_cur / G ) + foot_landing_delay);
             }
             ///// ついでに減速CPによる強制遊脚着地も判定
             hrp::dmatrix foot_vert3d_check_wld[LR], one_foot_hull2d[LR], one_foot_vert_3d_for_check[LR];
@@ -697,14 +702,13 @@ class WBMSCore{
                 one_foot_vert_3d_for_check[lr]  = make_rect_3d(offset_fblr(safe_foot_vert_fblr[lr], 0.002));// 数値誤差で内外判定ずれるので少し大きい凸包で判定
                 foot_vert3d_check_wld[lr]       = (rp_ref_out.foot(lr).abs.R * one_foot_vert_3d_for_check[lr]).colwise() + rp_ref_out.foot(lr).abs.p; // rotate and translate in 3D
                 one_foot_hull2d[lr]             = makeConvexHull2D( foot_vert3d_check_wld[lr].topRows(XY) ); // project into 2D and make convex hull
-                cp_force_go_contact[OPPOSITE(lr)] = !isPointInHull2D(cp_dec_ragulated, one_foot_hull2d[lr]); // if CapturePoint go out of R sole region, L foot must be go contact
+                cp_force_go_contact[OPPOSITE(lr)] = !isPointInHull2D(dcm_ragulated, one_foot_hull2d[lr]); // if CapturePoint go out of R sole region, L foot must be go contact
             }
-            ///// 加速CP条件(ACP使用)
-            hrp::Vector2 cp_acc_ragulated = com_pos - com_vel * sqrt( H_cur / G );
-            cp_acc_ragulated *= wp.capture_point_extend_ratio;
-            if(!isPointInHull2D(cp_acc_ragulated, hull_a)){
-                calcCrossPointOnHull(com_pos, cp_acc_ragulated, hull_a, cp_acc_ragulated);
-                com_vel_accel_ok = (-cp_acc_ragulated + com_pos ) / sqrt( H_cur / G );
+            ///// 加速CP条件(CCM使用)
+            hrp::Vector2 ccm_ragulated = (com_pos - com_vel * sqrt( H_cur / G )) * wp.capture_point_extend_ratio;;
+            if(!isPointInHull2D(ccm_ragulated, hull_ccm)){
+                calcCrossPointOnHull(com_pos, ccm_ragulated, hull_ccm, ccm_ragulated);
+                com_vel_accel_ok = (-ccm_ragulated + com_pos ) / sqrt( H_cur / G );
             }
             ///// 加速減速条件マージ com_vel進行方向をより減速させるものを採用？
             return (com_vel_decel_ok.dot(com_vel) < com_vel_accel_ok.dot(com_vel)) ? com_vel_decel_ok : com_vel_accel_ok; //normじゃダメ？
