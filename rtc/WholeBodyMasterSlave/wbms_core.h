@@ -361,7 +361,7 @@ class WBMSCore{
         class WBMSParams {
             public:
                 bool auto_com_mode;
-                bool auto_foor_h_mode;
+                bool auto_floor_h_mode;
                 bool auto_foot_landing_by_act_cp;
                 bool auto_foot_landing_by_act_zmp;
                 double additional_double_support_time;
@@ -373,6 +373,7 @@ class WBMSCore{
                 double com_filter_cutoff_hz;
                 double foot_collision_avoidance_distance;
                 double foot_landing_vel;
+                double force_double_support_com_h;
                 double human_to_robot_ratio;
                 double max_double_support_width;
                 double upper_body_rmc_ratio;
@@ -385,7 +386,7 @@ class WBMSCore{
                 std::vector<std::string> use_targets;
             WBMSParams(){
                 auto_com_mode                       = true;
-                auto_foor_h_mode                    = true;
+                auto_floor_h_mode                    = true;
                 auto_foot_landing_by_act_cp         = false;
                 auto_foot_landing_by_act_zmp        = true;
                 additional_double_support_time      = 0.2;
@@ -397,6 +398,7 @@ class WBMSCore{
                 com_filter_cutoff_hz                = 1.2;
                 foot_collision_avoidance_distance   = 0.16;
                 foot_landing_vel                    = 0.4;
+                force_double_support_com_h          = 0.9;
                 human_to_robot_ratio                = 1.0;//human 1.1m vs jaxon 1.06m
                 max_double_support_width            = 0.4;
                 upper_body_rmc_ratio                = 0.0;
@@ -417,6 +419,7 @@ class WBMSCore{
                 LIMIT_MINMAX(com_filter_cutoff_hz                , 0, 500);
                 LIMIT_MINMAX(foot_collision_avoidance_distance   , 0, 1);
                 LIMIT_MINMAX(foot_landing_vel                    , 0.01, 2);
+                LIMIT_MINMAX(force_double_support_com_h          , 0, 999);
                 LIMIT_MINMAX(human_to_robot_ratio                , 0, 10);
                 LIMIT_MINMAX(max_double_support_width            , 0, 2);
                 LIMIT_MINMAX(upper_body_rmc_ratio                , 0, 1);
@@ -550,6 +553,12 @@ class WBMSCore{
                 if      ( rf_h_from_floor - lf_h_from_floor >  wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
                 else if ( rf_h_from_floor - lf_h_from_floor < -wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
                 else                       { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
+                ///// lock if com height is low = half sitting
+                for(int lr=0; lr<LR; lr++){
+                    if(act_rs.ref_com(Z) - old.foot(lr).cnt.p(Z) < wp.force_double_support_com_h){
+                        out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2;
+                    }
+                }
             }
         }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
@@ -602,14 +611,14 @@ class WBMSCore{
             static bool is_locked[LR] = {false};
             static int cnt_for_clear[LR] ={0};
             for(int lr=0; lr<LR; lr++){
-                if(wp.auto_foor_h_mode){
+                if(wp.auto_floor_h_mode){
                     // judge act contact height
                     if(!is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) > wp.auto_floor_h_detect_fz){
                         out.foot(lr).cnt.p(Z) = act_rs.act_foot_pose[lr].p(Z);
                         is_locked[lr] = true;
                     }
                     if(is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) < wp.auto_floor_h_reset_fz){
-                        if(cnt_for_clear[lr]++ > 1000){
+                        if(cnt_for_clear[lr]++ > HZ * 0.5){
                             out.foot(lr).cnt.p(Z) = out.foot(lr).offs.p(Z);
                             is_locked[lr] = false;
                             cnt_for_clear[lr] = 0;

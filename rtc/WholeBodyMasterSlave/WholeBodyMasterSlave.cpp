@@ -136,7 +136,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     q_ip = new interpolator(fik->numStates(), m_dt, interpolator::CUBICSPLINE, 1); // or HOFFARBIB, QUINTICSPLINE
     q_ip->clear();
     if(fik->m_robot->name().find("JAXON") != std::string::npos){
-        avg_q_vel = hrp::dvector::Constant(fik->numStates(), 2.0); // all joint max avarage vel = 2.0 rad/s
+        avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0);
         avg_q_vel.head(12).fill(4.0); // leg
     }else{
         avg_q_vel = hrp::dvector::Constant(fik->numStates(), 1.0); // all joint max avarage vel = 1.0 rad/s
@@ -312,10 +312,41 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
                 wbms->hp_wld_raw.tgt_by_str(ee).w = hrp::to_dvector(m_masterEEWrenches[ee].data);
             }
         }
-        if (m_actCPIn.isNew())  { m_actCPIn.read(); rel_act_cp = hrp::to_Vector3(m_actCP.data);}
-        if (m_actZMPIn.isNew())  { m_actZMPIn.read(); rel_act_zmp = hrp::to_Vector3(m_actZMP.data);}
+        if (m_actCPIn.isNew()){     m_actCPIn.read();   rel_act_cp  = hrp::to_Vector3(m_actCP.data);}
+        if (m_actZMPIn.isNew()){    m_actZMPIn.read();  rel_act_zmp = hrp::to_Vector3(m_actZMP.data);}
+    }else{
+        for (auto tgt : {"lhand", "rhand"}){ // PAUSE中もボタン読み込みのためにこれらだけは更新・・・
+            if (m_masterTgtPosesIn[tgt]->isNew()){ m_masterTgtPosesIn[tgt]->read(); }
+        }
     }
     addTimeReport("InPort");
+
+    ///// Button start
+    static int button1_flag_count = 0, button2_flag_count = 0;
+    if(m_masterTgtPoses["rhand"].data.position.x > 0 && m_masterTgtPoses["lhand"].data.position.x > 0  ){ button1_flag_count++; }else{ button1_flag_count = 0; }
+    if(m_masterTgtPoses["rhand"].data.position.x > 0 && m_masterTgtPoses["lhand"].data.position.x <= 0 ){ button2_flag_count++; }else{ button2_flag_count = 0; }
+    if(button1_flag_count > 2.0 / m_dt){// keep pless both button for 2s to start
+        if(mode.now() == MODE_IDLE){
+            RTC_INFO_STREAM("startWholeBodyMasterSlave by Button");
+            startWholeBodyMasterSlave();
+        }
+        if(mode.now() == MODE_WBMS || mode.now() == MODE_PAUSE ){
+            RTC_INFO_STREAM("stopWholeBodyMasterSlave by Button");
+            stopWholeBodyMasterSlave();
+        }
+        button1_flag_count = 0;
+    }
+    if(button2_flag_count > 2.0 / m_dt){// keep pless both button for 2s to start
+        if(mode.now() == MODE_WBMS){
+            RTC_INFO_STREAM("pauseWholeBodyMasterSlave by Button");
+            pauseWholeBodyMasterSlave();
+        }
+        if(mode.now() == MODE_PAUSE ){
+            RTC_INFO_STREAM("resumeWholeBodyMasterSlave by Button");
+            resumeWholeBodyMasterSlave();
+        }
+        button2_flag_count = 0;
+    }
 
     processTransition();
     mode.update();
@@ -336,18 +367,14 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         if(fik->m_robot->name() == "RHP4B"){
             const double hand_max_vel = M_PI/0.4;//0.4s for 180deg
             {
-                double trigger_in = m_masterTgtPoses["lhand"].data.position.y;
-                LIMIT_MINMAX(trigger_in, 0.0, 1.0);
+                const double trigger_in = MINMAX_LIMITED(m_masterTgtPoses["lhand"].data.position.y, 0, 1);
                 double tgt_hand_q = (-29.0 + (124.0-(-29.0))*trigger_in ) /180.0*M_PI;
-                LIMIT_MINMAX(tgt_hand_q, fik->m_robot->link("L_HAND")->llimit, fik->m_robot->link("L_HAND")->ulimit);
-                fik->m_robot->link("L_HAND")->q = tgt_hand_q;
+                fik->m_robot->link("L_HAND")->q = MINMAX_LIMITED(tgt_hand_q, fik->m_robot->link("L_HAND")->llimit, fik->m_robot->link("L_HAND")->ulimit);
                 avg_q_vel(fik->m_robot->link("L_HAND")->jointId) = hand_max_vel;
             }{
-                double trigger_in = m_masterTgtPoses["rhand"].data.position.y;
-                LIMIT_MINMAX(trigger_in, 0.0, 1.0);
+                const double trigger_in = MINMAX_LIMITED(m_masterTgtPoses["rhand"].data.position.y, 0, 1);
                 double tgt_hand_q = (-29.0 + (124.0-(-29.0))*trigger_in ) /180.0*M_PI;
-                LIMIT_MINMAX(tgt_hand_q, fik->m_robot->link("R_HAND")->llimit, fik->m_robot->link("R_HAND")->ulimit);
-                fik->m_robot->link("R_HAND")->q = tgt_hand_q;
+                fik->m_robot->link("R_HAND")->q = MINMAX_LIMITED(tgt_hand_q, fik->m_robot->link("R_HAND")->llimit, fik->m_robot->link("R_HAND")->ulimit);
                 avg_q_vel(fik->m_robot->link("R_HAND")->jointId) = hand_max_vel;
             }
         }
@@ -447,15 +474,10 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(){
     fik->m_robot->calcForwardKinematics();
     double current_foot_height_from_world = std::min(ee_ikc_map["rleg"].getCurrentTargetPos(fik->m_robot)(Z), ee_ikc_map["lleg"].getCurrentTargetPos(fik->m_robot)(Z));
     RTC_INFO_STREAM("current_foot_height_from_world = "<<current_foot_height_from_world<<" will be modified to 0");
-
-    std::vector<hrp::BodyPtr> body_list;
-    body_list.push_back(fik->m_robot);
-    body_list.push_back(m_robot_vsafe);
-    for(int i=0;i<body_list.size();i++){//初期姿勢でBodyをFK
-        hrp::setRobotStateVec(body_list[i], hrp::to_dvector(m_qRef.data), hrp::to_Vector3(m_basePos.data) - hrp::Vector3::UnitZ() * current_foot_height_from_world, hrp::rotFromRpy(hrp::to_Vector3(m_baseRpy.data)));
-        body_list[i]->calcForwardKinematics();
+    for(auto b : {fik->m_robot, m_robot_vsafe}){//初期姿勢でBodyをFK
+        hrp::setRobotStateVec(b, hrp::to_dvector(m_qRef.data), hrp::to_Vector3(m_basePos.data) - hrp::Vector3::UnitZ() * current_foot_height_from_world, hrp::rotFromRpy(hrp::to_Vector3(m_baseRpy.data)));
+        b->calcForwardKinematics();
     }
-
     fik->q_ref = hrp::getRobotStateVec(fik->m_robot);
     q_ip->set(fik->q_ref.data());
     wbms->initializeRequest(fik->m_robot, ee_ikc_map);
@@ -776,7 +798,7 @@ namespace hrp{
 bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTC_INFO_STREAM("setWholeBodyMasterSlaveParam");
     wbms->wp.auto_com_mode                      = i_param.auto_com_mode;
-    wbms->wp.auto_foor_h_mode                   = i_param.auto_foor_h_mode;
+    wbms->wp.auto_floor_h_mode                  = i_param.auto_floor_h_mode;
     wbms->wp.auto_foot_landing_by_act_cp        = i_param.auto_foot_landing_by_act_cp;
     wbms->wp.auto_foot_landing_by_act_zmp       = i_param.auto_foot_landing_by_act_zmp;
     wbms->wp.additional_double_support_time     = i_param.additional_double_support_time;
@@ -788,6 +810,7 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
     wbms->wp.com_filter_cutoff_hz               = i_param.com_filter_cutoff_hz;
     wbms->wp.foot_collision_avoidance_distance  = i_param.foot_collision_avoidance_distance;
     wbms->wp.foot_landing_vel                   = i_param.foot_landing_vel;
+    wbms->wp.force_double_support_com_h         = i_param.force_double_support_com_h;
     wbms->wp.human_to_robot_ratio               = i_param.human_to_robot_ratio;
     wbms->wp.max_double_support_width           = i_param.max_double_support_width;
     wbms->wp.upper_body_rmc_ratio               = i_param.upper_body_rmc_ratio;
@@ -806,7 +829,7 @@ bool WholeBodyMasterSlave::setParams(const OpenHRP::WholeBodyMasterSlaveService:
 bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     RTC_INFO_STREAM("getWholeBodyMasterSlaveParam");
     i_param.auto_com_mode                       = wbms->wp.auto_com_mode;
-    i_param.auto_foor_h_mode                    = wbms->wp.auto_foor_h_mode;
+    i_param.auto_floor_h_mode                   = wbms->wp.auto_floor_h_mode;
     i_param.auto_foot_landing_by_act_cp         = wbms->wp.auto_foot_landing_by_act_cp;
     i_param.auto_foot_landing_by_act_zmp        = wbms->wp.auto_foot_landing_by_act_zmp;
     i_param.additional_double_support_time      = wbms->wp.additional_double_support_time;
@@ -818,6 +841,7 @@ bool WholeBodyMasterSlave::getParams(OpenHRP::WholeBodyMasterSlaveService::Whole
     i_param.com_filter_cutoff_hz                = wbms->wp.com_filter_cutoff_hz;
     i_param.foot_collision_avoidance_distance   = wbms->wp.foot_collision_avoidance_distance;
     i_param.foot_landing_vel                    = wbms->wp.foot_landing_vel;
+    i_param.force_double_support_com_h          = wbms->wp.force_double_support_com_h;
     i_param.human_to_robot_ratio                = wbms->wp.human_to_robot_ratio;
     i_param.max_double_support_width            = wbms->wp.max_double_support_width;
     i_param.upper_body_rmc_ratio                = wbms->wp.upper_body_rmc_ratio;

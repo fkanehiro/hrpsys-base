@@ -19,7 +19,7 @@ module OpenHRP
     struct WholeBodyMasterSlaveParam
     {
         boolean auto_com_mode;
-        boolean auto_foor_h_mode;
+        boolean auto_floor_h_mode;
         boolean auto_foot_landing_by_act_cp;
         boolean auto_foot_landing_by_act_zmp;
         double additional_double_support_time;
@@ -31,6 +31,7 @@ module OpenHRP
         double com_filter_cutoff_hz;
         double foot_collision_avoidance_distance;
         double foot_landing_vel;
+        double force_double_support_com_h;
         double human_to_robot_ratio;
         double max_double_support_width;
         double upper_body_rmc_ratio;
