@@ -386,16 +386,16 @@ class WBMSCore{
                 std::vector<std::string> use_targets;
             WBMSParams(){
                 auto_com_mode                       = true;
-                auto_floor_h_mode                    = true;
+                auto_floor_h_mode                   = false;
                 auto_foot_landing_by_act_cp         = false;
                 auto_foot_landing_by_act_zmp        = true;
-                additional_double_support_time      = 0.2;
+                additional_double_support_time      = 0.5;//0.4s以上は必須な気がする
                 auto_com_foot_move_detect_height    = 0.03;
                 auto_floor_h_detect_fz              = 50;
                 auto_floor_h_reset_fz               = 30;
                 base_to_hand_min_distance           = 0.5;
                 capture_point_extend_ratio          = 1.0;
-                com_filter_cutoff_hz                = 1.2;
+                com_filter_cutoff_hz                = 1.0;
                 foot_collision_avoidance_distance   = 0.16;
                 foot_landing_vel                    = 0.4;
                 force_double_support_com_h          = 0.9;
@@ -694,13 +694,13 @@ class WBMSCore{
             hrp::Vector2 com_vel_decel_ok, com_vel_accel_ok;
             com_vel_decel_ok = com_vel_accel_ok = com_vel;
 
-            double lf_landing_delay = (rp_ref_out.tgt[lf].abs.p[Z] - rp_ref_out.tgt[lf].cnt.p[Z]) / wp.foot_landing_vel;
-            double rf_landing_delay = (rp_ref_out.tgt[rf].abs.p[Z] - rp_ref_out.tgt[rf].cnt.p[Z]) / wp.foot_landing_vel;
-            if(com_vel(Y)>0 ){ rf_landing_delay = 0; }//怪しい
-            if(com_vel(Y)<0 ){ lf_landing_delay = 0; }
+            double lf_landing_delay = MIN_LIMITED((rp_ref_out.tgt[lf].abs.p[Z] - rp_ref_out.tgt[lf].cnt.p[Z]) / wp.foot_landing_vel, 0);
+            double rf_landing_delay = MIN_LIMITED((rp_ref_out.tgt[rf].abs.p[Z] - rp_ref_out.tgt[rf].cnt.p[Z]) / wp.foot_landing_vel, 0);
+            // if(com_vel(Y)>0 ){ rf_landing_delay = 0; }//怪しい
+            // if(com_vel(Y)<0 ){ lf_landing_delay = 0; }
             double foot_landing_delay = std::max(rf_landing_delay, lf_landing_delay);
             //減速CP条件(現在のCPを常に両足裏で頭打ち)
-            hrp::Vector2  dcm_ragulated = (com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay)) * wp.capture_point_extend_ratio;
+            hrp::Vector2  dcm_ragulated = (com_pos + com_vel * ( sqrt( H_cur / G ) + foot_landing_delay) * wp.capture_point_extend_ratio );
             if(!isPointInHull2D(dcm_ragulated, hull_d)){
                 calcCrossPointOnHull(com_pos, dcm_ragulated, hull_d, dcm_ragulated);
                 com_vel_decel_ok = (dcm_ragulated - com_pos) / ( sqrt( H_cur / G ) + foot_landing_delay);
@@ -714,7 +714,7 @@ class WBMSCore{
                 cp_force_go_contact[OPPOSITE(lr)] = !isPointInHull2D(dcm_ragulated, one_foot_hull2d[lr]); // if CapturePoint go out of R sole region, L foot must be go contact
             }
             ///// 加速CP条件(CCM使用)
-            hrp::Vector2 ccm_ragulated = (com_pos - com_vel * sqrt( H_cur / G )) * wp.capture_point_extend_ratio;;
+            hrp::Vector2 ccm_ragulated = (com_pos - com_vel * sqrt( H_cur / G ) * wp.capture_point_extend_ratio );
             if(!isPointInHull2D(ccm_ragulated, hull_ccm)){
                 calcCrossPointOnHull(com_pos, ccm_ragulated, hull_ccm, ccm_ragulated);
                 com_vel_accel_ok = (-ccm_ragulated + com_pos ) / sqrt( H_cur / G );
