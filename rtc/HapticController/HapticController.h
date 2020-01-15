@@ -145,6 +145,7 @@ class HapticController : public RTC::DataFlowComponentBase{
                 double gravity_compensation_ratio;
                 double q_friction_coeff;
                 double q_ref_max_torque_ratio;
+                double torque_feedback_ratio;
                 double wrench_hpf_cutoff_hz;
                 double wrench_lpf_cutoff_hz;
                 double wrench_hpf_gain;
@@ -159,16 +160,17 @@ class HapticController : public RTC::DataFlowComponentBase{
                 baselink_height_from_floor          = 1.5;// will be overwrited
                 dqAct_filter_cutoff_hz              = 500;// 10以下で確実に位相遅れによる振動
                 ee_vel_filter_cutoff_hz             = 500;// 10以下で確実に位相遅れによる振動
-                ex_gravity_compensation_ratio_lower = 1.1;
+                ex_gravity_compensation_ratio_lower = 1.0;
                 ex_gravity_compensation_ratio_upper = 0.9;
                 foot_min_distance                   = 0.25;
-                force_feedback_ratio                = 0.2;
+                force_feedback_ratio                = 0.1;
                 gravity_compensation_ratio          = 1.0;
                 q_friction_coeff                    = 0;
-                q_ref_max_torque_ratio              = 0.1;
+                q_ref_max_torque_ratio              = 0.01;
+                torque_feedback_ratio               = 0.01;
                 wrench_hpf_cutoff_hz                = 20;
                 wrench_lpf_cutoff_hz                = 0.3;
-                wrench_hpf_gain                     = 0.8;
+                wrench_hpf_gain                     = 0.1;
                 wrench_lpf_gain                     = 0;
                 ee_pos_rot_friction_coeff           << 10, 0.1;
                 floor_pd_gain                       << 10000, 500;
@@ -192,6 +194,7 @@ class HapticController : public RTC::DataFlowComponentBase{
                 LIMIT_MINMAX(gravity_compensation_ratio          , 0, 2);
                 LIMIT_MINMAX(q_friction_coeff                    , 0, 0.1);
                 LIMIT_MINMAX(q_ref_max_torque_ratio              , 0, 1);
+                LIMIT_MINMAX(torque_feedback_ratio               , 0, 1);
                 LIMIT_MINMAX(wrench_hpf_cutoff_hz                , 0, 500);
                 LIMIT_MINMAX(wrench_lpf_cutoff_hz                , 0, 500);
                 LIMIT_MINMAX(wrench_hpf_gain                     , 0, 2);

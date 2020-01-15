@@ -30,6 +30,7 @@ module OpenHRP
         double gravity_compensation_ratio;
         double q_friction_coeff;
         double q_ref_max_torque_ratio;
+        double torque_feedback_ratio;
         double wrench_hpf_cutoff_hz;
         double wrench_lpf_cutoff_hz;
         double wrench_hpf_gain;
