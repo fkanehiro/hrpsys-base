@@ -644,6 +644,7 @@ bool HapticController::setParams(const OpenHRP::HapticControllerService::HapticC
     hcp.gravity_compensation_ratio          = i_param.gravity_compensation_ratio;
     hcp.q_friction_coeff                    = i_param.q_friction_coeff;
     hcp.q_ref_max_torque_ratio              = i_param.q_ref_max_torque_ratio;
+    hcp.torque_feedback_ratio               = i_param.torque_feedback_ratio;
     hcp.wrench_hpf_cutoff_hz                = i_param.wrench_hpf_cutoff_hz;
     hcp.wrench_lpf_cutoff_hz                = i_param.wrench_lpf_cutoff_hz;
     hcp.wrench_hpf_gain                     = i_param.wrench_hpf_gain;
@@ -687,6 +688,7 @@ bool HapticController::getParams(OpenHRP::HapticControllerService::HapticControl
     i_param.gravity_compensation_ratio          = hcp.gravity_compensation_ratio;
     i_param.q_friction_coeff                    = hcp.q_friction_coeff;
     i_param.q_ref_max_torque_ratio              = hcp.q_ref_max_torque_ratio;
+    i_param.torque_feedback_ratio               = hcp.torque_feedback_ratio;
     i_param.wrench_hpf_cutoff_hz                = hcp.wrench_hpf_cutoff_hz;
     i_param.wrench_lpf_cutoff_hz                = hcp.wrench_lpf_cutoff_hz;
     i_param.wrench_hpf_gain                     = hcp.wrench_hpf_gain;
