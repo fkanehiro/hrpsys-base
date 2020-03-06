@@ -440,7 +440,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     m_zmpOut.write();
     m_optionalDataOut.write();
     addTimeReport("OutPort");
-    if(DEBUGP) RTC_INFO_STREAM(time_report_str);
+    if(DEBUGP)RTC_INFO_STREAM(time_report_str);
+    if(DEBUGP)RTC_INFO_STREAM(wbms->ws.str());
     loop ++;
     return RTC::RTC_OK;
 }

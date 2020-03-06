@@ -18,6 +18,7 @@ enum { fx, fy, fz, tx, ty, tz, ft_xyz };
 enum { com, rf, lf, rh, lh, head, zmp, num_pose_tgt };
 enum { num_ee_tgt=4 };
 
+#define LR_STR(lr) (lr==R ? "R" : "L")
 #define OPPOSITE(lr) (lr==R ? L : R)
 
 static const double G = 9.80665;

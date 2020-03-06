@@ -346,7 +346,6 @@ class WBMSCore{
         HumanPose rp_ref_out_old;
         unsigned int loop;
         bool is_initial_loop;
-        bool cp_force_go_contact[LR];
         int zmp_force_go_contact_count[LR];
         BiquadIIRFilterVec acc4zmp_v_filters, com_filter;
         double com_filter_cutoff_hz_old;
@@ -432,6 +431,42 @@ class WBMSCore{
             hrp::dvector6 act_foot_wrench[LR];
             hrp::Pose3 act_foot_pose[LR];
         } act_rs;
+        class WBMSStates {
+            public:
+                bool lock_foot_by_ref_zmp[LR];
+                bool lock_foot_by_act_zmp[LR];
+                bool lock_foot_by_ref_cp[LR];
+                bool lock_foot_by_act_cp[LR];
+                bool lock_both_feet_by_com_h;
+                int lock_foot_by_act_zmp_count[LR];
+                string auto_com_pos_tgt;
+            WBMSStates(){
+                for(int lr=0; lr<LR; lr++){
+                    lock_foot_by_ref_zmp[lr] = false;
+                    lock_foot_by_act_zmp[lr] = false;
+                    lock_foot_by_ref_cp[lr] = false;
+                    lock_foot_by_act_cp[lr] = false;
+                    lock_foot_by_act_zmp_count[lr] = 0;
+                }
+                lock_both_feet_by_com_h = false;
+            }
+            std::string LR_BOOL_TO_STR(const bool in[LR]){
+                std::string ret;
+                ret += (in[L] ? "L":"");
+                ret += (in[R] ? "R":"");
+                return ret;
+            }
+            std::string str(){
+                std::stringstream ret;
+                ret << "LOCK_FOOT_BY_REF_ZMP(" << LR_BOOL_TO_STR(lock_foot_by_ref_zmp) <<") ";
+                ret << "LOCK_FOOT_BY_ACT_ZMP(" << LR_BOOL_TO_STR(lock_foot_by_act_zmp) <<") ";
+                ret << "LOCK_FOOT_BY_REF_CP("  << LR_BOOL_TO_STR(lock_foot_by_ref_cp) <<") ";
+                ret << "LOCK_FOOT_BY_ACT_CP("  << LR_BOOL_TO_STR(lock_foot_by_act_cp) <<") ";
+                ret << (lock_both_feet_by_com_h ? "LOCK_BOTH_FEET_BY_COM_H " : "");
+                ret << "AUTO_COM_POS_TGT(" << auto_com_pos_tgt << ") ";
+                return ret.str();
+            }
+        } ws;
 
         WBMSCore(const double& dt){
             DT = dt;
@@ -446,7 +481,6 @@ class WBMSCore{
             for(int lr=0; lr<LR; lr++){
                 act_foot_vert_fblr[lr]          = fbio2fblr(wp.actual_foot_vert_fbio, lr);
                 safe_foot_vert_fblr[lr]         = fbio2fblr(wp.safety_foot_vert_fbio, lr);
-                cp_force_go_contact[lr]         = false;
                 zmp_force_go_contact_count[lr]  = 0;
             }
             rp_ref_out_old.reset();
@@ -527,7 +561,6 @@ class WBMSCore{
                 com_filter_cutoff_hz_old = wp.com_filter_cutoff_hz;
             }
             rp_ref_out.tgt[com].abs.p = com_filter.passFilter(rp_ref_out.tgt[com].abs.p);
-
             loop++;
             is_initial_loop = false;
         }
@@ -550,15 +583,16 @@ class WBMSCore{
             if(wp.auto_com_mode){
                 const double rf_h_from_floor = human.tgt[rf].abs.p(Z) - old.tgt[rf].cnt.p(Z);
                 const double lf_h_from_floor = human.tgt[lf].abs.p(Z) - old.tgt[lf].cnt.p(Z);
-                if      ( rf_h_from_floor - lf_h_from_floor >  wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[lf].abs.p.head(XY); }
-                else if ( rf_h_from_floor - lf_h_from_floor < -wp.auto_com_foot_move_detect_height){ out.tgt[com].abs.p.head(XY) = old.tgt[rf].abs.p.head(XY); }
-                else                       { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2; }
-                ///// lock if com height is low = half sitting
-                for(int lr=0; lr<LR; lr++){
-                    if(act_rs.ref_com(Z) - old.foot(lr).cnt.p(Z) < wp.force_double_support_com_h){
-                        out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2;
-                    }
+                if      ( rf_h_from_floor - lf_h_from_floor >  wp.auto_com_foot_move_detect_height) { ws.auto_com_pos_tgt = "LF";  }
+                else if ( rf_h_from_floor - lf_h_from_floor < -wp.auto_com_foot_move_detect_height) { ws.auto_com_pos_tgt = "RF";  }
+                else                                                                                { ws.auto_com_pos_tgt = "MID"; }
+                for(int lr=0; lr<LR; lr++){///// lock if com height is low = half sitting
+                    if(act_rs.ref_com(Z) - old.foot(lr).cnt.p(Z) < wp.force_double_support_com_h)   { ws.auto_com_pos_tgt = "MID"; ws.lock_both_feet_by_com_h = true; }
                 }
+                if      (ws.auto_com_pos_tgt == "LF")   { out.tgt[com].abs.p.head(XY) =  old.tgt[lf].abs.p.head(XY);                                    }
+                else if (ws.auto_com_pos_tgt == "RF")   { out.tgt[com].abs.p.head(XY) =  old.tgt[rf].abs.p.head(XY);                                    }
+                else if (ws.auto_com_pos_tgt == "MID")  { out.tgt[com].abs.p.head(XY) = (old.tgt[rf].abs.p.head(XY) + old.tgt[lf].abs.p.head(XY)) / 2;  }
+                else                                    { std::cerr<< "setAutoCOMMode something wrong!" << std::endl;                                   }
             }
         }
         void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
@@ -568,21 +602,25 @@ class WBMSCore{
                 if(to_opposite_foot[lr].norm() < 1e-3){ std::cerr << "to_opposite_foot[lr].norm() < 1e-3 :" << to_opposite_foot[lr].transpose()<<std::endl; }
                 ///// lock by ref_zmp
                 ref_zmp_from_foot[lr] = act_rs.ref_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
-                out.foot(OPPOSITE(lr)).go_contact |= ( ref_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance );
+                ws.lock_foot_by_ref_zmp[OPPOSITE(lr)] = ( ref_zmp_from_foot[lr].dot(to_opposite_foot[lr].normalized()) > wp.single_foot_zmp_safety_distance);
                 ///// lock by act_zmp
                 if(wp.auto_foot_landing_by_act_zmp){
                     act_zmp_from_foot[lr] = act_rs.st_zmp.head(XY) - old.foot(lr).abs.p.head(XY);
-                    if( act_zmp_from_foot[lr].dot(to_opposite_foot[lr]) / to_opposite_foot[lr].norm() > wp.single_foot_zmp_safety_distance ){
-                        zmp_force_go_contact_count[OPPOSITE(lr)] = 1;
-                    }else if(zmp_force_go_contact_count[OPPOSITE(lr)] > 0 && zmp_force_go_contact_count[OPPOSITE(lr)] < HZ * wp.additional_double_support_time ){
-                        zmp_force_go_contact_count[OPPOSITE(lr)]++;
-                    }else{
-                        zmp_force_go_contact_count[OPPOSITE(lr)] = 0;
+                    if(act_zmp_from_foot[lr].dot(to_opposite_foot[lr].normalized()) > wp.single_foot_zmp_safety_distance){
+                        ws.lock_foot_by_act_zmp_count[OPPOSITE(lr)] = 0;// reset count
                     }
-                    out.foot(OPPOSITE(lr)).go_contact |= (zmp_force_go_contact_count[OPPOSITE(lr)] > 0);
+                    if(ws.lock_foot_by_act_zmp_count[OPPOSITE(lr)] < HZ * wp.additional_double_support_time){
+                        ws.lock_foot_by_act_zmp_count[OPPOSITE(lr)]++;// count up till additional_double_support_time
+                        ws.lock_foot_by_act_zmp[OPPOSITE(lr)] = true;// lock swing foot till reach count limit
+                    }else{
+                        ws.lock_foot_by_act_zmp[OPPOSITE(lr)] = false;// release swing foot lock after reach count limit
+                    }
+                }else{
+                    ws.lock_foot_by_act_zmp[OPPOSITE(lr)] = false;
                 }
-                ///// lock by ref cp
-                out.foot(OPPOSITE(lr)).go_contact |= cp_force_go_contact[OPPOSITE(lr)];
+            }
+            for(int lr=0; lr<LR; lr++){ // merge all swing foot lock flags
+                out.foot(lr).go_contact |= (ws.lock_foot_by_ref_zmp[lr] | ws.lock_foot_by_act_zmp[lr] | ws.lock_foot_by_ref_cp[lr] | ws.lock_foot_by_act_cp[lr]);
             }
         }
         void limitEEWorkspace(const HumanPose& old, HumanPose& out){
@@ -612,20 +650,19 @@ class WBMSCore{
             static int cnt_for_clear[LR] ={0};
             for(int lr=0; lr<LR; lr++){
                 if(wp.auto_floor_h_mode){
-                    // judge act contact height
-                    if(!is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) > wp.auto_floor_h_detect_fz){
-                        out.foot(lr).cnt.p(Z) = act_rs.act_foot_pose[lr].p(Z);
-                        is_locked[lr] = true;
-                    }
-                    if(is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) < wp.auto_floor_h_reset_fz){
-                        if(cnt_for_clear[lr]++ > HZ * 0.5){
+                    if(fabs(act_rs.act_foot_wrench[lr](fz)) > wp.auto_floor_h_detect_fz){
+                        if( cnt_for_clear[lr] >= HZ * 1.0){ // first contact after detected floor height cleared 
+                            out.foot(lr).cnt.p(Z) = act_rs.act_foot_pose[lr].p(Z);// get act contact height as detected floor height
+                        }
+                        cnt_for_clear[lr] = 0;// keep resetting count during act foot force exists
+                    }else{
+                        if(cnt_for_clear[lr] < HZ * 1.0){ // keep current detected floor height until reach count limit
+                            cnt_for_clear[lr]++;
+                        }else{ // clear detected floor height to zero after finish count up
                             out.foot(lr).cnt.p(Z) = out.foot(lr).offs.p(Z);
-                            is_locked[lr] = false;
-                            cnt_for_clear[lr] = 0;
                         }
                     }
                 }
-
                 if(out.foot(lr).go_contact){
                     out.foot(lr).abs.p.head(XY) = old.foot(lr).abs.p.head(XY);
                     // out.foot(lr).abs.p(Z) = out.foot(lr).offs.p(Z);
@@ -711,7 +748,7 @@ class WBMSCore{
                 one_foot_vert_3d_for_check[lr]  = make_rect_3d(offset_fblr(safe_foot_vert_fblr[lr], 0.002));// 数値誤差で内外判定ずれるので少し大きい凸包で判定
                 foot_vert3d_check_wld[lr]       = (rp_ref_out.foot(lr).abs.R * one_foot_vert_3d_for_check[lr]).colwise() + rp_ref_out.foot(lr).abs.p; // rotate and translate in 3D
                 one_foot_hull2d[lr]             = makeConvexHull2D( foot_vert3d_check_wld[lr].topRows(XY) ); // project into 2D and make convex hull
-                cp_force_go_contact[OPPOSITE(lr)] = !isPointInHull2D(dcm_ragulated, one_foot_hull2d[lr]); // if CapturePoint go out of R sole region, L foot must be go contact
+                ws.lock_foot_by_ref_cp[OPPOSITE(lr)] = !isPointInHull2D(dcm_ragulated, one_foot_hull2d[lr]); // if CapturePoint go out of R sole region, L foot must be go contact
             }
             ///// 加速CP条件(CCM使用)
             hrp::Vector2 ccm_ragulated = (com_pos - com_vel * sqrt( H_cur / G ) * wp.capture_point_extend_ratio );
