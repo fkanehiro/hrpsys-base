@@ -129,6 +129,8 @@ class HapticController : public RTC::DataFlowComponentBase{
         std::map<std::string, double> foot_h_from_floor;
         bool resetOdom_request;
 
+        double current_adjust_floor_h;
+
         ControlMode mode;
 
         std::vector<std::string> ee_names, tgt_names;

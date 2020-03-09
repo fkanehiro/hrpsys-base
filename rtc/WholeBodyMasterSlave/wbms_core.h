@@ -468,7 +468,7 @@ class WBMSCore{
             }
         } ws;
 
-        WBMSCore(const double& dt){
+        WBMSCore(const double dt){
             DT = dt;
             HZ = (int)(1.0/DT);
             loop = 0;
@@ -586,8 +586,8 @@ class WBMSCore{
                 if      ( rf_h_from_floor - lf_h_from_floor >  wp.auto_com_foot_move_detect_height) { ws.auto_com_pos_tgt = "LF";  }
                 else if ( rf_h_from_floor - lf_h_from_floor < -wp.auto_com_foot_move_detect_height) { ws.auto_com_pos_tgt = "RF";  }
                 else                                                                                { ws.auto_com_pos_tgt = "MID"; }
-                for(int lr=0; lr<LR; lr++){///// lock if com height is low = half sitting
-                    if(act_rs.ref_com(Z) - old.foot(lr).cnt.p(Z) < wp.force_double_support_com_h)   { ws.auto_com_pos_tgt = "MID"; ws.lock_both_feet_by_com_h = true; }
+                for(auto f : {rf,lf}){///// lock if com height is low = half sitting
+                    if(act_rs.ref_com(Z) - old.tgt[f].cnt.p(Z) < wp.force_double_support_com_h)     { ws.auto_com_pos_tgt = "MID"; ws.lock_both_feet_by_com_h = true; }
                 }
                 if      (ws.auto_com_pos_tgt == "LF")   { out.tgt[com].abs.p.head(XY) =  old.tgt[lf].abs.p.head(XY);                                    }
                 else if (ws.auto_com_pos_tgt == "RF")   { out.tgt[com].abs.p.head(XY) =  old.tgt[rf].abs.p.head(XY);                                    }
@@ -646,7 +646,6 @@ class WBMSCore{
             }
         }
         void setFootContactPoseByGoContact(const HumanPose& old, HumanPose& out){
-            static bool is_locked[LR] = {false};
             static int cnt_for_clear[LR] ={0};
             for(int lr=0; lr<LR; lr++){
                 if(wp.auto_floor_h_mode){
@@ -680,7 +679,6 @@ class WBMSCore{
                 }
                 if(loop%500==0){
                     dbg(lr);
-                    dbg(is_locked[lr]);
                     dbg(out.foot(lr).cnt.p(Z));
                     dbg(out.foot(lr).abs.p(Z));
                     dbg(act_rs.act_foot_pose[lr].p(Z));

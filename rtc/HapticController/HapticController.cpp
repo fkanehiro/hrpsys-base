@@ -87,6 +87,8 @@ RTC::ReturnCode_t HapticController::onInitialize(){
     baselink_h_ip->get(&baselink_h_from_floor, false);
     RTC_INFO_STREAM("setup interpolator finished");
 
+    current_adjust_floor_h = 0;
+
     dqAct_filter = BiquadIIRFilterVec(m_robot->numJoints());
     dqAct_filter.setParameter(hcp.dqAct_filter_cutoff_hz, 1/m_dt, Q_BUTTERWORTH);
     dqAct_filter.reset(0);
@@ -290,11 +292,14 @@ void HapticController::calcCurrentState(){
         jp.calcJacobian(J_ee[ee], ee_ikc_map[ee].localPos);
     }
 
-    for(auto leg : {"rleg","lleg"}){ //m_robot->rootLink()->p(Z)は0付近で更新されないのでworld座標系におけるfloor_hは-1.0とからへん
-        const double slave_act_floor_z = MINMAX_LIMITED(m_slaveTgtPoses[(leg=="lleg" ? "lfloor" : "rfloor")].data.position.z, 0, 0.3);
+    for(std::string lr : {"l","r"}){ //m_robot->rootLink()->p(Z)は0付近で更新されないのでworld座標系におけるfloor_hは-1.0とからへん
+        // const double slave_act_floor_z = MINMAX_LIMITED(m_slaveTgtPoses[lr+"floor"].data.position.z, 0, 0.3);
+        const double slave_act_floor_z = m_slaveTgtPoses[lr+"floor"].data.position.z;
         const double basic_floor_h_wld = m_robot->rootLink()->p(Z) - baselink_h_from_floor;
-        foot_h_from_floor[leg] = master_ee_pose[leg].p(Z) - (basic_floor_h_wld + slave_act_floor_z);
+        foot_h_from_floor[lr+"leg"] = master_ee_pose[lr+"leg"].p(Z) - (basic_floor_h_wld + slave_act_floor_z - current_adjust_floor_h);
     }
+    const double target_adjust_floor_h = std::min(m_slaveTgtPoses["lfloor"].data.position.z, m_slaveTgtPoses["rfloor"].data.position.z);
+    current_adjust_floor_h += NORM_LIMITED(target_adjust_floor_h - current_adjust_floor_h, 0.01*m_dt);
 
 }
 
@@ -536,7 +541,7 @@ void HapticController::calcOdometry(){
     const hrp::Pose3    pleg_to_cleg        = hrp::calcRelPose3 ( hrp::to_2DPlanePose3(master_ee_pose[parent_leg]),             hrp::to_2DPlanePose3(master_ee_pose[child_leg]) );
     hrp::Pose3 base_pose_from_floor_origin  = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_base)              );
     const double floating_h                 = MIN_LIMITED(std::min(foot_h_from_floor["rleg"], foot_h_from_floor["lleg"]), 0); 
-    base_pose_from_floor_origin.p(Z)        = baselink_h_from_floor - floating_h; // ajust not to float with both feet.
+    base_pose_from_floor_origin.p(Z)        = baselink_h_from_floor - floating_h + current_adjust_floor_h; // adjust not to float with both feet.
     leg_pose_from_floor_origin[child_leg]   = hrp::applyRelPose3( hrp::to_2DPlanePose3(leg_pose_from_floor_origin[parent_leg]), hrp::to_2DPlanePose3(pleg_to_cleg)              );
 
     //update base link pos from world

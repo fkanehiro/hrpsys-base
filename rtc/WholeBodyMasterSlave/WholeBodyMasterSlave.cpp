@@ -505,7 +505,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const hrp::Pose3& com_ref, const hrp:
       tmp.localPos = hrp::Vector3::Zero();
       tmp.localR = hrp::Matrix33::Identity();
       tmp.targetPos = hrp::to_Vector3(m_basePos.data);// will be ignored by selection_vec
-      tmp.targetRpy = com_ref.rpy();// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+      tmp.targetRpy = com_ref.rpy();
       tmp.constraint_weight << 1,1,1,1,1,1;
       tmp.rot_precision = deg2rad(3);
       ikc_list.push_back(tmp);

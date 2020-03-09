@@ -43,6 +43,7 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define MIN_LIMITED(x,min)          ( x<min ? min : x )
 #define MAX_LIMITED(x,max)          ( x>max ? max : x )
 #define MINMAX_LIMITED(x,min,max)   ( x<min ? min : ( x>max ? max : x ))
+#define NORM_LIMITED(x,max)         ( x<(-max) ? -max : (x>max ? max : x))
 
 
 namespace hrp{
