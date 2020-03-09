@@ -370,7 +370,7 @@ void HapticController::calcTorque(){
             rats::difference_rotation(diff_rot, master_ee_pose[leg].R, hrp::Matrix33::Identity());
             const hrp::Vector3 diff_rot_vel = hrp::Vector3::Zero() - master_ee_vel_filtered[leg].tail(3);
             hrp::dvector6 wrench = (hrp::dvector6()<< 0,0,0, diff_rot * hcp.foot_horizontal_pd_gain(0) + diff_rot_vel * hcp.foot_horizontal_pd_gain(1)).finished();
-            // wrench(tz) = 0;
+            //wrench(tz) = 0; // unlock foot yaw
             LIMIT_NORM_V(wrench.tail(3), 50);
             hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
             for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
@@ -381,7 +381,7 @@ void HapticController::calcTorque(){
         for (auto leg : legs){
             if(foot_h_from_floor[leg] < 0){
                 hrp::dvector6 wrench = hrp::dvector6::Unit(fz) * (-foot_h_from_floor[leg]*hcp.floor_pd_gain(0) + (0-master_ee_vel_filtered[leg](fz))*hcp.floor_pd_gain(1));
-                LIMIT_NORM_V(wrench, 1000);
+                LIMIT_NORM_V(wrench, 200);
                 const hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;
                 for(int j=0; j<jpath_ee[leg].numJoints(); j++){ jpath_ee[leg].joint(j)->u += tq_tmp(j); }
                 masterEEWrenches[leg] += wrench;
@@ -424,7 +424,7 @@ void HapticController::calcTorque(){
             rats::difference_rotation(diff_rot, cur_l2r_pose.R, locked_l2r_pose.R);
             hrp::dvector6 rleg_wrench = (hrp::dvector6()<< diff_pos * 1000, diff_rot * 100).finished();
             rleg_wrench(fz) = 0;
-            LIMIT_NORM_V(rleg_wrench, 1000);
+            LIMIT_NORM_V(rleg_wrench, 200);
             for (auto leg : legs){
                 hrp::dvector6 wrench = (leg=="rleg" ? 1:-1) *  rleg_wrench;
                 hrp::dvector tq_tmp = J_ee[leg].transpose() * wrench;

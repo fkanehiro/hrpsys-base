@@ -195,7 +195,7 @@ class HapticController : public RTC::DataFlowComponentBase{
                 LIMIT_MINMAX(force_feedback_ratio                , 0, 2);
                 LIMIT_MINMAX(gravity_compensation_ratio          , 0, 2);
                 LIMIT_MINMAX(q_friction_coeff                    , 0, 0.1);
-                LIMIT_MINMAX(q_ref_max_torque_ratio              , 0, 1);
+                LIMIT_MINMAX(q_ref_max_torque_ratio              , 0, 2);
                 LIMIT_MINMAX(torque_feedback_ratio               , 0, 1);
                 LIMIT_MINMAX(wrench_hpf_cutoff_hz                , 0, 500);
                 LIMIT_MINMAX(wrench_lpf_cutoff_hz                , 0, 500);
