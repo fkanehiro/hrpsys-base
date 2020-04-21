@@ -334,6 +334,13 @@ def initCORBA():
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
+    giopmaxmsgsize = '2147483648'
+    try:
+        n = sys.argv.index('-ORBgiopMaxMsgSize')
+        giopmaxmsgsize = sys.argv[n + 1]
+
+    os.environ['ORBgiopMaxMsgSize'] = giopmaxmsgsize
+
     try:
         orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
         nameserver = orb.resolve_initial_references("NameService")
