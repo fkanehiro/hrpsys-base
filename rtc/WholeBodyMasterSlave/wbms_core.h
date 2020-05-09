@@ -76,19 +76,18 @@ class HumanPose{
         std::vector<PoseTGT> tgt;
         HumanPose(){ tgt.resize(num_pose_tgt); }
         ~HumanPose(){cerr<<"HumanPose destructed"<<endl;}
-        void reset(){
-            for(std::vector<PoseTGT>::iterator it = tgt.begin(); it != tgt.end(); it++){ it->reset(); }
+        void reset(){ for(std::vector<PoseTGT>::iterator it = tgt.begin(); it != tgt.end(); it++){ it->reset(); }  }
+        friend ostream& operator<<(ostream& os, const HumanPose& in){
+            const std::vector<std::string> short_ns = {"c","rf","lf","rh","lh","hd","z"};
+            os << std::fixed << std::setprecision(1);
+            for (int i=0; i<in.tgt.size(); i++){ os << "\x1b[31m" << short_ns[i] << "\x1b[39m " << in.tgt[i].abs.p.transpose() <<" "; }
+            return os;
         }
-        static void hp_printf(const HumanPose& in) {
-            const std::string pcatgt[] = {"c","rf","lf","rh","lh","hd","z"}, wcatgt[] = {"rw","lw"};
-            for(int i=0;i<num_pose_tgt;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",pcatgt[i].c_str(),in.tgt[i].abs.p(X),in.tgt[i].abs.p(Y),in.tgt[i].abs.p(Z)); }
-            printf("\n");
-        }
-        PoseTGT&                        foot    (const int lr)      { assert(lr == R || lr == L); return (lr == R) ? tgt[rf] : tgt[lf]; }
-        const PoseTGT&                  foot    (const int lr) const{ assert(lr == R || lr == L); return (lr == R) ? tgt[rf] : tgt[lf]; }
-        PoseTGT&                        hand    (const int lr)      { assert(lr == R || lr == L); return (lr == R) ? tgt[rh] : tgt[lh]; }
-        const PoseTGT&                  hand    (const int lr) const{ assert(lr == R || lr == L); return (lr == R) ? tgt[rh] : tgt[lh]; }
-        PoseTGT& tgt_by_str(const std::string ln){
+        PoseTGT&        foot(const int lr)      { assert(lr == R || lr == L); return (lr == R) ? tgt[rf] : tgt[lf]; }
+        const PoseTGT&  foot(const int lr) const{ assert(lr == R || lr == L); return (lr == R) ? tgt[rf] : tgt[lf]; }
+        PoseTGT&        hand(const int lr)      { assert(lr == R || lr == L); return (lr == R) ? tgt[rh] : tgt[lh]; }
+        const PoseTGT&  hand(const int lr) const{ assert(lr == R || lr == L); return (lr == R) ? tgt[rh] : tgt[lh]; }
+        PoseTGT&  stgt(const std::string ln){
             assert(ln == "com" || ln == "head" || ln == "lleg" || ln == "rleg" || ln == "larm" || ln == "rarm" );
             if      (ln == "lleg"){ return tgt[lf]; }
             else if (ln == "rleg"){ return tgt[rf]; }
@@ -97,7 +96,6 @@ class HumanPose{
             else if (ln == "com" ){ return tgt[com]; }
             else                  { return tgt[head]; }
         }
-        void print() const { hp_printf(*this); }
 };
 
 namespace hrp{
@@ -351,6 +349,7 @@ class WBMSCore{
         double com_filter_cutoff_hz_old;
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        bool legged;
         double H_cur;
         HumanPose hp_wld_raw, rp_ref_out;
         hrp::Pose3 baselinkpose;
@@ -450,21 +449,20 @@ class WBMSCore{
                 }
                 lock_both_feet_by_com_h = false;
             }
-            std::string LR_BOOL_TO_STR(const bool in[LR]){
+            static std::string LR_BOOL_TO_STR(const bool in[LR]){
                 std::string ret;
                 ret += (in[L] ? "L":"");
                 ret += (in[R] ? "R":"");
                 return ret;
             }
-            std::string str(){
-                std::stringstream ret;
-                ret << "LOCK_FOOT_BY_REF_ZMP(" << LR_BOOL_TO_STR(lock_foot_by_ref_zmp) <<") ";
-                ret << "LOCK_FOOT_BY_ACT_ZMP(" << LR_BOOL_TO_STR(lock_foot_by_act_zmp) <<") ";
-                ret << "LOCK_FOOT_BY_REF_CP("  << LR_BOOL_TO_STR(lock_foot_by_ref_cp) <<") ";
-                ret << "LOCK_FOOT_BY_ACT_CP("  << LR_BOOL_TO_STR(lock_foot_by_act_cp) <<") ";
-                ret << (lock_both_feet_by_com_h ? "LOCK_BOTH_FEET_BY_COM_H " : "");
-                ret << "AUTO_COM_POS_TGT(" << auto_com_pos_tgt << ") ";
-                return ret.str();
+            friend ostream& operator<<(ostream& os, const WBMSStates& in){
+                os << "LOCK_FOOT_BY_REF_ZMP(\x1b[31m" << LR_BOOL_TO_STR(in.lock_foot_by_ref_zmp) <<"\x1b[39m) ";
+                os << "LOCK_FOOT_BY_ACT_ZMP(\x1b[31m" << LR_BOOL_TO_STR(in.lock_foot_by_act_zmp) <<"\x1b[39m) ";
+                os << "LOCK_FOOT_BY_REF_CP(\x1b[31m"  << LR_BOOL_TO_STR(in.lock_foot_by_ref_cp)  <<"\x1b[39m) ";
+                os << "LOCK_FOOT_BY_ACT_CP(\x1b[31m"  << LR_BOOL_TO_STR(in.lock_foot_by_act_cp)  <<"\x1b[39m) ";
+                os << (in.lock_both_feet_by_com_h ? "LOCK_BOTH_FEET_BY_COM_H " : "");
+                os << "AUTO_COM_POS_TGT(\x1b[31m" << in.auto_com_pos_tgt << "\x1b[39m) ";
+                return os;
             }
         } ws;
 
@@ -472,6 +470,7 @@ class WBMSCore{
             DT = dt;
             HZ = (int)(1.0/DT);
             loop = 0;
+            legged = true;
             com_old = com_oldold = comacc = hrp::Vector3::Zero();
             cp_dec = cp_acc = hrp::Vector3::Zero();
             acc4zmp_v_filters.resize(XYZ);
@@ -534,33 +533,35 @@ class WBMSCore{
         }
         void update(){//////////  メインループ  ////////////
             convertHumanToRobot                 (hp_wld_raw, rp_ref_out);
-            setAutoCOMMode                      (hp_wld_raw, rp_ref_out_old, rp_ref_out);
+            if(legged){
+                setAutoCOMMode                      (hp_wld_raw, rp_ref_out_old, rp_ref_out);
 
-            lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
-            limitEEWorkspace                    (rp_ref_out_old, rp_ref_out);
-            setFootContactPoseByGoContact       (rp_ref_out_old, rp_ref_out);
-            limitFootVelNearGround              (rp_ref_out_old, rp_ref_out);
-            avoidFootSinkIntoFloor              (rp_ref_out);
+                lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
+                limitEEWorkspace                    (rp_ref_out_old, rp_ref_out);
+                setFootContactPoseByGoContact       (rp_ref_out_old, rp_ref_out);
+                limitFootVelNearGround              (rp_ref_out_old, rp_ref_out);
+                avoidFootSinkIntoFloor              (rp_ref_out);
 
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
-            com_forcp_ref = rp_ref_out.tgt[com].abs.p.head(XY);
-            static hrp::Vector2 com_forcp_ref_old;
-            com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
-            com_forcp_ref_old = com_forcp_ref;
-            applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
-            applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
-            applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);//結局STに送るZMPは最終段で計算するからこれ意味ない
-            H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
-            rp_ref_out_old = rp_ref_out;
+                applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
+                applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
+                com_forcp_ref = rp_ref_out.tgt[com].abs.p.head(XY);
+                static hrp::Vector2 com_forcp_ref_old;
+                com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
+                com_forcp_ref_old = com_forcp_ref;
+                applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
+                applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs, rp_ref_out.tgt[lf].abs, rp_ref_out.tgt[com].abs.p);
+                applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);//結局STに送るZMPは最終段で計算するからこれ意味ない
+                H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[lf].abs.p(Z));
+                rp_ref_out_old = rp_ref_out;
 
-            ///// COMだけはフィルターいるか・・・
-            if(is_initial_loop || wp.com_filter_cutoff_hz != com_filter_cutoff_hz_old){
-                com_filter.setParameter(wp.com_filter_cutoff_hz, HZ, Q_NOOVERSHOOT);
-                com_filter.reset(rp_ref_out.tgt[com].abs.p);
-                com_filter_cutoff_hz_old = wp.com_filter_cutoff_hz;
+                ///// COMだけはフィルターいるか・・・
+                if(is_initial_loop || wp.com_filter_cutoff_hz != com_filter_cutoff_hz_old){
+                    com_filter.setParameter(wp.com_filter_cutoff_hz, HZ, Q_NOOVERSHOOT);
+                    com_filter.reset(rp_ref_out.tgt[com].abs.p);
+                    com_filter_cutoff_hz_old = wp.com_filter_cutoff_hz;
+                }
+                rp_ref_out.tgt[com].abs.p = com_filter.passFilter(rp_ref_out.tgt[com].abs.p);
             }
-            rp_ref_out.tgt[com].abs.p = com_filter.passFilter(rp_ref_out.tgt[com].abs.p);
             loop++;
             is_initial_loop = false;
         }
@@ -677,12 +678,12 @@ class WBMSCore{
                     out.foot(lr).cnt.R = hrp::rotFromRpy(0, 0, hrp::rpyFromRot(out.foot(lr).abs.R)(y));  
                     LIMIT_MIN( out.foot(lr).abs.p(Z), out.foot(lr).cnt.p(Z)+wp.swing_foot_height_offset);
                 }
-                if(loop%500==0){
-                    dbg(lr);
-                    dbg(out.foot(lr).cnt.p(Z));
-                    dbg(out.foot(lr).abs.p(Z));
-                    dbg(act_rs.act_foot_pose[lr].p(Z));
-                }
+                // if(loop%500==0){
+                //     dbg(lr);
+                //     dbg(out.foot(lr).cnt.p(Z));
+                //     dbg(out.foot(lr).abs.p(Z));
+                //     dbg(act_rs.act_foot_pose[lr].p(Z));
+                // }
             }
         }
         void limitFootVelNearGround(const HumanPose& old, HumanPose& out){

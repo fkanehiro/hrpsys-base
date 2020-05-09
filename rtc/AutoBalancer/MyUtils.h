@@ -25,10 +25,10 @@ static const double G = 9.80665;
 static const double Q_NOOVERSHOOT = 0.5;
 static const double Q_BUTTERWORTH = 0.707106781;
 
-#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
-#define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
-#define dbgv(var) std::cout<<#var"= "<<(var.transpose())<<std::endl
-#define RTC_INFO_STREAM(var) std::cout << "[" << m_profile.instance_name << "] "<< var << std::endl;
+#define dbg(var) std::cerr<<#var"= "<<(var)<<std::endl
+#define dbgn(var) std::cerr<<#var"= "<<std::endl<<(var)<<std::endl
+#define dbgv(var) std::cerr<<#var"= "<<(var.transpose())<<std::endl
+#define RTC_INFO_STREAM(var) std::cerr << "[" << m_profile.instance_name << "] "<< var << std::endl;
 #define RTC_WARN_STREAM(var) std::cerr << "\x1b[31m[" << m_profile.instance_name << "] " << var << "\x1b[39m" << std::endl;
 
 #define eps_eq(a, b, c)             (fabs((a)-(b)) <= c)
