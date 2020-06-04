@@ -191,8 +191,8 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
 
     double tau = m_torqueMode.data[i] ? m_tauRef.data[i] : Pgain[i] * (qRef - q) + Dgain[i] * (dqRef - dq);
 
-    double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio;
-
+    double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * abs(m_robot->joint(i)->gearRatio);
+    
     m_tau.data[i] = std::max(std::min(tau, tau_limit), -tau_limit);
   }
 
