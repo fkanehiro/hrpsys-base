@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 import os
-import rtm
+from hrpsys import rtm
 
-from rtm import *
-from OpenHRP import *
-from hrpsys import *  # load ModelLoader
-from hrpsys import ImpedanceControllerService_idl
-from waitInput import waitInputConfirm
+from hrpsys.rtm import *
+from hrpsys.OpenHRP import *
+from hrpsys.waitInput import waitInputConfirm
 
 import socket
 import time
@@ -806,7 +804,7 @@ class HrpsysConfigurator(object):
         '''
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
-        mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
+        mdlldr = obj._narrow(ModelLoader)
         url = self.parseUrl(url)
         print(self.configurator_name + "  bodyinfo URL = file://" + url)
         return mdlldr.getBodyInfo("file://" + url)

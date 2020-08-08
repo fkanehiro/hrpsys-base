@@ -127,9 +127,19 @@ foreach(_idl_file ${openhrp_idl_files})
   endif()
 endforeach()
 
-install(CODE "execute_process(COMMAND omniidl -bpython -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
-install(CODE "execute_process(COMMAND omniidl -bpython -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_IDL_DIR}/OpenHRP)")
-install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir}/hrpsys)")
+# generate stub code
+install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
+install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_IDL_DIR}/OpenHRP)")
+
+# delete rtm stub to avoid cross reference
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/RTC)")
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/RTC__POA)")
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/OpenRTM)")
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/OpenRTM__POA)")
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/SDOPackage)")
+install(CODE "execute_process(COMMAND rm -rf \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys/SDOPackage__POA)")
+
+install(CODE "execute_process(COMMAND python -m compileall hrpsys WORKING_DIRECTORY ${python_dist_pkg_dir})")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 

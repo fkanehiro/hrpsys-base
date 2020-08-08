@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from omniORB import CORBA, any, cdrUnmarshal, cdrMarshal
 import CosNaming
 
@@ -5,6 +7,8 @@ import OpenRTM_aist
 import RTC, OpenRTM, SDOPackage, RTM
 from OpenRTM import CdrData, OutPortCdr, InPortCdr
 from RTC import *
+
+import hrpsys.OpenHRP
 
 import sys
 import string, math, socket
@@ -920,7 +924,7 @@ def getConfiguration(rtc):
 # \param klass class name 
 # \param package package where the class is defined
 #
-def narrow(ior, klass, package="OpenHRP"):
+def narrow(ior, klass, package="hrpsys.OpenHRP"):
     return ior._narrow(getattr(sys.modules[package], klass))
 
 ##
