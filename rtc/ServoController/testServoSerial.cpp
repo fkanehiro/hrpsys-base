@@ -34,6 +34,8 @@ void usage() {
     printf(" 1-9 : change id\n");
     printf("   r : setReset\n");
     printf("   D : setID\n");
+    printf("   e : setReverse to 1\n");
+    printf("   E : setReverse to 0\n");
     printf("   o : setTorqueOn\n");
     printf("   f : setTorqueOff\n");
     printf("   b : setTorqueBreak\n");
@@ -84,6 +86,12 @@ int main() {
                 {printf("please type new ID and press Enter\n");
                  unsigned char new_id = getchar()-'0';
                  serial->setID(id, new_id);}
+                break;
+            case 'e':
+                serial->setReverse(id, 1);
+                break;
+            case 'E':
+                serial->setReverse(id, 0);
                 break;
             case 'o':
                 serial->setTorqueOn(id);
