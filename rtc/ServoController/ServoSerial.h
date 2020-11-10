@@ -257,6 +257,18 @@ public:
     return 0;
   }
 
+  int getROMData(int id, unsigned char *data) {
+    if (sendPacket(0xFAAF, id, 0x03, 0x00, 0, 1, NULL)<0) {
+      clear_packet();
+      return -1;
+    }
+    if ( receivePacket(id, 0x00, 30, data) < 0 ) {
+      clear_packet();
+      return -1;
+    }
+    return 0;
+  }
+
   int receivePacket(int id, int address, int length, unsigned char data[]){
     unsigned short header;
     unsigned char ids, flags, addr, len, count, sum;

@@ -50,6 +50,7 @@ void usage() {
     printf("   c : getTemperature\n");
     printf("   v : getVoltage\n");
     printf("   S : getState\n");
+    printf("   R : getROMData\n");
 }
 
 int main() {
@@ -159,6 +160,16 @@ int main() {
                         if ( i % 10 == 9 ) fprintf(stderr, " : ");
                 }
 		fprintf(stderr, "\n");
+                break;
+            case 'R':
+                {unsigned char data[30];
+                 serial->getROMData(id, data);
+		 fprintf(stderr, "ROM data =");
+                 for(int i = 0; i < 30; i++) {
+                         fprintf(stderr, " %02X", data[i]);
+                         if ( i % 10 == 9 ) fprintf(stderr, " : ");
+                 }
+		 fprintf(stderr, "\n");}
                 break;
             }
             usage();
