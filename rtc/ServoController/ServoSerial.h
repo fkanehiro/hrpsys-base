@@ -88,6 +88,21 @@ public:
     return 0;
   }
 
+  int setReverse(int id, int is_reverse) {// #5
+    if (is_reverse != 0 && is_reverse != 1) {
+      printf("[ServoSerial] Change is_reverse %d to 1 as is_reverse should be 0 (false) or 1 (true)\n", is_reverse);
+      is_reverse = 1;
+    }
+    printf("[ServoSerial] setReverse %d: %d\n", id, is_reverse);
+    unsigned char data[1];
+    data[0] = is_reverse;
+    sendPacket(0xFAAF, id, 0x00, 0x05, 1, 1, data);
+    sendPacket(0xFAAF, id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
+  }
+
   int setPosition(int id, double rad) {// #30
     signed short angle = (signed short)(180/M_PI*rad*10);
     printf("[ServoSerial] setPosition %f, %04x\n", 180/M_PI*rad, angle);
