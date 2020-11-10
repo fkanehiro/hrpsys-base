@@ -75,6 +75,19 @@ public:
     sendPacket(0xFAAF, id, 0x20, 0xFF, 0, 0, NULL);
   }
 
+  int setID(int id, unsigned char new_id) {// #4
+    if (new_id < 1 || 127 < new_id) {
+      fprintf(stderr, "[ServoSerial] Given ID %d is out of range\n", new_id);
+      return -1;
+    }
+    printf("[ServoSerial] setID %d: %d\n", id, new_id);
+    sendPacket(0xFAAF, id, 0x00, 0x04, 1, 1, &new_id);
+    sendPacket(0xFAAF, new_id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
+  }
+
   int setPosition(int id, double rad) {// #30
     signed short angle = (signed short)(180/M_PI*rad*10);
     printf("[ServoSerial] setPosition %f, %04x\n", 180/M_PI*rad, angle);
