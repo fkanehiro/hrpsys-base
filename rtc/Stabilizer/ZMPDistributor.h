@@ -153,7 +153,7 @@ public:
     bool calc_closest_boundary_point (Eigen::Vector2d& p, size_t& right_idx, size_t& left_idx) {
       size_t n_ch = convex_hull.size();
       Eigen::Vector2d cur_closest_point;
-      for (size_t i; i < n_ch; i++) {
+      for (size_t i = 0; i < n_ch; i++) {
         switch(calcProjectedPoint(cur_closest_point, p, convex_hull[left_idx], convex_hull[right_idx])) {
         case MIDDLE:
           p = cur_closest_point;
