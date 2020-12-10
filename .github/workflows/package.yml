@@ -1,6 +1,6 @@
 name: Package hrpsys-base
 
-# This workflow only runs when pushing to master
+# This workflow only runs when pushing to debian
 #
 # It will:
 # - Build packages for selected Debian/Ubuntu distro
@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        dist: [xenial, bionic]
+        dist: [xenial, bionic, focal]
         arch: [i386, amd64]
         exclude:
           - dist: focal
@@ -45,7 +45,7 @@ jobs:
       max-parallel: 1
       fail-fast: true
       matrix:
-        dist: [xenial, bionic]
+        dist: [xenial, bionic, focal]
         arch: [i386, amd64]
         exclude:
           - dist: focal
