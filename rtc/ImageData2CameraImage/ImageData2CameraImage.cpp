@@ -32,8 +32,8 @@ static const char* imagedata2cameraimage_spec[] =
 ImageData2CameraImage::ImageData2CameraImage(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_dataIn("imageIn", m_data.data.image),
-    m_dataOut("imageOut", m_data),
+    m_dataIn("imageIn", m_tid),
+    m_dataOut("imageOut", m_tci),
     // </rtc-template>
     dummy(0)
 {
@@ -68,7 +68,7 @@ RTC::ReturnCode_t ImageData2CameraImage::onInitialize()
   // Set CORBA Service Ports
   
   // </rtc-template>
-  m_data.error_code = 0;
+  m_tci.error_code = 0;
 
   return RTC::RTC_OK;
 }
@@ -112,6 +112,8 @@ RTC::ReturnCode_t ImageData2CameraImage::onExecute(RTC::UniqueId ec_id)
 {
   if (m_dataIn.isNew()){
     m_dataIn.read();
+    m_tci.tm = m_tid.tm;
+    m_tci.data.image = m_tid.data;
     m_dataOut.write();
   }
   return RTC::RTC_OK;
