@@ -218,6 +218,10 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     double tau_limit = m_robot->joint(i)->torqueConst * m_robot->joint(i)->climit * fabs(m_robot->joint(i)->gearRatio);
     
     m_tau.data[i] = std::max(std::min(tau, tau_limit), -tau_limit);
+
+    // if (i == 11 || i == 21)
+    //     std::cout << "Rafa, in ModifiedServo::onExecute, for i = " << i << ", q[i] = " << q << ", qRef[i] = " << qRef
+    //               << ", tau[i] = " << tau << ", tau_limit[i] = " << tau_limit << ", m_tau[i] = " << m_tau.data[i] << std::endl;
   }
 
   m_step--;
