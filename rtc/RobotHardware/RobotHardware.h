@@ -223,7 +223,6 @@ class RobotHardware
  private:
   void getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2);
   
-  // int m_count_noNewTauRef;  // Added by Rafa
   bool allowTorqueControlMode;  // Added by Rafa
   
   int dummy;

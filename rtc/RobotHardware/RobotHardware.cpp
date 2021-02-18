@@ -15,8 +15,6 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>
 
-//#define MAX_CYCLES_WITHOUT_TAUREF 3  // Added by Rafa
-
 using namespace OpenHRP;
 using namespace hrp;
 
@@ -258,20 +256,11 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }    
 
   /*
-  if (!m_isDemoMode && m_robot->isJointTorqueControlModeUsed()){  // Added by Rafa
-      if (m_robot->checkJointActualValues() || m_count_noNewTauRef > MAX_CYCLES_WITHOUT_TAUREF){
-          m_robot->servo("all", false);
-          m_emergencySignal.data = robot::EMG_SERVO_ERROR;
-          m_emergencySignalOut.write();
-      }
-      m_count_noNewTauRef++;
-  }
-  */
-
   if (!m_isDemoMode && m_robot->checkJointActualValues()){
       m_robot->resetJointControlMode();
       allowTorqueControlMode = false;
   }
+  */
 
   if (m_qRefIn.isNew()){
       m_qRefIn.read();
