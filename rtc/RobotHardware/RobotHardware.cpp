@@ -288,7 +288,6 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   if (m_tauRefIn.isNew()){
       m_tauRefIn.read();
-      // m_count_noNewTauRef = 0;
       //std::cout << "RobotHardware: tauRef[21] = " << m_tauRef.data[21] << std::endl;
       // output to iob
       m_robot->writeTorqueCommands(m_tauRef.data.get_buffer());
