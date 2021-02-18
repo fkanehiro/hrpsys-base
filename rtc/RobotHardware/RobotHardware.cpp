@@ -62,7 +62,6 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
-    // m_count_noNewTauRef(0),
     allowTorqueControlMode(true),
     dummy(0)
 {
