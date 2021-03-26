@@ -618,7 +618,7 @@ class WBMSCore{
                         is_locked[lr] = true;
                     }
                     if(is_locked[lr] && fabs(act_rs.act_foot_wrench[lr](fz)) < wp.auto_floor_h_reset_fz){
-                        if(cnt_for_clear[lr]++ > HZ * 0.5){
+                        if(cnt_for_clear[lr]++ > HZ * 2.0){
                             out.foot(lr).cnt.p(Z) = out.foot(lr).offs.p(Z);
                             is_locked[lr] = false;
                             cnt_for_clear[lr] = 0;
