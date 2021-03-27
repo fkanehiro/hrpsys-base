@@ -18,16 +18,17 @@ enum { fx, fy, fz, tx, ty, tz, ft_xyz };
 enum { com, rf, lf, rh, lh, head, zmp, num_pose_tgt };
 enum { num_ee_tgt=4 };
 
+#define LR_STR(lr) (lr==R ? "R" : "L")
 #define OPPOSITE(lr) (lr==R ? L : R)
 
 static const double G = 9.80665;
 static const double Q_NOOVERSHOOT = 0.5;
 static const double Q_BUTTERWORTH = 0.707106781;
 
-#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
-#define dbgn(var) std::cout<<#var"= "<<std::endl<<(var)<<std::endl
-#define dbgv(var) std::cout<<#var"= "<<(var.transpose())<<std::endl
-#define RTC_INFO_STREAM(var) std::cout << "[" << m_profile.instance_name << "] "<< var << std::endl;
+#define dbg(var) std::cerr<<#var"= "<<(var)<<std::endl
+#define dbgn(var) std::cerr<<#var"= "<<std::endl<<(var)<<std::endl
+#define dbgv(var) std::cerr<<#var"= "<<(var.transpose())<<std::endl
+#define RTC_INFO_STREAM(var) std::cerr << "[" << m_profile.instance_name << "] "<< var << std::endl;
 #define RTC_WARN_STREAM(var) std::cerr << "\x1b[31m[" << m_profile.instance_name << "] " << var << "\x1b[39m" << std::endl;
 
 #define eps_eq(a, b, c)             (fabs((a)-(b)) <= c)
@@ -42,6 +43,7 @@ static const double Q_BUTTERWORTH = 0.707106781;
 #define MIN_LIMITED(x,min)          ( x<min ? min : x )
 #define MAX_LIMITED(x,max)          ( x>max ? max : x )
 #define MINMAX_LIMITED(x,min,max)   ( x<min ? min : ( x>max ? max : x ))
+#define NORM_LIMITED(x,max)         ( x<(-max) ? -max : (x>max ? max : x))
 
 
 namespace hrp{

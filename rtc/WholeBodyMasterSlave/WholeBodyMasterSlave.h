@@ -22,7 +22,7 @@
 
 //#define USE_DEBUG_PORT
 
-enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_HC, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
+enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
 class ControlMode{
     private:
@@ -32,10 +32,10 @@ class ControlMode{
         ~ControlMode(){}
         bool setNextMode(const mode_enum _request){
             switch(_request){
-                case MODE_SYNC_TO_HC:
-                    if(current == MODE_IDLE){ next = MODE_SYNC_TO_HC; return true; }else{ return false; }
+                case MODE_SYNC_TO_WBMS:
+                    if(current == MODE_IDLE){ next = MODE_SYNC_TO_WBMS; return true; }else{ return false; }
                 case MODE_WBMS:
-                    if(current == MODE_SYNC_TO_HC || current == MODE_PAUSE ){ next = MODE_WBMS; return true; }else{ return false; }
+                    if(current == MODE_SYNC_TO_WBMS || current == MODE_PAUSE ){ next = MODE_WBMS; return true; }else{ return false; }
                 case MODE_PAUSE:
                     if(current == MODE_WBMS){ next = MODE_PAUSE; return true; }else{ return false; }
                 case MODE_SYNC_TO_IDLE:
@@ -49,8 +49,8 @@ class ControlMode{
         void update(){ previous = current; current = next; }
         mode_enum now(){ return current; }
         mode_enum pre(){ return previous; }
-        bool isRunning(){ return (current==MODE_SYNC_TO_HC) || (current==MODE_WBMS) || (current==MODE_PAUSE) || (current==MODE_SYNC_TO_IDLE) ;}
-        bool isInitialize(){ return (previous==MODE_IDLE) && (current==MODE_SYNC_TO_HC) ;}
+        bool isRunning(){ return (current==MODE_SYNC_TO_WBMS) || (current==MODE_WBMS) || (current==MODE_PAUSE) || (current==MODE_SYNC_TO_IDLE) ;}
+        bool isInitialize(){ return (previous==MODE_IDLE) && (current==MODE_SYNC_TO_WBMS) ;}
 };
 
 namespace hrp{
@@ -179,10 +179,10 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase{
         std::vector<std::string> tgt_names;
 
         RTC::ReturnCode_t setupEEIKConstraintFromConf(std::map<std::string, IKConstraint>& _ee_ikc_map, hrp::BodyPtr _robot, RTC::Properties& _prop);
-        void solveFullbodyIK(const hrp::Pose3& com_ref, const hrp::Pose3& rf_ref, const hrp::Pose3& lf_ref, const hrp::Pose3& rh_ref, const hrp::Pose3& lh_ref, const hrp::Pose3& head_ref);
+        void solveFullbodyIK(HumanPose& ref);
         void processTransition();
         void preProcessForWholeBodyMasterSlave();
-        void processWholeBodyMasterSlave(const HumanPose& pose_ref);
+        void processWholeBodyMasterSlave(const HumanPose& ref);
         void smoothingJointAngles(hrp::BodyPtr _robot, hrp::BodyPtr _robot_safe);
         bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; }
         void addTimeReport(const std::string& prefix){

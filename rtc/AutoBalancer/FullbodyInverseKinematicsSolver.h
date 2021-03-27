@@ -156,7 +156,7 @@ class FullbodyInverseKinematicsSolver{
                     J_part << J_com, J_am;
                 }
                 else{
-                    std::cerr<<"Unknown Link Target !!"<<std::endl; continue;  //不明なリンク指定
+                    std::cerr<<"Unknown Link Target !! "<< _ikc_list[i].target_link_name << std::endl; continue;  //不明なリンク指定
                 }
                 // set one of the end effector constraints into Jacobian
                 hrp::dmatrix c_part_selection_mat = hrp::to_SelectionMat(_ikc_list[i].constraint_weight);   // select only valid end effector constraint
