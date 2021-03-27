@@ -369,10 +369,10 @@ case $TEST_PACKAGE in
 
         if [ "${ROS_DISTRO}" == "hydro" ]; then
             # https://github.com/fkanehiro/openhrp3/issues/46
-            ls -al /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController || echo "ok"
-            sudo mkdir -p /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/ || echo "ok"
-            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.pos || echo "ok"
-            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.vel || echo "ok"
+            ls -al /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.2/sample/controller/SampleController || echo "ok"
+            sudo mkdir -p /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.2/sample/controller/SampleController/etc/ || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.2/sample/controller/SampleController/etc/Sample.pos || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.2/sample/controller/SampleController/etc/Sample.vel || echo "ok"
             # https://github.com/start-jsk/rtmros_hironx/issues/287
             if [ -e /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
                 sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py

@@ -13,7 +13,7 @@
    <property name="connection" value="PDcontroller0.torque:Sample4LegRobot(Robot)0.tauRef"/>
    <property name="connection" value="Sample4LegRobot(Robot)0.q:PDcontroller0.angle"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample_4leg_robot_bush" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/sample_4leg_robot_bush.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample_4leg_robot_bush" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/sample_4leg_robot_bush.wrl">
    <property name="rtcName" value="Sample4LegRobot(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
@@ -127,7 +127,7 @@
    <property name="PDcontroller0.period" value="0.002"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/longfloor.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/longfloor.wrl">
    <property name="rtcName" value="longfloor(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>

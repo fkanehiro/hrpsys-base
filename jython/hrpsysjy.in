@@ -7,6 +7,6 @@ for j in $(ls $JARPATH/*.jar); do
     export CLASSPATH=$j:$CLASSPATH
 done
 
-export CLASSPATH=:@OPENHRP_DIR@/share/OpenHRP-3.1/java/openhrpstubskel.jar:$CLASSPATH
+export CLASSPATH=:@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/java/openhrpstubskel.jar:$CLASSPATH
 
-jython -DNS_OPT="$NS_OPT" -Dpython.path=@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython:@OPENHRP_DIR@/share/OpenHRP-3.1/sample/script $@
+jython -DNS_OPT="$NS_OPT" -Dpython.path=@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython:@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/script $@

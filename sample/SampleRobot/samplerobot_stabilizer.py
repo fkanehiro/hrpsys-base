@@ -432,7 +432,7 @@ def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
 
 
 def demo():
-    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
+    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.2', '--variable=prefix']).rstrip()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
         init()
         if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):

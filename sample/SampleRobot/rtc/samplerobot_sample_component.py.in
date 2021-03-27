@@ -31,7 +31,7 @@ class SampleConfigurator(HrpsysConfigurator):
 def init ():
     global hcf
     hcf = SampleConfigurator()
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/sample1.wrl")
     disconnectPorts(hcf.sh.port("qOut"), hcf.co.port("qRef"))
     connectPorts(hcf.sh.port("qOut"), hcf.ss.port("qCurrent"))
     connectPorts(hcf.ss.port("q"), hcf.co.port("qRef"))

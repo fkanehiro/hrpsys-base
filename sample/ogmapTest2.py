@@ -12,8 +12,8 @@ r2pc   = mgr.create("Range2PointCloud")
 ogmap  = mgr.create("OccupancyGridMap3D")
 viewer = mgr.create("OGMap3DViewer")
 
-openhrp_dir = commands.getoutput("pkg-config --variable=prefix openhrp3.1")
-project = "file://"+openhrp_dir+"/share/OpenHRP-3.1/sample/project/SampleRobot_inHouse.xml"
+openhrp_dir = commands.getoutput("pkg-config --variable=prefix openhrp3.2")
+project = "file://"+openhrp_dir+"/share/OpenHRP-3.2/sample/project/SampleRobot_inHouse.xml"
 vc.setProperty("project", project)
 vc.setProperty("camera", "Robot:VISION_SENSOR1")
 vc.setProperty("generateRange", "1")
