@@ -164,7 +164,7 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
     double tlimit;
     if (m_robot && m_robot->numJoints() == dof) {
-        tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i];
+        tlimit = fabs(m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i]);
     } else {
         tlimit = (std::numeric_limits<double>::max)() * tlimit_ratio[i];
         if (i == 0 && loop % 500 == 0) {
