@@ -11,6 +11,7 @@ namespace RTC
 {
     hrpExecutionContext::~hrpExecutionContext()
     {
+        wait();
         if (m_thread_pending)
             abort ();
     }
