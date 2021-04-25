@@ -624,7 +624,8 @@ int robot::readTorquePgain(int i, double &o_torquepgain)
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
     return read_torque_pgain(i, &o_torquepgain);
 #else
-    return E_ID;
+    o_torquepgain = 0.0;
+    return TRUE;
 #endif
 }
 
@@ -633,7 +634,8 @@ int robot::readTorqueDgain(int i, double &o_torquedgain)
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
     return read_torque_dgain(i, &o_torquedgain);
 #else
-    return E_ID;
+    o_torquedgain = 0.0;
+    return TRUE;
 #endif
 }
 

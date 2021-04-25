@@ -151,10 +151,8 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_servoState.data.length(m_robot->numJoints());
   m_pgain.data.length(m_robot->numJoints());
   m_dgain.data.length(m_robot->numJoints());
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
   m_torquePgain.data.length(m_robot->numJoints());
   m_torqueDgain.data.length(m_robot->numJoints());
-#endif
   m_qRef.data.length(m_robot->numJoints());
   m_dqRef.data.length(m_robot->numJoints());
   m_ddqRef.data.length(m_robot->numJoints());
@@ -353,12 +351,10 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_pgain.tm = tm;
   for (unsigned int i=0; i<m_dgain.data.length(); i++) m_robot->readDgain(i, m_dgain.data[i]);
   m_dgain.tm = tm;
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
   for (unsigned int i=0; i<m_torquePgain.data.length(); i++) m_robot->readTorquePgain(i, m_torquePgain.data[i]);
   m_torquePgain.tm = tm;
   for (unsigned int i=0; i<m_torqueDgain.data.length(); i++) m_robot->readTorqueDgain(i, m_torqueDgain.data[i]);
   m_torqueDgain.tm = tm;
-#endif
 
   getStatus2(m_rstate2.data);
   m_rstate2.tm = tm;
