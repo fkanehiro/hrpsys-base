@@ -4,8 +4,8 @@ name: Package hrpsys-base
 #
 # It will:
 # - Build packages for selected Debian/Ubuntu distro
-# - Upload the packages to https://dl.bintray.com/gergondet/multi-contact-head
-# - Upload the packages to https://dl.bintray.com/gergondet/multi-contact
+# - Upload the packages to https://cloudsmith.io/~mc-rtc/repos/head/packages/
+# - Upload the packages to https://cloudsmith.io/~mc-rtc/repos/stable/packages/
 #
 
 on:
@@ -40,8 +40,7 @@ jobs:
       with:
         dist: ${{ matrix.dist }}
         arch: ${{ matrix.arch }}
-        other-mirrors: "https://dl.bintray.com/gergondet/multi-contact-release"
-        other-gpg-keys: "0x892EA6EE273707C6495A6FB6220D644C64666806"
+        cloudsmith-repo: 'mc-rtc/head'
     - uses: actions/upload-artifact@v1
       with:
         name: packages-${{ matrix.dist }}-${{ matrix.arch }}
@@ -64,46 +63,24 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: packages-${{ matrix.dist }}-${{ matrix.arch }}
-    - name: Upload to multi-contact-head
+    - name: Upload to mc-rtc/head
       uses: jrl-umi3218/github-actions/upload-package@master
       with:
-        dist: ${{ matrix.dist }}
-        arch: ${{ matrix.arch }}
-        subject: gergondet
-        repo: multi-contact-head
-        package: |
-          name: hrpsys-base
-          desc: "Basic RT components and utilities to control robots using OpenRTM"
-          licenses: [EPL-1.0]
-          vcs_url: https://github.com/fkanehiro/hrpsys-base
-        version: 3.1.9
+        dist: ubuntu/${{ matrix.dist }}
+        repo: mc-rtc/head
         path: packages-${{ matrix.dist }}-${{ matrix.arch }}
-        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-    - name: Upload to multi-contact-release
+        CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+    - name: Upload to mc-rtc/stable
       uses: jrl-umi3218/github-actions/upload-package@master
       with:
-        dist: ${{ matrix.dist }}
-        arch: ${{ matrix.arch }}
-        subject: gergondet
-        repo: multi-contact-release
-        package: |
-          name: hrpsys-base
-          desc: "Basic RT components and utilities to control robots using OpenRTM"
-          licenses: [EPL-1.0]
-          vcs_url: https://github.com/fkanehiro/hrpsys-base
-        version: 3.1.9
+        dist: ubuntu/${{ matrix.dist }}
+        repo: mc-rtc/stable
         path: packages-${{ matrix.dist }}-${{ matrix.arch }}
-        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
   sync-and-trigger:
     needs: upload-packages
     runs-on: ubuntu-18.04
     steps:
-    - name: Request mirror sync
-      run: |
-        curl -ugergondet:${{ secrets.BINTRAY_API_KEY }} --header "X-GPG-PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}" -X POST https://api.bintray.com/calc_metadata/gergondet/multi-contact-head
-        curl -ugergondet:${{ secrets.BINTRAY_API_KEY }} --header "X-GPG-PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}" -X POST https://api.bintray.com/calc_metadata/gergondet/multi-contact-release
     - name: Trigger dependents rebuild
       run: |
         curl -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token ${{ secrets.GH_PAGES_TOKEN }}" --request POST --data "{\"event_type\": \"package\"}" https://api.github.com/repos/gergondet/choreonoid/dispatches
