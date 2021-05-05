@@ -849,6 +849,7 @@ bool SequencePlayer::removeJointGroup(const char *gname)
     bool ret;
     {
         Guard guard(m_mutex);
+        if (!setInitialState()) return false;
         ret = m_seq->removeJointGroup(gname);
     }
     return ret;
