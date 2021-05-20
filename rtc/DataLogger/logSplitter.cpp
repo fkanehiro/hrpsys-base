@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+#include <string>
 #include "hrpsys/idl/RobotHardwareService.hh"
 
 int main(int argc, char *argv[])
