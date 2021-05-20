@@ -5,6 +5,11 @@
 #include <float.h>
 #include <hrpUtil/MatrixSolvers.h>
 
+#if __cplusplus >= 201103L
+using std::isinf;
+using std::isnan;
+#endif
+
 #define deg2rad(x)((x)*M_PI/180)
 #define rad2deg(rad) (rad * 180 / M_PI)
 #define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
@@ -191,7 +196,7 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         } else {
             r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
                       (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
-            if (std::isnan(r)) r = 0;
+            if (isnan(r)) r = 0;
         }
 
         // If use_inside_joint_weight_retrieval = true (true by default), use T. F. Chang and R.-V. Dubeby weight retrieval inward.
@@ -373,7 +378,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     // check nan / inf
     bool solve_linear_equation = true;
     for(int j=0; j < n; ++j){
-      if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
+      if ( isnan(dq(j)) || isinf(dq(j)) ) {
         solve_linear_equation = false;
         break;
       }
