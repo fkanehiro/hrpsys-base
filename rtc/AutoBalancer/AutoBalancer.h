@@ -28,7 +28,8 @@
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
 #include "../TorqueFilter/IIRFilter.h"
-#include "SimpleFullbodyInverseKinematicsSolver.h"
+//#include "SimpleFullbodyInverseKinematicsSolver.h"
+#include "FullbodyInverseKinematicsSolver.h"
 
 // </rtc-template>
 
@@ -207,6 +208,7 @@ class AutoBalancer
     bool is_active, has_toe_joint;
   };
   void getTargetParameters();
+  void solveSimpleFullbodyIK ();
   void solveFullbodyIK ();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -246,8 +248,9 @@ class AutoBalancer
   ggPtr gg;
   bool gg_is_walking, gg_solved;
   // for abc
-  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
+  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
+  OpenHRP::AutoBalancerService::IKMode ik_mode;
   hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
