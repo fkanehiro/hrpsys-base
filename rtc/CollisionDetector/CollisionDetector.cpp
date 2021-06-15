@@ -432,7 +432,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             it = m_pair.begin();
             for (unsigned int i = 0; it != m_pair.end(); i++, it++){
                 CollisionLinkPair* c = it->second;
-                VclipLinkPairPtr p = c->pair;
+                boost::intrusive_ptr<CollisionLibraryLinkPair> p = c->pair;
                 tp.lines.push_back(std::make_pair(c->point0, c->point1));
                 if ( c->distance <= c->pair->getTolerance() ) {
                     m_safe_posture = false;
@@ -753,7 +753,7 @@ bool CollisionDetector::enable(void)
     std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
     for (unsigned int i = 0; it != m_pair.end(); it++, i++){
         CollisionLinkPair* c = it->second;
-        VclipLinkPairPtr p = c->pair;
+        boost::intrusive_ptr<CollisionLibraryLinkPair> p = c->pair;
         c->distance = c->pair->computeDistance(c->point0.data(), c->point1.data());
         if ( c->distance <= c->pair->getTolerance() ) {
             hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
