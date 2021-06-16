@@ -190,9 +190,9 @@ void Monitor::showStatus(hrp::BodyPtr &body)
             // error
             if( i<rstate.angle.length() && i<rstate.command.length() ){
                 double e = (rstate.angle[i]-rstate.command[i])*180/M_PI;
-                if ( abs(e) > 1 ) yellow();
-                if ( abs(e) > 2 ) magenta();
-                if ( abs(e) > 4 ) red();
+                if ( std::abs(e) > 1 ) yellow();
+                if ( std::abs(e) > 2 ) magenta();
+                if ( std::abs(e) > 4 ) red();
                 fprintf(stdout, "%8.3f ", e);
                 black();
             }else{
@@ -201,9 +201,9 @@ void Monitor::showStatus(hrp::BodyPtr &body)
             // velocity
             if( i<velocity.size() ) {
                 double e = velocity[i]; //*180/M_PI;
-                if ( abs(e) >  2 ) yellow();
-                if ( abs(e) > 10 ) magenta();
-                if ( abs(e) > 20 ) red();
+                if ( std::abs(e) >  2 ) yellow();
+                if ( std::abs(e) > 10 ) magenta();
+                if ( std::abs(e) > 20 ) red();
                 fprintf(stdout, "%8.2f ", e);
                 black();
             }else{
@@ -212,9 +212,9 @@ void Monitor::showStatus(hrp::BodyPtr &body)
             // accleration
             if( i<acceleration.size() ) {
                 double e = acceleration[i]; //*180/M_PI;
-                if ( abs(e) >  50 ) yellow();
-                if ( abs(e) > 100 ) magenta();
-                if ( abs(e) > 200 ) red();
+                if ( std::abs(e) >  50 ) yellow();
+                if ( std::abs(e) > 100 ) magenta();
+                if ( std::abs(e) > 200 ) red();
                 fprintf(stdout, "%8.1f ", e);
                 black();
             }else{
