@@ -1,0 +1,53 @@
+/**
+ * @file HapticControllerService.idl
+ * @brief Services for the HapticController interface
+ */
+//#include "OpenHRPCommon.idl"
+module OpenHRP
+{
+  
+  interface HapticControllerService
+  {
+    typedef sequence<double, 2> DblSequence2;
+    typedef sequence<double, 3> DblSequence3;
+    typedef sequence<double, 4> DblSequence4;
+    typedef sequence<double, 6> DblSequence6;
+    typedef sequence<sequence<double, 6> , 4> DblSeqSeq6;
+    typedef double DblArray2[2];
+    typedef double DblArray3[3];
+    typedef double DblArray4[4];
+    typedef sequence<string> StrSequence;
+
+    struct HapticControllerParam
+    {
+        double dqAct_filter_cutoff_hz;
+        double ee_vel_filter_cutoff_hz;
+        double ex_gravity_compensation_ratio_lower;
+        double ex_gravity_compensation_ratio_upper;
+        double baselink_height_from_floor;
+        double foot_min_distance;
+        double force_feedback_ratio;
+        double gravity_compensation_ratio;
+        double q_friction_coeff;
+        double q_ref_max_torque_ratio;
+        double torque_feedback_ratio;
+        double wrench_hpf_cutoff_hz;
+        double wrench_lpf_cutoff_hz;
+        double wrench_hpf_gain;
+        double wrench_lpf_gain;
+        DblSequence2 ee_pos_rot_friction_coeff;
+        DblSequence2 floor_pd_gain;
+        DblSequence2 foot_horizontal_pd_gain;
+        DblSequence2 force_feedback_limit_ft;
+        DblSequence2 q_ref_pd_gain;
+        DblSeqSeq6   ex_ee_ref_wrench;
+    };
+    boolean startHapticController();
+    boolean stopHapticController();
+    boolean pauseHapticController();
+    boolean resumeHapticController();
+    void resetOdom();
+    void setParams(in HapticControllerParam i_param);
+    void getParams(out HapticControllerParam i_param);
+  };
+};
