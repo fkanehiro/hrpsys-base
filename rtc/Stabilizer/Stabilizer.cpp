@@ -767,7 +767,8 @@ void Stabilizer::getCurrentParameters ()
 
 void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot)
 {
-  rats::coordinates leg_c[2], tmpc;
+  rats::coordinates tmpc;
+  std::vector<rats::coordinates> leg_c(stikp.size());
   hrp::Vector3 ez = hrp::Vector3::UnitZ();
   hrp::Vector3 ex = hrp::Vector3::UnitX();
   for (size_t i = 0; i < stikp.size(); i++) {
@@ -784,7 +785,7 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
   }
   if (ref_contact_states[contact_states_index_map["rleg"]] &&
       ref_contact_states[contact_states_index_map["lleg"]]) {
-    rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+    rats::mid_coords(tmpc, 0.5, leg_c[contact_states_index_map["rleg"]], leg_c[contact_states_index_map["lleg"]]);
     foot_origin_pos = tmpc.pos;
     foot_origin_rot = tmpc.rot;
   } else if (ref_contact_states[contact_states_index_map["rleg"]]) {
