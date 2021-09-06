@@ -535,7 +535,7 @@ void ImpedanceController::calcForceMoment ()
           if ( sensor ) {
             // real force sensor
             sensorR = sensor->link->R * sensor->localR;
-            sensorPos = sensor->link->p + sensorR * sensor->localPos;
+            sensorPos = sensor->link->p + sensor->link->R * sensor->localPos;
           } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
