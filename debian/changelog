@@ -1,3 +1,10 @@
+hrpsys-base (315.15.0-1ubuntu4) UNRELEASED; urgency=medium
+
+  * Pull latest changes from master
+  * Build hrpsys-util on Focal
+
+ -- Pierre Gergondet <pierre.gergondet+ppa@gmail.com>  Tue, 16 Nov 2021 18:59:55 +0800
+
 hrpsys-base (315.15.0-1ubuntu3) unstable; urgency=medium
 
   * Add omniidl-python to build dependencies
