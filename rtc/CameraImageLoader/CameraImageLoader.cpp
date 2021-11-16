@@ -7,8 +7,14 @@
  * $Id$
  */
 
-#include <cv.h>
-#include <highgui.h>
+#ifndef CV_VERSION_EPOCH
+  #define CV_VERSION_EPOCH CV_VERSION_MAJOR
+#endif
+#if CV_VERSION_EPOCH > 3
+#include <opencv2/imgcodecs/imgcodecs.hpp>
+#else
+#include <opencv2/highgui/highgui.hpp>
+#endif
 #include "CameraImageLoader.h"
 
 // Module specification
@@ -116,26 +122,26 @@ RTC::ReturnCode_t CameraImageLoader::onExecute(RTC::UniqueId ec_id)
   std::string filename;
   std::cin >> filename;
 
-  IplImage *image = cvLoadImage(filename.c_str(), CV_LOAD_IMAGE_COLOR);
-  if (!image) {
+  cv::Mat image = cv::imread(filename.c_str(), cv::IMREAD_COLOR);
+  if (image.empty()) {
       std::cerr << m_profile.instance_name << ": failed to load("
                 << filename << ")" << std::endl;
       return RTC::RTC_OK;
   }
 
-  m_image.data.image.width = image->width;
-  m_image.data.image.height = image->height;
-  m_image.data.image.raw_data.length(image->imageSize);
-  switch(image->nChannels){
+  m_image.data.image.width = image.size().width;
+  m_image.data.image.height = image.size().height;
+  m_image.data.image.raw_data.length(image.size().area());
+  switch(image.channels()){
   case 3:
       m_image.data.image.format = Img::CF_RGB;
       {
           // BGR -> RGB
-          char *src;
+          unsigned char *src;
           unsigned char *dst = m_image.data.image.raw_data.get_buffer();
-          for (int i=0; i<image->height; i++){
-              for (int j=0; j<image->width; j++){
-                  src = image->imageData + image->widthStep*i + j*3;
+          for (int i=0; i<image.size().height; i++){
+              for (int j=0; j<image.size().width; j++){
+                  src = image.data + image.step * i + j * 3;
                   dst[2] = src[0];
                   dst[1] = src[1];
                   dst[0] = src[2];
@@ -147,14 +153,12 @@ RTC::ReturnCode_t CameraImageLoader::onExecute(RTC::UniqueId ec_id)
   case 1:
       m_image.data.image.format = Img::CF_GRAY;
       memcpy(m_image.data.image.raw_data.get_buffer(),
-             image->imageData,
+             image.data,
              m_image.data.image.raw_data.length());
       break;
   default:
       break;
   }
-  
-  cvReleaseImage (&image);
   
   m_imageOut.write();
   

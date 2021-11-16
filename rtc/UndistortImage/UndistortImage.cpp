@@ -9,6 +9,10 @@
 
 #include "UndistortImage.h"
 
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/core/types_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* cameraimageviewercomponent_spec[] =
@@ -37,8 +41,6 @@ UndistortImage::UndistortImage(RTC::Manager* manager)
       m_imageOut("imageOut", m_image),
       // </rtc-template>
       m_cvImage(NULL),
-      m_intrinsic(NULL),
-      m_distortion(NULL),
       dummy(0)
 {
 }
@@ -106,18 +108,16 @@ RTC::ReturnCode_t UndistortImage::onActivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
 
-    CvFileStorage *fs 
-        = cvOpenFileStorage (m_calibFile.c_str(), 0, CV_STORAGE_READ);
-    if (!fs){
+    cv::FileStorage fs(m_calibFile.c_str(), cv::FileStorage::READ);
+    if (!fs.isOpened()){
         std::cerr << m_profile.instance_name << ": can't open "
                   << m_calibFile << std::endl;
         return RTC::RTC_ERROR;
     }
-    CvFileNode *param = cvGetFileNodeByName (fs, NULL, "intrinsic");
-    m_intrinsic = (CvMat *) cvRead (fs, param);
-    param = cvGetFileNodeByName (fs, NULL, "distortion");
-    m_distortion = (CvMat *) cvRead (fs, param);
-    cvReleaseFileStorage (&fs);
+    cv::FileNode param = fs["intrinsic"];
+    param >> m_intrinsic;
+    param = fs["distortion"];
+    param >> m_distortion;
 
     return RTC::RTC_OK;
 }
@@ -129,9 +129,7 @@ RTC::ReturnCode_t UndistortImage::onDeactivated(RTC::UniqueId ec_id)
         cvReleaseImage(&m_cvImage);
         m_cvImage = NULL;
     }
-    if (m_intrinsic) cvReleaseMat (&m_intrinsic);
-    if (m_distortion) cvReleaseMat (&m_distortion);
-    
+
     return RTC::RTC_OK;
 }
 
@@ -189,14 +187,16 @@ RTC::ReturnCode_t UndistortImage::onExecute(RTC::UniqueId ec_id)
     }
     
     
-    IplImage *dst_img = cvCloneImage (m_cvImage);
-    cvUndistort2 (m_cvImage, dst_img, m_intrinsic, m_distortion);
+    cv::Mat src_img = cv::cvarrToMat(m_cvImage);
+    cv::Mat dst_img;
+    src_img.copyTo(dst_img);
+    cv::undistort (src_img, dst_img, m_intrinsic, m_distortion);
 
     switch(m_image.data.image.format){
     case Img::CF_RGB:
         {
             // BGR -> RGB
-            char *src = dst_img->imageData;
+            unsigned char *src = dst_img.data;
             for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
                 m_image.data.image.raw_data[i+2] = src[i  ]; 
                 m_image.data.image.raw_data[i+1] = src[i+1]; 
@@ -206,14 +206,12 @@ RTC::ReturnCode_t UndistortImage::onExecute(RTC::UniqueId ec_id)
         }
     case Img::CF_GRAY:
         memcpy(m_image.data.image.raw_data.get_buffer(),
-               dst_img->imageData,
+               dst_img.data,
                m_image.data.image.raw_data.length());
         break;
     default:
         break;
     }
-
-    cvReleaseImage (&dst_img);
 
     m_imageOut.write();
 

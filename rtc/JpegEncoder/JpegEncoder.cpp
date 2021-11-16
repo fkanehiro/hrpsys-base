@@ -10,6 +10,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
+#ifndef CV_VERSION_EPOCH
+#define CV_VERSION_EPOCH CV_VERSION_MAJOR
+#endif
+#if CV_VERSION_EPOCH > 3
+#include <opencv2/imgcodecs/legacy/constants_c.h>
+#endif
 #include "JpegEncoder.h"
 
 // Module specification

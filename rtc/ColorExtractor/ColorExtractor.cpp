@@ -7,7 +7,11 @@
  * $Id$
  */
 
-#include <highgui.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#ifndef CV_RGB
+#define CV_RGB( r, g, b )  cvScalar( (b), (g), (r), 0 )
+#endif
 #include "ColorExtractor.h"
 #include "hrpsys/util/VectorConvert.h"
 

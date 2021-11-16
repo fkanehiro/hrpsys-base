@@ -1,7 +1,6 @@
 
 /* Most of capture.cpp and capture.h are copied from http://jsk-enshu.svn.sourceforge.net/viewvc/jsk-enshu/trunk/keisanki/2009/ */
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/core/core.hpp>
 #include <linux/videodev2.h>
 #include <fcntl.h>
 #include <errno.h>

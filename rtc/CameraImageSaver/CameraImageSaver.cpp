@@ -7,8 +7,16 @@
  * $Id$
  */
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#ifndef CV_VERSION_EPOCH
+  #define CV_VERSION_EPOCH CV_VERSION_MAJOR
+#endif
+#if CV_VERSION_EPOCH > 3
+#include <opencv2/imgcodecs/imgcodecs.hpp>
+#else
+#include <opencv2/highgui/highgui.hpp>
+#endif
 #include "CameraImageSaver.h"
 
 // Module specification
@@ -158,7 +166,8 @@ RTC::ReturnCode_t CameraImageSaver::onExecute(RTC::UniqueId ec_id)
 
     char fname[256];
     sprintf(fname, "%s%04d.png", m_basename.c_str(), m_count++);
-    cvSaveImage(fname, cvImage);
+    cv::Mat image = cv::cvarrToMat(cvImage);
+    cv::imwrite(fname, image);
     
     cvReleaseImage(&cvImage);
   }
