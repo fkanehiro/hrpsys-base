@@ -18,8 +18,9 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -137,7 +138,7 @@ class UndistortImage
  private:
     IplImage* m_cvImage;
     std::string m_calibFile;
-    CvMat *m_intrinsic, *m_distortion;
+    cv::Mat m_intrinsic, m_distortion;
     int dummy;
 };
 

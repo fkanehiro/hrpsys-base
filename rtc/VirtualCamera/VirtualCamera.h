@@ -22,8 +22,8 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 //Open CV headder
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/core/core_c.h>
+#include <opencv2/highgui/highgui_c.h>
 //
 #include "hrpsys/util/LogManager.h"
 #include "hrpsys/util/SDLUtil.h"
