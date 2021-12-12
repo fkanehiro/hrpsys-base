@@ -146,7 +146,7 @@ namespace RTC
 #else
                         RTC::RTObject_var rtc = list[i];
 #endif
-                        rtc_names.push_back(std::string(rtc->get_component_profile()->instance_name));
+                        rtc_names.push_back(std::string(RTC::ComponentProfile_var(rtc->get_component_profile())->instance_name));
                     }
                 }
                 printRTCProcessingTime(processes);
