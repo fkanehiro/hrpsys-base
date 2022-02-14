@@ -31,18 +31,15 @@ add_custom_target(SampleComponentService.idl.compiled ALL DEPENDS SampleComponen
 # plugins comps
 set(comp_sources SampleComponent.cpp SampleComponent_impl.cpp SampleComponentServiceSk.cpp SampleComponentServiceDynSk.cpp)
 
-add_library(SampleComponent SHARED ${comp_sources})
+add_library(SampleComponent SHARED ${comp_sources} SampleComponentService.hh)
 target_link_libraries(SampleComponent ${libs})
 set_target_properties(SampleComponent PROPERTIES PREFIX "")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(SampleComponentComp SampleComponentComp.cpp ${comp_sources})
+add_executable(SampleComponentComp SampleComponentComp.cpp ${comp_sources} SampleComponentService.hh)
 target_link_libraries(SampleComponentComp ${libs})
 
 set(target SampleComponent SampleComponentComp)
-
-add_dependencies(SampleComponent SampleComponentService.hh)
-add_dependencies(SampleComponentComp SampleComponentService.hh)
 
 configure_file(samplerobot_sample_component.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sample_component.py)
 
