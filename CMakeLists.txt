@@ -138,8 +138,6 @@ find_package(QuickHull REQUIRED)
 
 option(USE_HRPSYSUTIL "Build hrpsysUtil" ON)
 
-include(FindPkgConfig)
-
 if(USE_HRPSYSUTIL)
   find_package(SDL REQUIRED)
   find_package(OpenGL REQUIRED)
@@ -164,11 +162,6 @@ endif()
 find_package(PCL)
 if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
   message(FATAL_ERROR "PCL is required to build hrpsysUtil on Apple platform")
-endif()
-
-if(NOT QNXNTO)
-  find_package(Eigen REQUIRED)
-  include_directories(${Eigen_INCLUDE_DIRS})
 endif()
 
 execute_process(
