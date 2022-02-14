@@ -226,7 +226,6 @@ if (NOT QNXNTO)
   add_subdirectory(util)
 endif()
 add_subdirectory(sample)
-add_subdirectory(test)
 
 #if catkin environment
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
