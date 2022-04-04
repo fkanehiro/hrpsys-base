@@ -23,8 +23,12 @@ class PCDLoaderService_impl
     void setComp(PCDLoader *i_comp);
     //
     ::CORBA::Boolean load(const char* filename, const char* label);
+    
+    void offset(const char* label, CORBA::Double cx, CORBA::Double cy, CORBA::Double cz,
+                CORBA::Double ox, CORBA::Double oy, CORBA::Double oz,
+                CORBA::Double r, CORBA::Double p, CORBA::Double y);
  private:
     PCDLoader *m_comp;
 };
-    
+
 #endif

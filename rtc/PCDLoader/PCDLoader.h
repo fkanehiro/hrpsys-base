@@ -100,8 +100,10 @@ class PCDLoader
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  
+    
     bool load(const std::string& filename, const std::string& label);
+
+    void offset(const std::string& label, const hrp::Vector3& center, const hrp::Vector3& offsetP, const hrp::Matrix33& offsetR);
     
 protected:
   // Configuration variable declaration
@@ -112,7 +114,7 @@ protected:
   PointCloudTypes::PointCloud m_cloud;
   OpenHRP::PCDOffsetSeq m_offset;
   RTC::TimedBoolean m_isOutput;
-  
+      
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   
@@ -144,17 +146,18 @@ protected:
   
   // </rtc-template>
 
-  void setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw);
+  bool setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw);
   
-  void setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_raw);
+  bool setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_raw);
   
-  void updateOffsetToCloudXYZ(void);
+  bool updateOffsetToCloudXYZ(void);
   
-  void updateOffsetToCloudXYZRGB(void);
+  bool updateOffsetToCloudXYZRGB(void);
   
  private:
   std::string m_path, m_fields;
   int dummy;
+  bool m_isSetOffset;
   boost::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZ>::Ptr> m_clouds_xyz;
   boost::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZRGB>::Ptr> m_clouds_xyzrgb;
 };
