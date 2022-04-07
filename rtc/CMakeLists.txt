@@ -63,9 +63,11 @@ if (NOT APPLE AND USE_HRPSYSUTIL)
   add_subdirectory(VideoCapture)
 endif()
 
-find_package(Irrlicht)
-if (IRRLICHT_FOUND AND USE_HRPSYSUTIL)
-  add_subdirectory(OGMap3DViewer)
+if (USE_IRRLICHT AND USE_HRPSYSUTIL)
+  find_package(Irrlicht)
+  if(IRRLICHT_FOUND)
+    add_subdirectory(OGMap3DViewer)
+  endif()
 endif()
 
 # Octomap
