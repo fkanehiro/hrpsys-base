@@ -13,6 +13,12 @@ include(FindPkgConfig)
 include(CheckIncludeFiles)
 
 option(ENABLE_INSTALL_RPATH "Enable RPATH setting for installed binary files" OFF)
+option(USE_HRPSYSUTIL "Build hrpsysUtil" ON)
+option(USE_IRRLICHT "Build Irrlicht components" OFF)
+option(NO_DIGITAL_INPUT "Disable readDigitalInput and lengthDigitalInput" OFF)
+option(USE_QPOASES "Build qpOASES" OFF)
+option(ENABLE_DOXYGEN "Use Doxygen" ON)
+
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -136,8 +142,6 @@ include(CPack)
 find_package(LibXml2 REQUIRED)
 find_package(QuickHull REQUIRED)
 
-option(USE_HRPSYSUTIL "Build hrpsysUtil" ON)
-
 if(USE_HRPSYSUTIL)
   find_package(SDL REQUIRED)
   find_package(OpenGL REQUIRED)
@@ -177,7 +181,6 @@ install(FILES
 
 add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
 
-option(NO_DIGITAL_INPUT "Disable readDigitalInput and lengthDigitalInput" OFF)
 if(NO_DIGITAL_INPUT)
   add_definitions(-DNO_DIGITAL_INPUT)
   message(STATUS "Disablng readDigitalInput and lengthDigitalInput")
@@ -194,11 +197,8 @@ add_subdirectory(python)
 add_subdirectory(idl)
 add_subdirectory(lib)
 add_subdirectory(ec)
-# option for 3rdparty
-option(USE_QPOASES "Build qpOASES" OFF)
 add_subdirectory(3rdparty)
 add_subdirectory(rtc)
-option(ENABLE_DOXYGEN "Use Doxygen" ON)
 if(ENABLE_DOXYGEN)
   add_subdirectory(doc)
 endif()
