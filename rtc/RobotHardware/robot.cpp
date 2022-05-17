@@ -440,12 +440,19 @@ bool robot::power(int jid, bool turnon)
     int com = OFF;
 
     if (turnon) {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+        int s;
+        read_servo_state(jid, &s);
+        if (s == ON)
+            return false;
+#else
         for(unsigned int i=0; i<numJoints(); i++) {
             int s;
             read_servo_state(i, &s);
             if (s == ON)
                 return false;
         }
+#endif
         com = ON;
     }
 
