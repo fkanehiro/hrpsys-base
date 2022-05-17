@@ -37,6 +37,8 @@ ModifiedServo::ModifiedServo(RTC::Manager* manager)
     m_qIn("q", m_q),
     m_torqueModeIn("torqueMode", m_torqueMode),
     m_tauOut("tau", m_tau),
+    m_pgainsIn("pgains", m_pgains),
+    m_dgainsIn("dgains", m_dgains),
     // </rtc-template>
     gain_fname(""),
     dt(0.005),
@@ -58,6 +60,8 @@ RTC::ReturnCode_t ModifiedServo::onInitialize()
   addInPort("qRef", m_qRefIn);
   addInPort("q", m_qIn);
   addInPort("torqueMode", m_torqueModeIn);
+  addInPort("pgains", m_pgainsIn);
+  addInPort("dgains", m_dgainsIn);
 
   // Set OutPort buffer
   addOutPort("tau", m_tauOut);
@@ -174,11 +178,19 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     m_qRefIn.read();
     step = nstep;
   }
+  if(m_pgainsIn.isNew()){
+    m_pgainsIn.read();
+  }
+  if(m_dgainsIn.isNew()){
+    m_dgainsIn.read();
+  }
 
   if (m_torqueModeIn.isNew())
     m_torqueModeIn.read();
 
   for (size_t i = 0; i < dof; i++) {
+    Pgain[i] = m_pgains.data[i];
+    Dgain[i] = m_dgains.data[i];
     
     double q = m_q.data[i];
     double qRef = step > 0 ? qRef_old[i] + (m_qRef.data[i] - qRef_old[i]) / step : qRef_old[i];
@@ -250,6 +262,8 @@ void ModifiedServo::readGainFile()
 
     Pgain.resize(dof);
     Dgain.resize(dof);
+    m_pgains.data.length(dof);
+    m_dgains.data.length(dof);
     
     for (unsigned int i = 0; i < dof; i++) {
 
@@ -265,6 +279,12 @@ void ModifiedServo::readGainFile()
     }
 
     gain.close();
+
+    // initialize pgains, dgains with with values read from file
+    for(unsigned int i=0; i < dof; ++i){
+      m_pgains.data[i] = Pgain[i];
+      m_dgains.data[i] = Dgain[i];
+    }
 
     std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] successfully read" << std::endl;
   }

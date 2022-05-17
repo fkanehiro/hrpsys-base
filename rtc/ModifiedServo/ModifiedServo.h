@@ -106,6 +106,10 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   InPort<TimedDoubleSeq> m_qIn;
   TimedBooleanSeq m_torqueMode;
   InPort<TimedBooleanSeq> m_torqueModeIn;
+  TimedDoubleSeq m_pgains;
+  InPort<TimedDoubleSeq> m_pgainsIn;
+  TimedDoubleSeq m_dgains;
+  InPort<TimedDoubleSeq> m_dgainsIn;
 
   // </rtc-template>
 
