@@ -150,10 +150,15 @@ RTC::ReturnCode_t ModifiedServo::onActivated(RTC::UniqueId ec_id)
   
   m_tau.data.length(dof);
 
+  m_pgains.data.length(dof);
+  m_dgains.data.length(dof);
+
   for (size_t i = 0; i < dof; i++) {
     m_tauRef.data[i] = 0.0;
     m_qRef.data[i] = qRef_old[i] = q_old[i] = m_q.data[i];
     m_torqueMode.data[i] = false;
+    m_pgains.data[i] = Pgain[i];
+    m_dgains.data[i] = Dgain[i];
   }
   
   return RTC::RTC_OK;
@@ -262,8 +267,6 @@ void ModifiedServo::readGainFile()
 
     Pgain.resize(dof);
     Dgain.resize(dof);
-    m_pgains.data.length(dof);
-    m_dgains.data.length(dof);
     
     for (unsigned int i = 0; i < dof; i++) {
 
@@ -279,12 +282,6 @@ void ModifiedServo::readGainFile()
     }
 
     gain.close();
-
-    // initialize pgains, dgains with with values read from file
-    for(unsigned int i=0; i < dof; ++i){
-      m_pgains.data[i] = Pgain[i];
-      m_dgains.data[i] = Dgain[i];
-    }
 
     std::cout << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] successfully read" << std::endl;
   }
