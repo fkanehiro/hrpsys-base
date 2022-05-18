@@ -106,6 +106,10 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   InPort<TimedDoubleSeq> m_qIn;
   TimedBooleanSeq m_torqueMode;
   InPort<TimedBooleanSeq> m_torqueModeIn;
+  TimedDoubleSeq m_pgains;
+  InPort<TimedDoubleSeq> m_pgainsIn;
+  TimedDoubleSeq m_dgains;
+  InPort<TimedDoubleSeq> m_dgainsIn;
 
   // </rtc-template>
 
@@ -113,6 +117,10 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_tau;
   OutPort<TimedDoubleSeq> m_tauOut;
+  // Will bind to to m_pgains
+  OutPort<TimedDoubleSeq> m_pgainsOut;
+  // Will bind to m_dgains
+  OutPort<TimedDoubleSeq> m_dgainsOut;
 
   // </rtc-template>
 

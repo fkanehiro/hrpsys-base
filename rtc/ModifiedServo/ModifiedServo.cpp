@@ -37,6 +37,10 @@ ModifiedServo::ModifiedServo(RTC::Manager* manager)
     m_qIn("q", m_q),
     m_torqueModeIn("torqueMode", m_torqueMode),
     m_tauOut("tau", m_tau),
+    m_pgainsIn("pgainsSet", m_pgains),
+    m_dgainsIn("dgainsSet", m_dgains),
+    m_pgainsOut("pgainsGet", m_pgains),
+    m_dgainsOut("dgainsGet", m_dgains),
     // </rtc-template>
     gain_fname(""),
     dt(0.005),
@@ -58,9 +62,13 @@ RTC::ReturnCode_t ModifiedServo::onInitialize()
   addInPort("qRef", m_qRefIn);
   addInPort("q", m_qIn);
   addInPort("torqueMode", m_torqueModeIn);
+  addInPort("pgainsSet", m_pgainsIn);
+  addInPort("dgainsSet", m_dgainsIn);
 
   // Set OutPort buffer
   addOutPort("tau", m_tauOut);
+  addOutPort("pgainsGet", m_pgainsOut);
+  addOutPort("dgainsGet", m_dgainsOut);
 
   // Set service provider to Ports
 
@@ -146,10 +154,15 @@ RTC::ReturnCode_t ModifiedServo::onActivated(RTC::UniqueId ec_id)
   
   m_tau.data.length(dof);
 
+  m_pgains.data.length(dof);
+  m_dgains.data.length(dof);
+
   for (size_t i = 0; i < dof; i++) {
     m_tauRef.data[i] = 0.0;
     m_qRef.data[i] = qRef_old[i] = q_old[i] = m_q.data[i];
     m_torqueMode.data[i] = false;
+    m_pgains.data[i] = Pgain[i];
+    m_dgains.data[i] = Dgain[i];
   }
   
   return RTC::RTC_OK;
@@ -174,11 +187,19 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
     m_qRefIn.read();
     step = nstep;
   }
+  if(m_pgainsIn.isNew()){
+    m_pgainsIn.read();
+  }
+  if(m_dgainsIn.isNew()){
+    m_dgainsIn.read();
+  }
 
   if (m_torqueModeIn.isNew())
     m_torqueModeIn.read();
 
   for (size_t i = 0; i < dof; i++) {
+    Pgain[i] = m_pgains.data[i];
+    Dgain[i] = m_dgains.data[i];
     
     double q = m_q.data[i];
     double qRef = step > 0 ? qRef_old[i] + (m_qRef.data[i] - qRef_old[i]) / step : qRef_old[i];
@@ -200,6 +221,8 @@ RTC::ReturnCode_t ModifiedServo::onExecute(RTC::UniqueId ec_id)
 
   m_tau.tm = m_q.tm;
   m_tauOut.write();
+  m_pgainsOut.write();
+  m_dgainsOut.write();
   
   return RTC::RTC_OK;
 }
