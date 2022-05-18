@@ -117,6 +117,10 @@ class ModifiedServo  : public RTC::DataFlowComponentBase
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_tau;
   OutPort<TimedDoubleSeq> m_tauOut;
+  // Will bind to to m_pgains
+  OutPort<TimedDoubleSeq> m_pgainsOut;
+  // Will bind to m_dgains
+  OutPort<TimedDoubleSeq> m_dgainsOut;
 
   // </rtc-template>
 
