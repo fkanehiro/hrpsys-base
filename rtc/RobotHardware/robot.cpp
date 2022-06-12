@@ -372,7 +372,7 @@ bool robot::servo(const char *jname, bool turnon)
         }
         m_reportedEmergency = false;
         return ret;
-    }else if ((l = link(jname))){
+    }else if ((l = link(jname)) && (l->jointId >= 0)){
         return servo(l->jointId, turnon);
     }else{
         char *s = (char *)jname; while(*s) {*s=toupper(*s);s++;}
@@ -428,6 +428,7 @@ bool robot::power(const char *jname, bool turnon)
     }else{
         Link *l = link(jname);
         if (!l) return false;
+        if (l->jointId < 0) return false;
         jid = l->jointId;
     }
     return power(jid, turnon);
@@ -749,7 +750,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             gain_counter[i] = 0;
         }
         std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
-    }else if ((l = link(i_jname))){
+    }else if ((l = link(i_jname)) && (l->jointId >= 0)){
         if (!read_pgain(l->jointId, &old_pgain[l->jointId])) old_pgain[l->jointId] = pgain[l->jointId];
         pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
         if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
@@ -800,7 +801,7 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
             gain_counter[i] = 0;
         }
         std::cerr << "[RobotHardware] setServoTorqueGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
-    }else if ((l = link(i_jname))){
+    }else if ((l = link(i_jname)) && (l->jointId >= 0)){
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
         if (!read_torque_pgain(l->jointId, &old_tqpgain[l->jointId])) old_tqpgain[l->jointId] = tqpgain[l->jointId];
         tqpgain[l->jointId] = default_tqpgain[l->jointId] * i_percentage/100.0;
@@ -838,7 +839,7 @@ bool robot::setServoErrorLimit(const char *i_jname, double i_limit)
         for (unsigned int i=0; i<numJoints(); i++){
             m_servoErrorLimit[i] = i_limit;
         }
-    }else if ((l = link(i_jname))){
+    }else if ((l = link(i_jname)) && (l->jointId >= 0)){
         m_servoErrorLimit[l->jointId] = i_limit;
     }else{
         char *s = (char *)i_jname; while(*s) {*s=toupper(*s);s++;}
@@ -989,6 +990,7 @@ bool robot::setJointInertia(const char *jname, double mn)
     Link *l = link(jname);
     if (!l) return false;
     int jid = l->jointId;
+    if (jid < 0) return false;
     return write_joint_inertia(jid, mn);
 #else
     return false;
@@ -1040,7 +1042,7 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
             write_control_mode(i, mode);
         }
         std::cerr << "[RobotHardware] setJointControlMode for all joints : " << mode << std::endl;
-    } else if ((l = link(i_jname))) {
+    } else if ((l = link(i_jname)) && (l->jointId >= 0)) {
         write_control_mode(l->jointId, mode);
         std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;
     } else {
