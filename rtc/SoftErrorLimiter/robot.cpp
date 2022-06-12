@@ -25,11 +25,11 @@ bool robot::setServoErrorLimit(const char *i_jname, double i_limit) {
       m_servoErrorLimit[i] = i_limit;
     }
     std::cerr << "[el] setServoErrorLimit " << i_limit << "[rad] for all joints" << std::endl;
-  }else if ((l = link(i_jname))){
+  }else if ((l = link(i_jname)) && (l->jointId >= 0)){
     m_servoErrorLimit[l->jointId] = i_limit;
     std::cerr << "[el] setServoErrorLimit " << i_limit << "[rad] for " << i_jname << std::endl;
   }else{
-    std::cerr << "[el] Invalid joint name of setServoErrorLimit " << i_jname << "!" << std::endl;
+    std::cerr << "[el] Invalid joint name of jointId of setServoErrorLimit name:" << i_jname << " jointId:" << l->jointId << "!" << std::endl;
     return false;
   }
   return true;
