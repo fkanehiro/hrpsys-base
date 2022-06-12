@@ -391,6 +391,10 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
     }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
+    if (id < 0 || id >= m_robot->numJoints()){
+        std::cerr << "[setJointAngle] Invalid jointId " << id << std::endl;
+        return false;
+    }
     dvector q(m_robot->numJoints());
     m_seq->getJointAngles(q.data());
     q[id] = angle;
