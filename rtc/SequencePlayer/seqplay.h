@@ -69,7 +69,7 @@ private:
             delete inter;
         }
         void get(double *full, double *dfull = NULL, bool popp=true){
-            if (state == created) return;
+            if (state == created || state == removed) return;
             if (state == removing){
                 double x[indices.size()];
                 double v[indices.size()];
@@ -123,8 +123,11 @@ private:
             state = working;
         }
         void remove(double time){
-            state = removing;
-            time2remove = time;
+            if (state == created) state = removed;
+            else{
+                state = removing;
+                time2remove = time;
+            }
         }
         void clear(double i_timeLimit=0) {
             tick_t t1 = get_tick();
