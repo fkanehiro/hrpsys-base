@@ -123,7 +123,7 @@ private:
             state = working;
         }
         void remove(double time){
-            if (state == created) state = removed;
+            if (state == created || state == removed) state = removed;
             else{
                 state = removing;
                 time2remove = time;

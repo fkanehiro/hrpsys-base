@@ -455,6 +455,10 @@ bool seqplay::removeJointGroup(const char *gname, double time)
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		i->remove(time);
+		if (i->state == groupInterpolator::removed){
+			groupInterpolators.erase(gname);
+			delete i;
+		}
 		return true;
 	}else{
 		std::cerr << "[removeJointGroup] group name " << gname << " is not installed" << std::endl;
