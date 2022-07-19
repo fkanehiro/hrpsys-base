@@ -166,6 +166,7 @@ class DataLogger
   coil::Mutex m_suspendFlagMutex;
   unsigned int m_log_precision;
   int dummy;
+  bool save_zip(const std::string &i_basename);
 };
 
 
