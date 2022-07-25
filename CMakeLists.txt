@@ -149,7 +149,7 @@ if (NOT SDL_FOUND)
   set(USE_HRPSYSUTIL OFF)
 endif()
 find_package(OpenGL REQUIRED)
-if (NOT OpenGL_FOUND)
+if (NOT OPENGL_FOUND)
   message(WARNING "OpenGL is required to build hrpsysUtil")
   set(USE_HRPSYSUTIL OFF)
 endif()
@@ -187,7 +187,7 @@ if(PCL_FOUND)
 endif()
 
 if(FORCE_COMPILE_HRPSYSUTIL AND (NOT USE_HRPSYSUTIL))
-  message(FATAL_ERROR "dependencies required to build hrpsysUtil is not found : SDL_FOUND: ${SDL_FOUND} / OpenGL_FOUND: ${OpenGL_FOUND} / GLUT_FOUND: ${GLUT_FOUND} / OpenCV_FOUND: ${OpenCV_FOUND} / GLEW_FOUND: ${GLEW_FOUND}")
+  message(FATAL_ERROR "dependencies required to build hrpsysUtil is not found : SDL_FOUND: ${SDL_FOUND} / OPENGL_FOUND: ${OPENGL_FOUND} / GLUT_FOUND: ${GLUT_FOUND} / OpenCV_FOUND: ${OpenCV_FOUND} / GLEW_FOUND: ${GLEW_FOUND}")
 endif()
 
 execute_process(
