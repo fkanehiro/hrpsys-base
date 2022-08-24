@@ -551,6 +551,7 @@ bool SequencePlayer::setBasePos(const double *pos, double tm)
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
     m_seq->setBasePos(pos, tm);
     return true;
 }
@@ -561,6 +562,7 @@ bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
     m_seq->setBaseRpy(rpy, tm);
     return true;
 }
@@ -571,6 +573,7 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
     m_seq->setZmp(zmp, tm);
     return true;
 }
@@ -578,6 +581,7 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
 bool SequencePlayer::setWrenches(const double *wrenches, double tm)
 {
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
     m_seq->setWrenches(wrenches, tm);
     return true;
 }
