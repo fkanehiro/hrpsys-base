@@ -54,29 +54,29 @@ static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
 AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
-      m_qRefIn("qRef", m_qRef),
-      m_basePosIn("basePosIn", m_basePos),
-      m_baseRpyIn("baseRpyIn", m_baseRpy),
-      m_zmpIn("zmpIn", m_zmp),
-      m_optionalDataIn("optionalData", m_optionalData),
-      m_emergencySignalIn("emergencySignal", m_emergencySignal),
-      m_diffCPIn("diffCapturePoint", m_diffCP),
-      m_refFootOriginExtMomentIn("refFootOriginExtMoment", m_refFootOriginExtMoment),
+      m_qRefIn("qRef", m_qRef), // 関節角度入力値
+      m_basePosIn("basePosIn", m_basePos), // ベースリンク位置入力値
+      m_baseRpyIn("baseRpyIn", m_baseRpy), // ベースリンク姿勢入力値 (rpy)
+      m_zmpIn("zmpIn", m_zmp), // ZMP 入力値 (ベースリンク座標)
+      m_optionalDataIn("optionalData", m_optionalData), // 各足の接地状態(遊脚<->支持脚)が変わるまでの時間
+      m_emergencySignalIn("emergencySignal", m_emergencySignal), // 転倒判定フラグ (false: 非転倒, true: 転倒)
+      m_diffCPIn("diffCapturePoint", m_diffCP), // Capture Point 誤差 (world 座標)
+      m_refFootOriginExtMomentIn("refFootOriginExtMoment", m_refFootOriginExtMoment), // (把持物体などによる)目標外モーメント
       m_refFootOriginExtMomentIsHoldValueIn("refFootOriginExtMomentIsHoldValue", m_refFootOriginExtMomentIsHoldValue),
-      m_actContactStatesIn("actContactStates", m_actContactStates),
-      m_qOut("q", m_qRef),
-      m_zmpOut("zmpOut", m_zmp),
-      m_basePosOut("basePosOut", m_basePos),
-      m_baseRpyOut("baseRpyOut", m_baseRpy),
-      m_baseTformOut("baseTformOut", m_baseTform),
-      m_basePoseOut("basePoseOut", m_basePose),
-      m_accRefOut("accRef", m_accRef),
-      m_contactStatesOut("contactStates", m_contactStates),
-      m_toeheelRatioOut("toeheelRatio", m_toeheelRatio),
-      m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
-      m_walkingStatesOut("walkingStates", m_walkingStates),
-      m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
-      m_cogOut("cogOut", m_cog),
+      m_actContactStatesIn("actContactStates", m_actContactStates), // 各脚の実接触状態 (false: 遊脚, true: 支持脚)
+      m_qOut("q", m_qRef), // 関節角度出力値
+      m_zmpOut("zmpOut", m_zmp), // ZMP 出力値 (ベースリンク座標)
+      m_basePosOut("basePosOut", m_basePos), // ベースリンク位置出力値
+      m_baseRpyOut("baseRpyOut", m_baseRpy), // ベースリンク姿勢出力値 (rpy)
+      m_baseTformOut("baseTformOut", m_baseTform), // ベースリンク位置姿勢 (matrix)
+      m_basePoseOut("basePoseOut", m_basePose), // ベースリンク位置姿勢 (rpy)
+      m_accRefOut("accRef", m_accRef), // IMU の目標加速度
+      m_contactStatesOut("contactStates", m_contactStates), // 各足の目標接触状態 (false: 遊脚, true: 支持脚)
+      m_toeheelRatioOut("toeheelRatio", m_toeheelRatio), // 各足の回転状態 (1 -> 0: べた足 -> つま先 or かかと)
+      m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime), // 各足の接地状態(遊脚<->支持脚)が変わるまでの時間
+      m_walkingStatesOut("walkingStates", m_walkingStates), // 歩行中かどうか (false: 非歩行, true: 歩行)
+      m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset), // 目標外力と釣り合うための重心位置修正量 (world 座標)
+      m_cogOut("cogOut", m_cog), // 重心位置出力値 (world 座標)
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       gait_type(BIPED),
