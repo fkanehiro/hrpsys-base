@@ -171,7 +171,18 @@ endif()
 execute_process(
   COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
   OUTPUT_VARIABLE PYTHON_VERSION
+  RESULT_VARIABLE PYTHON_VERSION_SUCCESS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
+  execute_process(
+    COMMAND python2 -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+    OUTPUT_VARIABLE PYTHON_VERSION
+    RESULT_VARIABLE PYTHON_VERSION_SUCCESS
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
+    message(FATAL_ERROR "Could not determine Python 2 version, maybe it is not installed?")
+  endif()
+endif()
 set(python_dist_pkg_dir lib/python${PYTHON_VERSION}/dist-packages)
 
 configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
