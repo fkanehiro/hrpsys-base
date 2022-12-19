@@ -710,9 +710,9 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         if (alarm & SS_EMERGENCY) {
             if (!m_reportedEmergency) {
                 m_reportedEmergency = true;
-                o_reason = EMG_SERVO_ALARM;
-                o_id = i;
             }
+            o_reason = EMG_SERVO_ALARM;
+            o_id = i;
             return true;
         }
     }
