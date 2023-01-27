@@ -22,16 +22,16 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        dist: [xenial, bionic, focal]
+        dist: [bionic, focal]
         arch: [i386, amd64]
         exclude:
           - dist: focal
             arch: i386
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
       if: github.event.action != 'package'
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
       with:
         ref: 'debian'
       if: github.event.action == 'package'
@@ -52,12 +52,12 @@ jobs:
       max-parallel: 1
       fail-fast: true
       matrix:
-        dist: [xenial, bionic, focal]
+        dist: [bionic, focal]
         arch: [i386, amd64]
         exclude:
           - dist: focal
             arch: i386
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Download packages
       uses: actions/download-artifact@v1
