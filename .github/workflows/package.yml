@@ -1,86 +1,18 @@
 name: Package hrpsys-base
-
-# This workflow only runs when pushing to debian
-#
-# It will:
-# - Build packages for selected Debian/Ubuntu distro
-# - Upload the packages to https://cloudsmith.io/~mc-rtc/repos/head/packages/
-# - Upload the packages to https://cloudsmith.io/~mc-rtc/repos/stable/packages/
-#
-
 on:
   repository_dispatch:
     types:
-    - package
+    - package-master
   push:
     branches:
-      - debian
-
+    - debian
 jobs:
-  # This job build binary packages for Ubuntu
-  build-packages:
-    strategy:
-      fail-fast: true
-      matrix:
-        dist: [bionic, focal]
-        arch: [i386, amd64]
-        exclude:
-          - dist: focal
-            arch: i386
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-      if: github.event.action != 'package'
-    - uses: actions/checkout@v3
-      with:
-        ref: 'debian'
-      if: github.event.action == 'package'
-    - name: Build package
-      uses: jrl-umi3218/github-actions/build-package-native@master
-      with:
-        dist: ${{ matrix.dist }}
-        arch: ${{ matrix.arch }}
-        cloudsmith-repo: 'mc-rtc/head'
-    - uses: actions/upload-artifact@v1
-      with:
-        name: packages-${{ matrix.dist }}-${{ matrix.arch }}
-        path: /tmp/packages-${{ matrix.dist }}-${{ matrix.arch }}/
-  # This job upload binary packages for Ubuntu
-  upload-packages:
-    needs: build-packages
-    strategy:
-      max-parallel: 1
-      fail-fast: true
-      matrix:
-        dist: [bionic, focal]
-        arch: [i386, amd64]
-        exclude:
-          - dist: focal
-            arch: i386
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Download packages
-      uses: actions/download-artifact@v1
-      with:
-        name: packages-${{ matrix.dist }}-${{ matrix.arch }}
-    - name: Upload to mc-rtc/head
-      uses: jrl-umi3218/github-actions/upload-package@master
-      with:
-        dist: ubuntu/${{ matrix.dist }}
-        repo: mc-rtc/head
-        path: packages-${{ matrix.dist }}-${{ matrix.arch }}
-        CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-    - name: Upload to mc-rtc/stable
-      uses: jrl-umi3218/github-actions/upload-package@master
-      with:
-        dist: ubuntu/${{ matrix.dist }}
-        repo: mc-rtc/stable
-        path: packages-${{ matrix.dist }}-${{ matrix.arch }}
-        CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-  sync-and-trigger:
-    needs: upload-packages
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Trigger dependents rebuild
-      run: |
-        curl -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token ${{ secrets.GH_PAGES_TOKEN }}" --request POST --data "{\"event_type\": \"package\"}" https://api.github.com/repos/gergondet/choreonoid/dispatches
+  package:
+    uses: jrl-umi3218/github-actions/.github/workflows/package-project.yml@master
+    with:
+      main-branch: debian
+      update-stable-and-head: true
+      deps: '["gergondet/choreonoid"]'
+    secrets:
+      CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+      GH_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}
