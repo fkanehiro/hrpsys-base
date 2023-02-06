@@ -252,14 +252,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
               m_emergencySignalOut.write();
           }
       }
-  }    
-
-  /*
-  if (!m_isDemoMode && m_robot->checkJointActualValues()){
-      m_robot->resetJointControlMode();
-      allowTorqueControlMode = false;
   }
-  */
 
   if (m_qRefIn.isNew()){
       m_qRefIn.read();

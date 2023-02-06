@@ -268,12 +268,6 @@ public:
     bool checkJointCommands(const double *i_commands);
 
     /**
-       \brief check actual joint values to see if they are within the range of the joint limits
-       \return true if the joint values are outside of the safe range, false otherwise
-     */
-    bool checkJointActualValues();
-
-    /**
        \brief set the parcentage to the default servo gain
        \param name joint name, part name or "all"
        \param percentage to joint servo gain[0-100]
@@ -361,12 +355,6 @@ public:
        \return true if set successfully, false otherwise 
      */
     bool setJointControlMode(const char *i_jname, joint_control_mode mode);
-
-    /**
-       \brief resets all the torque-controlled joints to position control keeping the actual value
-       \return true if at least one joint has been affected
-     */
-    bool resetJointControlMode();  // Added by Rafa
     
 private:
     /**

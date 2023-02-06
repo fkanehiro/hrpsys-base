@@ -627,31 +627,6 @@ char *time_string()
     return time;
 }
 
-bool robot::checkJointActualValues()
-{
-    int state;
-    for (unsigned int i=0; i<numJoints(); i++){
-        read_servo_state(i, &state);
-        if (state == ON){
-            double llimit, ulimit, angle;
-            read_llimit_angle(i, &llimit);
-            read_ulimit_angle(i, &ulimit);
-            read_actual_angle(i, &angle);
-            if (angle <= llimit || angle >= ulimit){
-                std::cerr << time_string()
-                          << ": actual joint angle outside allowed range"
-                          << ": joint = "   << joint(i)->name
-                          << ", llimit = " << llimit/M_PI*180 << "[deg]"
-                          << ", angle = "  << angle/M_PI*180  << "[deg]"
-                          << ", ulimit = " << ulimit/M_PI*180 << "[deg]"
-                          << std::endl;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 bool robot::checkJointCommands(const double *i_commands)
 {
     if (!m_dt) return false;
@@ -1076,7 +1051,7 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
             write_control_mode(i, mode);
         }
         // std::cerr << "[RobotHardware] setJointControlMode for all joints : " << mode << std::endl;  // Commented out by Rafa
-    } else if ((l = link(i_jname))) {
+    } else if ((l = link(i_jname)) && (l->jointId >= 0)) {
         write_control_mode(l->jointId, mode);
         // std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;  // Commented out by Rafa
     } else {
@@ -1089,25 +1064,4 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
         // std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;  // Commented out by Rafa
     }
     return true;
-}
-
-bool robot::resetJointControlMode()  // Added by Rafa
-{
-    bool res = false;
-    double angle;
-    joint_control_mode mode;
-    for (unsigned int i=0; i<numJoints(); i++){
-        read_control_mode(i, &mode);
-        if (mode == JCM_TORQUE){
-            read_actual_angle(i, &angle);
-            m_commandOld[i] = angle;
-            m_velocityOld[i] = 0.0;
-            // Ths function below saturates to joint limits
-            write_command_angle(i, angle);
-            write_control_mode(i, JCM_POSITION);
-            std::cerr << "[RobotHardware] reset to position control mode for joint " << i << std::endl;
-            res = true;
-        }   
-    }
-    return res;
 }
