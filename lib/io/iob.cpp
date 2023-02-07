@@ -531,17 +531,6 @@ int read_llimit_angle(int id, double *angle)
 {
   return FALSE;
 }
-
-int write_ulimit_angle(int id, double angle)
-{
-  return FALSE;
-}
-
-int write_llimit_angle(int id, double angle)
-{
-  return FALSE;
-}
-
 int read_encoder_pulse(int id, double *ec)
 {
   return FALSE;
