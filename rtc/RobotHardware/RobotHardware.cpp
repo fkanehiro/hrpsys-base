@@ -62,7 +62,6 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
-    allowTorqueControlMode(true),
     dummy(0)
 {
 }
@@ -287,10 +286,8 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   if (m_torqueControlModeIn.isNew()){
       m_torqueControlModeIn.read();
-      if (allowTorqueControlMode){
-          for (unsigned int i=0; i<m_robot->numJoints(); ++i){
-              m_robot->setJointControlMode(m_robot->joint(i)->name.c_str(), m_torqueControlMode.data[i] ? JCM_TORQUE : JCM_POSITION);
-          }
+      for (unsigned int i=0; i<m_robot->numJoints(); ++i){
+          m_robot->setJointControlMode(m_robot->joint(i)->name.c_str(), m_torqueControlMode.data[i] ? JCM_TORQUE : JCM_POSITION);
       }
   }
 

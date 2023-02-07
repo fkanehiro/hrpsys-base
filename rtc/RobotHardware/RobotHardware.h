@@ -223,8 +223,6 @@ class RobotHardware
  private:
   void getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2);
   
-  bool allowTorqueControlMode;  // Added by Rafa
-  
   int dummy;
   boost::shared_ptr<robot> m_robot;
 };
