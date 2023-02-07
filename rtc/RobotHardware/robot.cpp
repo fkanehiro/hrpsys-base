@@ -665,11 +665,11 @@ bool robot::checkJointCommands(const double *i_commands)
 bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 {
     int state;
-    joint_control_mode mode;  // Added by Rafa
+    joint_control_mode mode;
     for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
-        read_control_mode(i, &mode);  // Added by Rafa
-        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCM_TORQUE){  // Modified by Rafa
+        read_control_mode(i, &mode);
+        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCM_TORQUE){
             double angle, command;
             read_actual_angle(i, &angle);
             read_command_angle(i, &command);
@@ -1050,10 +1050,10 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
         for (int i=0; i < numJoints(); i++) {
             write_control_mode(i, mode);
         }
-        // std::cerr << "[RobotHardware] setJointControlMode for all joints : " << mode << std::endl;  // Commented out by Rafa
+        std::cerr << "[RobotHardware] setJointControlMode for all joints : " << mode << std::endl;
     } else if ((l = link(i_jname)) && (l->jointId >= 0)) {
         write_control_mode(l->jointId, mode);
-        // std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;  // Commented out by Rafa
+        std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;
     } else {
         char *s = (char *)i_jname; while(*s) { *s=toupper(*s); s++; }
         const std::vector<int> jgroup = m_jointGroups[i_jname];
@@ -1061,7 +1061,7 @@ bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
         for (unsigned int i=0; i<jgroup.size(); i++) {
             write_control_mode(jgroup[i], mode);
         }
-        // std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;  // Commented out by Rafa
+        std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << " : " << mode << std::endl;
     }
     return true;
 }
