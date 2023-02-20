@@ -23,6 +23,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 
 #include <hrpModel/Body.h>
+#include <hrpModel/Link.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -140,7 +141,12 @@ class RobotHardware
   */
   TimedDoubleSeq m_tauRef;
   InPort<TimedDoubleSeq> m_tauRefIn;
-  
+  /**
+     \brief array of booleans indicating which joint is in torque mode (1) or position mode (0)
+  */
+  TimedBooleanSeq m_torqueControlMode;
+  InPort<TimedBooleanSeq> m_torqueControlModeIn;
+    
   // </rtc-template>
 
   /**
@@ -216,7 +222,7 @@ class RobotHardware
   robot *robot_ptr(void) { return m_robot.get(); };
  private:
   void getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2);
-
+  
   int dummy;
   boost::shared_ptr<robot> m_robot;
 };
