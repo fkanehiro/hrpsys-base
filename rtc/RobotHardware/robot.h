@@ -261,6 +261,7 @@ public:
      */
     bool checkEmergency(emg_reason &o_reason, int &o_id);
 
+
     /**
        \brief check joint commands are valid or not
        \return true if the joint command is invalid, false otherwise
@@ -355,7 +356,6 @@ public:
        \return true if set successfully, false otherwise 
      */
     bool setJointControlMode(const char *i_jname, joint_control_mode mode);
-    
 private:
     /**
        \brief calibrate inertia sensor for one sampling period
