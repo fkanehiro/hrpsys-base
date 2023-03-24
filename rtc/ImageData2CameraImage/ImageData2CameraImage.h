@@ -103,11 +103,12 @@ class ImageData2CameraImage
   
   // </rtc-template>
 
-  Img::TimedCameraImage m_data;
+  Img::TimedImageData m_tid;
+  Img::TimedCameraImage m_tci;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<Img::ImageData> m_dataIn;
+  InPort<Img::TimedImageData> m_dataIn;
   
   // </rtc-template>
 
