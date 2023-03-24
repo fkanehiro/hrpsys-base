@@ -194,12 +194,11 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
 }
 
 
-/*
 RTC::ReturnCode_t RobotHardware::onFinalize()
 {
+  delete m_robot.get(); // to call close_iob() in destructor of robot
   return RTC::RTC_OK;
 }
-*/
 
 /*
 RTC::ReturnCode_t RobotHardware::onStartup(RTC::UniqueId ec_id)
