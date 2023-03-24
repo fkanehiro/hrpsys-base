@@ -1,11 +1,11 @@
 set(comp_sources DataLogger.cpp DataLoggerService_impl.cpp)
 set(libs hrpsysBaseStub)
 add_library(DataLogger SHARED ${comp_sources})
-target_link_libraries(DataLogger ${libs})
+target_link_libraries(DataLogger ${libs} zip)
 set_target_properties(DataLogger PROPERTIES PREFIX "")
 
 add_executable(DataLoggerComp DataLoggerComp.cpp ${comp_sources})
-target_link_libraries(DataLoggerComp ${libs})
+target_link_libraries(DataLoggerComp ${libs} zip)
 
 add_executable(logSplitter logSplitter.cpp)
 target_link_libraries(logSplitter ${libs})

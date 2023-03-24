@@ -12,6 +12,11 @@
 #include "hrpsys/idl/RobotHardwareService.hh"
 #include "DataLogger.h"
 
+extern "C" {
+#include <zip.h>
+}
+#include <sstream>
+#include <memory>
 
 typedef coil::Guard<coil::Mutex> Guard;
 
@@ -502,6 +507,12 @@ bool DataLogger::add(const char *i_type, const char *i_name)
 
 bool DataLogger::save(const char *i_basename)
 {
+  {
+    std::string tmp_basename = i_basename;
+    if ( tmp_basename.size() > 4 && tmp_basename.substr(tmp_basename.size() - 4) == ".zip" ) {
+      return this->save_zip(tmp_basename);
+    }
+  }
   suspendLogging();
   bool ret = true;
   for (unsigned int i=0; i<m_ports.size(); i++){
@@ -518,6 +529,78 @@ bool DataLogger::save(const char *i_basename)
   }
   if (ret) std::cerr << "[" << m_profile.instance_name << "] Save log to " << i_basename << ".*" << std::endl;
   resumeLogging();
+  return ret;
+}
+
+bool DataLogger::save_zip(const std::string &i_basename)
+{
+  std::string dirname = "";
+  std::string basename = i_basename.substr(0, i_basename.size() - 4);
+  int pos = basename.find_last_of('/');
+  if (pos != std::string::npos) {
+    dirname  = basename.substr(0, pos -1);
+    basename = basename.substr(pos+1);
+  }
+
+  int err = 0;
+  zip_t *zipf = zip_open(i_basename.c_str(), ZIP_CREATE | ZIP_EXCL, &err);
+  if (zipf == NULL) {
+    zip_error_t zip_err;
+    zip_error_init_with_code(&zip_err, err);
+    std::string err_str = zip_error_strerror(&zip_err);
+    std::cerr << "[" << m_profile.instance_name << "] faild zip_open / " << i_basename
+              << " / " << err_str << std::endl;
+    return false;
+  }
+  // start logging
+  suspendLogging();
+  bool ret = true;
+  std::vector<std::shared_ptr< std::string> > strbuf; // require valid buffer until zip_close
+  for (unsigned int i=0; i<m_ports.size(); i++) {
+    std::string fname = basename;
+    fname.append(".");
+    fname.append(m_ports[i]->name());
+    std::ostringstream os;
+
+    m_ports[i]->dumpLog(os, m_log_precision);
+
+    std::shared_ptr< std::string> str = std::make_shared<std::string> (os.str());
+    strbuf.push_back(str);
+    zip_source_t *zs = zip_source_buffer(zipf, str->c_str(), str->size(), 0);
+    if (zs == NULL) {
+      std::string errstr = zip_strerror(zipf);
+      std::cerr << "[" << m_profile.instance_name << "] faild zip_source_buffer / " << fname
+                << " / " << errstr << std::endl;
+      ret = false;
+      break;
+    }
+    long index = -1;
+    if ( (index = zip_file_add(zipf, fname.c_str(), zs, ZIP_FL_OVERWRITE)) < 0 ) {
+      std::string errstr = zip_strerror(zipf);
+      std::cerr << "[" << m_profile.instance_name << "] faild zip_file_add / " << fname
+                << " / " << errstr << std::endl;
+      zip_source_free(zs);
+      ret = false;
+      break;
+    }
+    // set no-compression mode
+    if ( zip_set_file_compression(zipf, index, ZIP_CM_STORE, 0) < 0 ) {
+      std::string errstr = zip_strerror(zipf);
+      std::cerr << "[" << m_profile.instance_name << "] faild zip_set_file_compression / " << fname
+                << " / " << errstr << std::endl;
+    }
+  }
+  resumeLogging();
+  // finish logging
+  if (zip_close(zipf) < 0) {
+    ret = false;
+    std::string errstr = zip_strerror(zipf);
+    std::cerr << "[" << m_profile.instance_name << "] faild zip_close / " << i_basename
+              << " / " << errstr << std::endl;
+  }
+
+  if (ret) std::cerr << "[" << m_profile.instance_name << "] Save log to " << i_basename << ".*" << std::endl;
+
   return ret;
 }
 
