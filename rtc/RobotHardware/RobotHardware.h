@@ -177,6 +177,22 @@ class RobotHardware
   */
   std::vector<TimedDoubleSeq> m_force;
   OpenHRP::TimedLongSeqSeq m_servoState;
+  /**
+     \brief array of pgain of joint with jointId
+  */
+  TimedDoubleSeq m_pgain;
+  /**
+     \brief array of dgain of joint with jointId
+  */
+  TimedDoubleSeq m_dgain;
+  /**
+     \brief array of torque pgain of joint with jointId
+  */
+  TimedDoubleSeq m_torquePgain;
+  /**
+     \brief array of torque dgain of joint with jointId
+  */
+  TimedDoubleSeq m_torqueDgain;
   TimedLong m_emergencySignal;
   OpenHRP::RobotHardwareService::TimedRobotState2 m_rstate2;
 
@@ -191,6 +207,10 @@ class RobotHardware
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
   OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
+  OutPort<TimedDoubleSeq> m_pgainOut;
+  OutPort<TimedDoubleSeq> m_dgainOut;
+  OutPort<TimedDoubleSeq> m_torquePgainOut;
+  OutPort<TimedDoubleSeq> m_torqueDgainOut;
   OutPort<TimedLong> m_emergencySignalOut;
   OutPort<OpenHRP::RobotHardwareService::TimedRobotState2> m_rstate2Out;
 
