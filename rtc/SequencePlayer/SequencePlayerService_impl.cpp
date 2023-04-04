@@ -194,6 +194,60 @@ CORBA::Boolean SequencePlayerService_impl::setJointAngle(const char *jname, CORB
     return m_player->setJointAngle(id, jv, tm);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setJointVelocities(const dSequence& jvs, CORBA::Double tm)
+{
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+  return m_player->setJointVelocities(jvs.get_buffer(), tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointVelocitiesSequence(const dSequenceSequence& jvss, const dSequence& tms)
+{
+  if (jvss.length() <= 0) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint velocitys sequence is invalid:" << jvss.length() << " > 0" << std::endl;
+      return false;
+  }
+  if (jvss.length() != tms.length()) {
+      std::cerr << __PRETTY_FUNCTION__ << " length of joint velocitys sequence and time sequence differ, joint velocity:" << jvss.length() << ", time:" << tms.length() << std::endl;
+      return false;
+  }
+  const dSequence& jvs = jvss[0];
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+  return m_player->setJointVelocitiesSequence(jvss, tms);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointTorques(const dSequence& jvs, CORBA::Double tm)
+{
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+  return m_player->setJointTorques(jvs.get_buffer(), tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointTorquesSequence(const dSequenceSequence& jvss, const dSequence& tms)
+{
+  if (jvss.length() <= 0) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint torques sequence is invalid:" << jvss.length() << " > 0" << std::endl;
+      return false;
+  }
+  if (jvss.length() != tms.length()) {
+      std::cerr << __PRETTY_FUNCTION__ << " length of joint torques sequence and time sequence differ, joint torque:" << jvss.length() << ", time:" << tms.length() << std::endl;
+      return false;
+  }
+  const dSequence& jvs = jvss[0];
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+  return m_player->setJointTorquesSequence(jvss, tms);
+}
+
 CORBA::Boolean SequencePlayerService_impl::setBasePos(const dSequence& pos, CORBA::Double tm)
 {
     if (pos.length() != 3) return false;

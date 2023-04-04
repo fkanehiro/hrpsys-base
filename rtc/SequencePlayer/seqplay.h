@@ -45,16 +45,18 @@ public:
     //
     void setJointAngle(unsigned int i_rank, double jv, double tm);
     void loadPattern(const char *i_basename, double i_tm);
+    bool setJointVelocitiesSequence(std::vector<const double*> vel, std::vector<double> tm);
+    bool setJointTorquesSequence(std::vector<const double*> torque, std::vector<double> tm);
     void clear(double i_timeLimit=0);
     void get(double *o_q, double *o_zmp, double *o_accel,
-	     double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches, double *o_optional_data);
+	     double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches, double *o_optional_data, double *o_dq);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, double i_time, 
+            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, const double *i_dq, double i_time, 
             bool immediate=true);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data,
+            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, const double *i_dq,
 	    const double *ii_q, const double *ii_zmp, const double *ii_acc,
-            const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches, const double *ii_optional_data,
+            const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches, const double *ii_optional_data, const double *ii_dq,
             double i_time, bool immediate=true);
     void sync();
     bool setInterpolationMode(interpolator::interpolation_mode i_mode_);
@@ -142,7 +144,7 @@ private:
         double time2remove;
     };
     void pop_back();
-    enum {Q, ZMP, ACC, P, RPY, TQ, WRENCHES, OPTIONAL_DATA, NINTERPOLATOR};
+    enum {Q, ZMP, ACC, P, RPY, TQ, WRENCHES, OPTIONAL_DATA, DQ, NINTERPOLATOR};
     interpolator *interpolators[NINTERPOLATOR];
     std::map<std::string, groupInterpolator *> groupInterpolators; 
     int debug_level, m_dof;

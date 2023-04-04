@@ -16,6 +16,7 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum, unsigned 
     interpolators[TQ] = new interpolator(i_dof, i_dt);
     interpolators[WRENCHES] = new interpolator(6 * i_fnum, i_dt, interpolator::HOFFARBIB, 100); // wrenches = 6 * [number of force sensors]
 	interpolators[OPTIONAL_DATA] = new interpolator(optional_data_dim, i_dt);
+    interpolators[DQ] = new interpolator(i_dof, i_dt);
     // Set interpolator name
     interpolators[Q]->setName("Q");
     interpolators[ZMP]->setName("ZMP");
@@ -25,6 +26,7 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum, unsigned 
     interpolators[TQ]->setName("TQ");
     interpolators[WRENCHES]->setName("WRENCHES");
     interpolators[OPTIONAL_DATA]->setName("OPTIONAL_DATA");
+    interpolators[DQ]->setName("DQ");
     //
 
 #ifdef WAIST_HEIGHT
@@ -220,7 +222,7 @@ void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
 
 void seqplay::playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len)
 {
-    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL, *tq=NULL, *wr=NULL, *od=NULL; double t=0;
+    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL, *tq=NULL, *wr=NULL, *od=NULL, *dq=NULL; double t=0;
     double *v = new double[len];
     for (unsigned int i=0; i<pos.size(); i++){
         q = pos[i];
@@ -252,8 +254,8 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
         if (i < zmp.size()) z = zmp[i];
         if (i < rpy.size()) e = rpy[i];
         if (i < tm.size()) t = tm[i];
-        go(q, z, a, p, e, tq, wr, od,
-		   v, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        go(q, z, a, p, e, tq, wr, od, dq,
+		   v, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 		  t, false);
     }
     sync();
@@ -331,6 +333,13 @@ void seqplay::loadPattern(const char *basename, double tm)
         interpolators[OPTIONAL_DATA]->load(optional_data, tm, scale, false);
         if (debug_level > 0) cout << optional_data;
     }
+    if (debug_level > 0) cout << endl << "vel = ";
+    string vel = basename; torque.append(".vel");
+    if (access(vel.c_str(),0)==0){
+        found = true;
+        interpolators[DQ]->load(vel, tm, scale, false);
+        if (debug_level > 0) cout << vel;
+    }
     if (debug_level > 0) cout << endl;
     if (!found) cerr << "pattern not found(" << basename << ")" << endl;
     //
@@ -352,7 +361,7 @@ void seqplay::pop_back()
 }
 
 void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
-				  double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches, double *o_optional_data)
+				  double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches, double *o_optional_data, double *o_dq)
 {
 	double v[m_dof];
 	interpolators[Q]->get(o_q, v);
@@ -376,21 +385,22 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 	interpolators[TQ]->get(o_tq);
 	interpolators[WRENCHES]->get(o_wrenches);
 	interpolators[OPTIONAL_DATA]->get(o_optional_data);
+	interpolators[DQ]->get(o_dq);
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, double i_time, 
+				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, const double *i_dq, double i_time, 
 				 bool immediate)
 {
-	go(i_q, i_zmp, i_acc, i_p, i_rpy, i_tq, i_wrenches, i_optional_data,
-	   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	go(i_q, i_zmp, i_acc, i_p, i_rpy, i_tq, i_wrenches, i_optional_data, i_dq,
+	   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 	   i_time, immediate);
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data,
+				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, const double *i_optional_data, const double *i_dq,
 				 const double *ii_q, const double *ii_zmp, const double *ii_acc,
-				 const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches, const double *ii_optional_data,
+				 const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches, const double *ii_optional_data, const double *ii_dq,
 				 double i_time,	 bool immediate)
 {
 	if (i_q) interpolators[Q]->go(i_q, ii_q, i_time, false);
@@ -401,6 +411,7 @@ void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
 	if (i_tq) interpolators[TQ]->go(i_tq, ii_tq, i_time, false);
 	if (i_wrenches) interpolators[WRENCHES]->go(i_wrenches, ii_wrenches, i_time, false);
 	if (i_optional_data) interpolators[OPTIONAL_DATA]->go(i_optional_data, ii_optional_data, i_time, false);
+	if (i_dq) interpolators[DQ]->go(i_dq, ii_dq, i_time, false);
 	if (immediate) sync();
 }
 
@@ -700,6 +711,11 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 	interpolators[OPTIONAL_DATA]->set(optional);
 	interpolators[OPTIONAL_DATA]->clear();
 	interpolators[OPTIONAL_DATA]->push(optional, dummy_optional, dummy_optional, true);
+	double vel[m_dof];
+	interpolators[DQ]->get(vel, false);
+	interpolators[DQ]->set(vel);
+	interpolators[DQ]->clear();
+	interpolators[DQ]->push(vel, dummy_dof, dummy_dof, true);
 
     const double *q=NULL;
     for (unsigned int i=0; i<i_pos.size(); i++){
@@ -743,6 +759,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 		interpolators[ZMP]->setGoal(i_zmps[i], i_tm[i], false);
 		interpolators[WRENCHES]->setGoal(i_wrenches[i], i_tm[i], false);
 		interpolators[OPTIONAL_DATA]->setGoal(i_optionals[i], i_tm[i], false);
+		interpolators[DQ]->setGoal(v, i_tm[i], false);
 		do{
 			double tm = i_tm[i], tm_tmp;
 			interpolators[Q]->interpolate(i_tm[i]);
@@ -753,6 +770,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 			tm_tmp = tm; interpolators[ZMP]->interpolate(tm_tmp);
 			tm_tmp = tm; interpolators[WRENCHES]->interpolate(tm_tmp);
 			tm_tmp = tm; interpolators[OPTIONAL_DATA]->interpolate(tm_tmp);
+			tm_tmp = tm; interpolators[DQ]->interpolate(tm_tmp);
 		}while(i_tm[i]>0);
 		sync();
 	}
@@ -872,5 +890,97 @@ bool seqplay::clearJointAnglesOfGroup(const char *gname)
 	}while(tm>0);
 	i->inter->sync();
 
+	return true;
+}
+
+bool seqplay::setJointVelocitiesSequence(std::vector<const double*> vel, std::vector<double> tm)
+{
+	// setJointVelocitys to override curren tgoal
+	double x[m_dof], v[m_dof], a[m_dof];
+	interpolators[DQ]->get(x, v, a, false);
+	interpolators[DQ]->set(x, v);
+	interpolators[DQ]->clear();
+	interpolators[DQ]->push(x, v, a, true);
+
+    const double *q=NULL;
+    for (unsigned int i=0; i<vel.size(); i++){
+        q = vel[i];
+		if (i < vel.size() - 1 ) {
+			double t0, t1;
+			if (tm.size() == vel.size()) {
+				t0 = tm[i]; t1 = tm[i+1];
+			} else {
+				t0 = t1 = tm[0];
+			}
+			const double *q_next = vel[i+1];
+			const double *q_prev = i==0?x:vel[i-1];
+			for (int j = 0; j < m_dof; j++) {
+				double d0, d1, v0, v1;
+				d0 = (q[j] - q_prev[j]);
+				d1 = (q_next[j] - q[j]);
+				v0 = d0/t0;
+				v1 = d1/t1;
+				if ( v0 * v1 >= 0 ) {
+					v[j] = 0.5 * (v0 + v1);
+				} else {
+					v[j] = 0;
+				}
+			}
+		} else {
+			for (int j = 0; j < m_dof; j++) { v[j] = 0.0; }
+		}
+
+		interpolators[DQ]->setGoal(vel[i], v, tm[i], false);
+		do{
+			interpolators[DQ]->interpolate(tm[i]);
+		}while(tm[i]>0);
+		sync();
+	}
+	return true;
+}
+
+bool seqplay::setJointTorquesSequence(std::vector<const double*> torque, std::vector<double> tm)
+{
+	// setJointTorques to override curren tgoal
+	double x[m_dof], v[m_dof], a[m_dof];
+	interpolators[TQ]->get(x, v, a, false);
+	interpolators[TQ]->set(x, v);
+	interpolators[TQ]->clear();
+	interpolators[TQ]->push(x, v, a, true);
+
+    const double *q=NULL;
+    for (unsigned int i=0; i<torque.size(); i++){
+        q = torque[i];
+		if (i < torque.size() - 1 ) {
+			double t0, t1;
+			if (tm.size() == torque.size()) {
+				t0 = tm[i]; t1 = tm[i+1];
+			} else {
+				t0 = t1 = tm[0];
+			}
+			const double *q_next = torque[i+1];
+			const double *q_prev = i==0?x:torque[i-1];
+			for (int j = 0; j < m_dof; j++) {
+				double d0, d1, v0, v1;
+				d0 = (q[j] - q_prev[j]);
+				d1 = (q_next[j] - q[j]);
+				v0 = d0/t0;
+				v1 = d1/t1;
+				if ( v0 * v1 >= 0 ) {
+					v[j] = 0.5 * (v0 + v1);
+				} else {
+					v[j] = 0;
+				}
+			}
+		} else {
+			for (int j = 0; j < m_dof; j++) { v[j] = 0.0; }
+		}
+
+		interpolators[TQ]->setGoal(torque[i], v, tm[i], false);
+		do{
+			interpolators[TQ]->interpolate(tm[i]);
+		}while(tm[i]>0);
+		sync();
+	}
 	return true;
 }
