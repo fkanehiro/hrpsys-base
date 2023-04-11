@@ -3,6 +3,9 @@
 PKG = 'hrpsys'
 NAME = 'test-hostname'
 
+import sys
+print "running test with PYTHONPATH=%s" % ";".join(sys.path)
+
 import imp  ## for rosbuild
 try:
     imp.find_module(PKG)
@@ -12,11 +15,9 @@ except:
 from hrpsys import hrpsys_config
 
 import socket
-import rtm
+from hrpsys import rtm
 
 import unittest
-import rostest
-import sys
 import time
 
 class TestHrpsysHostname(unittest.TestCase):
@@ -66,6 +67,9 @@ class TestHrpsysHostname(unittest.TestCase):
             print "[This is Expected Failure]"
             print str(e.message)
 
-#unittest.main()
 if __name__ == '__main__':
-    rostest.run(PKG, NAME, TestHrpsysHostname, sys.argv)
+    try:
+        import rostest
+        rostest.run(PKG, NAME, TestHrpsysHostname, sys.argv)
+    except ImportError:
+        unittest.main()

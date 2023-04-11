@@ -4,10 +4,10 @@ PKG = 'hrpsys'
 NAME = 'test_robothardware'
 
 from hrpsys import hrpsys_config
-import OpenHRP
+from hrpsys import OpenHRP
 
 import socket
-import rtm
+from hrpsys import rtm
 
 import unittest
 import rostest
