@@ -474,7 +474,12 @@ bool robot::power(int jid, bool turnon)
             }
         } else       
             for (unsigned int i=0; i<numJoints(); i++)
+            {
                 write_power_command(i, com);
+                //usleep(100000);// OK
+                usleep(10000);// OK
+                //usleep(1000);// OK
+            }
     } else {
         if (com == OFF) {
             write_pgain(jid, 0);
