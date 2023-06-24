@@ -1216,6 +1216,43 @@ class HrpsysConfigurator(object):
         '''
         return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
+    def _get_geometry(self, method, frame_name=None):
+        '''!@brief
+        A method only inteded for class-internal usage.
+        
+        @since: 315.12.1 or higher
+        @type method: A Python function object.
+        @param method: One of the following Python function objects defined in class HrpsysConfigurator:
+            [getCurrentPose, getCurrentPosition, getCurrentReference, getCurrentRPY,
+             getReferencePose, getReferencePosition, getReferenceReference, getReferenceRPY]
+        @param frame_name str: set reference frame name (available from version 315.2.5)
+        @rtype: {str: [float]}
+        @return: Dictionary of the values for each kinematic group.
+            Example (using getCurrentPosition):
+
+                [{CHEST_JOINT0: [0.0, 0.0, 0.0]},
+                 {HEAD_JOINT1: [0.0, 0.0, 0.5694999999999999]},
+                 {RARM_JOINT5: [0.3255751238415409, -0.18236314012331808, 0.06762452267747099]},
+                 {LARM_JOINT5: [0.3255751238415409, 0.18236314012331808, 0.06762452267747099]}]
+        '''
+        _geometry_methods = ['getCurrentPose', 'getCurrentPosition',
+                             'getCurrentReference', 'getCurrentRPY',
+                             'getReferencePose', 'getReferencePosition',
+                             'getReferenceReference', 'getReferenceRPY']
+        if method.__name__ not in _geometry_methods:
+            raise RuntimeError("Passed method {} is not supported.".format(method))
+        for kinematic_group in self.Groups:
+            # The last element is usually an eef in each kinematic group,
+            # although not required so.
+            eef_name = kinematic_group[1][-1]
+            try:
+                result = method(eef_name, frame_name)
+            except RuntimeError as e:
+                print(str(e))
+            print("{}: {}".format(eef_name, method(eef_name)))
+        raise RuntimeError("Since no link name passed, ran it for all"
+                           " available eefs.")
+
     def getCurrentPose(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current physical pose of the specified joint in the joint space.
@@ -1256,10 +1293,7 @@ class HrpsysConfigurator(object):
         \endverbatim
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getCurrentPose(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getCurrentPosition, frame_name)
         if frame_name:
             lname = lname + ':' + frame_name
         if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
@@ -1280,6 +1314,9 @@ class HrpsysConfigurator(object):
             [0.325, 0.182, 0.074]
         \endverbatim
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1287,18 +1324,18 @@ class HrpsysConfigurator(object):
         @return: List of x, y, z positions about the specified joint.
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getCurrentPosition(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getCurrentPosition, frame_name)
         pose = self.getCurrentPose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getCurrentRotation(self, lname, frame_name=None):
+    def getCurrentRotation(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1312,18 +1349,18 @@ class HrpsysConfigurator(object):
         \endverbatim
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getCurrentRotation(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getCurrentRotation, frame_name)
         pose = self.getCurrentPose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getCurrentRPY(self, lname, frame_name=None):
+    def getCurrentRPY(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1331,17 +1368,17 @@ class HrpsysConfigurator(object):
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getCurrentRPY(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getCurrentRPY, frame_name)
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
-    def getReferencePose(self, lname, frame_name=None):
+    def getReferencePose(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded pose of the specified joint in the joint space.
         cf. getCurrentPose that returns physical pose.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1356,10 +1393,7 @@ class HrpsysConfigurator(object):
         \endverbatim
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getReferencePose(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getReferencePose, frame_name)
         if frame_name:
             lname = lname + ':' + frame_name
         if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
@@ -1369,11 +1403,14 @@ class HrpsysConfigurator(object):
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getReferencePosition(self, lname, frame_name=None):
+    def getReferencePosition(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded position of the specified joint in Cartesian space.
         cf. getCurrentPosition that returns physical value.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1382,18 +1419,18 @@ class HrpsysConfigurator(object):
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getReferencePosition(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getReferencePosition, frame_name)
         pose = self.getReferencePose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getReferenceRotation(self, lname, frame_name=None):
+    def getReferenceRotation(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1407,18 +1444,18 @@ class HrpsysConfigurator(object):
         \endverbatim
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getReferencePotation(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getReferenceRotation, frame_name)
         pose = self.getReferencePose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getReferenceRPY(self, lname, frame_name=None):
+    def getReferenceRPY(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
 
+        For lname, when either None passed / no lname is specified, all
+        eefs will be iterated and *only print* the result (i.e. nothing
+        returned). See _get_geometry for more info.
         @type lname: str
         @param lname: Name of the link.
         @param frame_name str: set reference frame name (from 315.2.5)
@@ -1426,10 +1463,7 @@ class HrpsysConfigurator(object):
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
-            for item in self.Groups:
-                eef_name = item[1][-1]
-                print("{}: {}".format(eef_name, self.getReferenceRPY(eef_name)))
-            raise RuntimeError("need to specify joint name")
+            self._get_geometry(self.getReferenceRPY, frame_name)
         return euler_from_matrix(self.getReferenceRotation(lname, frame_name), 'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
