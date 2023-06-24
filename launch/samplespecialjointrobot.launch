@@ -19,7 +19,7 @@
   <arg unless="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="HGcontroller" />
   <arg     if="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="PDcontroller" />
   <env name="ROS_HOME" value="$(find hrpsys)/samples/SampleSpecialJointRobot" />
-  <env     if="$(arg TORQUE_CONTROL)" name="BUSH_CUSTOMIZER_CONFIG_PATH" value="$(find openhrp3)/../OpenHRP-3.1/customizer/sample_4leg_robot_bush_customizer_param.conf" />
+  <env     if="$(arg TORQUE_CONTROL)" name="BUSH_CUSTOMIZER_CONFIG_PATH" value="$(find openhrp3)/../OpenHRP-3.2/customizer/sample_4leg_robot_bush_customizer_param.conf" />
   <env unless="$(arg TORQUE_CONTROL)" name="BUSH_CUSTOMIZER_CONFIG_PATH" value="" />
   <!-- END:common setting -->
 
