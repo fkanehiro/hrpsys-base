@@ -29,6 +29,7 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include "../ImpedanceController/RatsMatrix.h"
 #include "../TorqueFilter/IIRFilter.h"
+#include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 
 // </rtc-template>
 
@@ -151,6 +152,7 @@ class Stabilizer
       return (transition_time / dt);
   };
   void calcDiffFootOriginExtMoment ();
+  void solveFullbodyIK(const hrp::Vector3& base_pos, const hrp::Matrix33& base_rot, const std::vector<hrp::Vector3>& ee_pos, const std::vector<hrp::Matrix33>& ee_rot, const hrp::Vector3& com_pos, const hrp::Vector3& com_am);
 
  protected:
   // Configuration variable declaration
@@ -334,6 +336,9 @@ class Stabilizer
   double total_mass, transition_time, cop_check_margin, contact_decision_threshold;
   std::vector<double> cp_check_margin, tilt_margin;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
+  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+  fikPtr fik;
+  hrp::Vector3 ref_cog_wld;
 };
 
 
