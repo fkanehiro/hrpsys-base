@@ -365,19 +365,6 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 {
 	double v[m_dof];
 	interpolators[Q]->get(o_q, v);
-	std::map<std::string, groupInterpolator *>::iterator it;
-	for (it=groupInterpolators.begin(); it!=groupInterpolators.end();){
-		groupInterpolator *gi = it->second;
-		if (gi){
-			gi->get(o_q, v);
-			if (gi->state == groupInterpolator::removed){
-				groupInterpolators.erase(it++);
-				delete gi;
-				continue;
-			}
-		}
-		++it;
-	}
 	interpolators[ZMP]->get(o_zmp);
 	interpolators[ACC]->get(o_accel);
 	interpolators[P]->get(o_basePos);
@@ -386,6 +373,23 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 	interpolators[WRENCHES]->get(o_wrenches);
 	interpolators[OPTIONAL_DATA]->get(o_optional_data);
 	interpolators[DQ]->get(o_dq);
+
+	std::map<std::string, groupInterpolator *>::iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end();){
+		groupInterpolator *gi = it->second;
+		if (gi){
+			gi->interpolate(o_q, v, o_dq, nullptr, o_tq, nullptr);
+			gi->get(groupInterpolator::G_Q, o_q);
+			gi->get(groupInterpolator::G_DQ, o_dq);
+			gi->get(groupInterpolator::G_TQ, o_tq);
+			if (gi->state == groupInterpolator::removed){
+				it = groupInterpolators.erase(it);
+				delete gi;
+				continue;
+			}
+		}
+		++it;
+	}
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
@@ -427,7 +431,7 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 	std::map<std::string, groupInterpolator *>::const_iterator it;
 	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 		groupInterpolator *gi = it->second;
-		ret &= gi->inter->setInterpolationMode(i_mode_);
+		ret &= gi->setInterpolationMode(i_mode_);
 	}
 	return ret;
 }
@@ -478,13 +482,15 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
-		i->set(full);
+		if(!i->isEmpty()) return true;
+
+		i->set(groupInterpolator::G_Q, full);
 		std::map<std::string, groupInterpolator *>::iterator it;
         for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 			if ( it->first != std::string(gname) ) { // other 
 				groupInterpolator *gi = it->second;
-				if (gi && (gi->state == groupInterpolator::created || gi->state == groupInterpolator::working) && gi->inter->isEmpty()) {
-					gi->set(full);
+				if (gi && (gi->state == groupInterpolator::created || gi->state == groupInterpolator::working) && gi->isEmpty()) {
+					gi->set(groupInterpolator::G_Q, full);
 				}
 			}
 		}
@@ -499,32 +505,41 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 
 bool seqplay::setJointAnglesOfGroup(const char *gname, const double* i_qRef, const size_t i_qsize, double i_tm)
 {
+	return setJointCommonOfGroup(Q, groupInterpolator::G_Q, gname, i_qRef, i_qsize, i_tm);}
+
+bool seqplay::setJointVelocitiesOfGroup(const char *gname, const double* i_dqRef, const size_t i_dqsize, double i_tm)
+{
+	return setJointCommonOfGroup(DQ, groupInterpolator::G_DQ, gname, i_dqRef, i_dqsize, i_tm);
+}
+
+bool seqplay::setJointTorquesOfGroup(const char *gname, const double* i_tqRef, const size_t i_tqsize, double i_tm)
+{
+	return setJointCommonOfGroup(TQ, groupInterpolator::G_TQ, gname, i_tqRef, i_tqsize, i_tm);
+}
+
+bool seqplay::setJointCommonOfGroup(unsigned int type, unsigned int g_type, const char *gname, const double* i_qRef, const size_t i_qsize, double i_tm)
+{
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		if (i_qsize != i->indices.size() ) {
-			std::cerr << "[setJointAnglesOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << i_qsize << " /= " << i->indices.size() << std::endl;
+			std::cerr << "[setJointCommonOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << i_qsize << " /= " << i->indices.size() << std::endl;
 			return false;
 		}
 		if (i->state == groupInterpolator::created){
 			double q[m_dof], dq[m_dof];
-			interpolators[Q]->get(q, dq, false);
+			interpolators[type]->get(q, dq, false);
 			std::map<std::string, groupInterpolator *>::iterator it;
 			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 				groupInterpolator *gi = it->second;
-				if (gi)	gi->get(q, dq, false);
+				if (gi)	gi->get(g_type, q, dq);
 			}
-			double x[i->indices.size()], v[i->indices.size()];
-			i->extract(x, q);
-			i->extract(v, dq);
-			i->inter->go(x,v,interpolators[Q]->deltaT());
+			i->set(g_type,q,dq);
 		}
-		double x[i->indices.size()], v[i->indices.size()];
-		i->inter->get(x, v, false);
-		i->setGoal(i_qRef, i_tm);
+		i->setGoal(g_type, i_qRef, i_tm);
 		return true;
 	}else{
-		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		std::cerr << "[setJointCommonOfGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 }
@@ -534,7 +549,7 @@ void seqplay::clearOfGroup(const char *gname, double i_timeLimit)
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
-		i->clear(i_timeLimit);
+		i->clear();
 	}
 }
 
@@ -553,12 +568,9 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 			std::map<std::string, groupInterpolator *>::iterator it;
 			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 				groupInterpolator *gi = it->second;
-				if (gi)	gi->get(q, dq, false);
+				if (gi)	gi->get(groupInterpolator::G_Q, q, dq);
 			}
-			double x[i->indices.size()], v[i->indices.size()];
-			i->extract(x, q);
-			i->extract(v, dq);
-			i->inter->go(x,v,interpolators[Q]->deltaT());
+			i->set(groupInterpolator::G_Q, q, dq);
 		}
 		const double *q=NULL; double t=0;
 		double *v = new double[len];
@@ -593,7 +605,7 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 				for (unsigned int j = 0; j < len; j++) { v[j] = 0.0; }
 			}
 			if (l < tm.size()) t = tm[l];
-			i->go(q, v, t);
+			i->go(groupInterpolator::G_Q, q, v, t);
 		}
 		sync();
 		delete [] v;
@@ -779,33 +791,46 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 
 bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const size_t pos_size)
 {
+	return setJointCommonSequenceOfGroup(Q, groupInterpolator::G_Q, gname, pos, tm, pos_size);
+}
+
+bool seqplay::setJointVelocitiesSequenceOfGroup(const char *gname, std::vector<const double*> vel, std::vector<double> tm, const size_t vel_size)
+{
+	return setJointCommonSequenceOfGroup(DQ, groupInterpolator::G_DQ, gname, vel, tm, vel_size);
+}
+
+bool seqplay::setJointTorquesSequenceOfGroup(const char *gname, std::vector<const double*> torque, std::vector<double> tm, const size_t torque_size)
+{
+	return setJointCommonSequenceOfGroup(TQ, groupInterpolator::G_TQ, gname, torque, tm, torque_size);
+}
+
+bool seqplay::setJointCommonSequenceOfGroup(unsigned int type, unsigned int g_type, const char *gname, std::vector<const double*> pos, std::vector<double> tm, const size_t pos_size)
+{
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 
 	if (! i){
-		std::cerr << "[setJointAnglesSequenceOfGroup] group name " << gname << " is not installed" << std::endl;
+		std::cerr << "[setJointCommonSequenceOfGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 	if (pos_size != i->indices.size() ) {
-		std::cerr << "[setJointAnglesSequenceOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << pos_size << " /= " << i->indices.size() << std::endl;
+		std::cerr << "[setJointCommonSequenceOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << pos_size << " /= " << i->indices.size() << std::endl;
 		return false;
 	}
 	int len = i->indices.size();
 	// playPatternOfGroup
 	double q[m_dof], dq[m_dof];
-	interpolators[Q]->get(q, dq, false); // fill all q,dq data
+	interpolators[type]->get(q, dq, false); // fill all q,dq data
 	std::map<std::string, groupInterpolator *>::iterator it;
 	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 		groupInterpolator *gi = it->second;
-		if (gi)	gi->get(q, dq, false);
+		if (gi)	gi->get(g_type, q, dq);
 	}
-	// extract currnet limb data
 	double x[len], v[len];
+	i->set(g_type, q, dq);
+	i->clear(g_type);
 	i->extract(x, q);
 	i->extract(v, dq);
-	// override currnet goal
-	i->inter->clear();
-	i->inter->go(x,v,interpolators[Q]->deltaT());
     const double *q_curr=NULL;
     for (unsigned int j=0; j<pos.size(); j++){
         q_curr = pos[j];
@@ -835,23 +860,15 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 		}
 		if (i->state == groupInterpolator::created){
 			double q[m_dof], dq[m_dof];
-			interpolators[Q]->get(q, dq, false);
+			interpolators[type]->get(q, dq, false);
 			std::map<std::string, groupInterpolator *>::iterator it;
 			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 				groupInterpolator *gi = it->second;
-				if (gi)	gi->get(q, dq, false);
+				if (gi)	gi->get(g_type, q, dq);
 			}
-			double x[i->indices.size()], v[i->indices.size()];
-			i->extract(x, q);
-			i->extract(v, dq);
-			i->inter->go(x,v,interpolators[Q]->deltaT());
+			i->set(g_type, q, dq);
 		}
-		i->inter->setGoal(pos[j], v, tm[j], false);
-		do{
-			i->inter->interpolate(tm[j]);
-		}while(tm[j]>0);
-		i->inter->sync();
-		i->state = groupInterpolator::working;
+		i->go(g_type, pos[j], v, tm[j]);
 	}
 	return true;
 }
@@ -876,19 +893,10 @@ bool seqplay::clearJointAnglesOfGroup(const char *gname)
 		return false;
 	}
 
-	int len = i->indices.size();
-	double x[len], v[len], a[len];
-	i->inter->get(x, v, a, false);
-	i->inter->set(x, v);
-	while(i->inter->remain_time() > 0){
-		i->inter->pop();
-	}
-	double tm = interpolators[Q]->deltaT();
-	i->inter->setGoal(x, v, tm, true);// true: update remian_t
-	do{
-		i->inter->interpolate(tm);
-	}while(tm>0);
-	i->inter->sync();
+	double x[m_dof], v[m_dof];
+	i->get(groupInterpolator::G_Q, x, v);
+	i->set(groupInterpolator::G_Q, x, v);
+	i->clear(groupInterpolator::G_Q);
 
 	return true;
 }

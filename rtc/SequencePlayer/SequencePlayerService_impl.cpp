@@ -360,6 +360,34 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceOfGroup(const c
     return m_player->setJointAnglesSequenceOfGroup(gname, jvss, tms);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setJointVelocitiesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
+{
+    return m_player->setJointVelocitiesOfGroup(gname, jvs, tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointVelocitiesSequenceOfGroup(const char *gname, const dSequenceSequence& jvss, const dSequence& tms)
+{
+    if (jvss.length() != tms.length()) {
+        std::cerr << __PRETTY_FUNCTION__ << " length of joint velocities sequence and time sequence differ, joint angle:" << jvss.length() << ", time:" << tms.length() << std::endl;
+        return false;
+    }
+    return m_player->setJointVelocitiesSequenceOfGroup(gname, jvss, tms);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointTorquesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
+{
+    return m_player->setJointTorquesOfGroup(gname, jvs, tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointTorquesSequenceOfGroup(const char *gname, const dSequenceSequence& jvss, const dSequence& tms)
+{
+    if (jvss.length() != tms.length()) {
+        std::cerr << __PRETTY_FUNCTION__ << " length of joint torques sequence and time sequence differ, joint angle:" << jvss.length() << ", time:" << tms.length() << std::endl;
+        return false;
+    }
+    return m_player->setJointTorquesSequenceOfGroup(gname, jvss, tms);
+}
+
 CORBA::Boolean SequencePlayerService_impl::clearJointAnglesOfGroup(const char *gname)
 {
     return m_player->clearJointAnglesOfGroup(gname);

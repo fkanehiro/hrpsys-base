@@ -45,6 +45,10 @@ public:
   CORBA::Boolean removeJointGroup(const char* gname);
   CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean setJointAnglesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
+  CORBA::Boolean setJointVelocitiesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointVelocitiesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
+  CORBA::Boolean setJointTorquesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointTorquesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
   CORBA::Boolean clearJointAnglesOfGroup(const char *gname);
   CORBA::Boolean clearOfGroup(const char *gname, CORBA::Double  i_timelimit);
   CORBA::Boolean playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm);
