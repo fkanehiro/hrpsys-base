@@ -251,7 +251,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     if (m_requestGoActual || (m_q.data.length() == 0 && m_currentQ.data.length() > 0)){
         m_q = m_currentQ;
         // Reset reference velocities to zero
-        if (m_q.data.length() != m_dq.data.length()) m_dq.data.length(m_dq.data.length());
+        if (m_q.data.length() != m_dq.data.length()) m_dq.data.length(m_q.data.length());
         for(size_t i=0;i<m_dq.data.length();i++){
           m_dq.data[i] = 0;
         }
