@@ -361,7 +361,7 @@ public:
     timeout.tv_sec = 0;
     timeout.tv_usec = 200*1000;
     select(fd + 1, &set, NULL, NULL, &timeout);
-    ret2 = read(fd, &echo, 8+length*count);
+    ret2 = read(fd, echo, 8+length*count);
 
     
     fprintf(stderr, "[ServoSerial] received: ");
