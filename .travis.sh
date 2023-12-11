@@ -58,8 +58,16 @@ travis_time_start setup_ros
 export CI_SOURCE_PATH=$(pwd)
 export REPOSITORY_NAME=${PWD##*/}
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-sudo -E sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/ros-latest.list'
-wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+case $ROS_DISTRO in
+    hydro)
+        sudo -E sh -c 'echo "deb http://snapshots.ros.org/${ROS_DISTRO}/final/ubuntu ${DISTRO} main" >> /etc/apt/sources.list.d/ros-snapshots.list'
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 4B63CF8FDE49746E98FA01DDAD19BAB3CBF125EA
+    ;;
+    *)
+        sudo -E sh -c 'echo "deb http://packages.ros.org/ros-testing/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/ros-latest.list'
+        wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+    ;;
+esac
 sudo apt-get update -qq
 
 travis_time_end
