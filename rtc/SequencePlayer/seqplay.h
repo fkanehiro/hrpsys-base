@@ -141,8 +141,8 @@ private:
             }
         }
         bool isEmpty() {
-            if(state == created || state == removed) return true;
-            if(state == removing) return false;
+            if(state == created) return true;
+            if(state == removing || state == removed) return false;
             for(unsigned int i=0; i<G_NINTERPOLATOR; i++){
                 if(!inters[i]->isEmpty()) return false;
             }
