@@ -37,12 +37,14 @@ StateHolder::StateHolder(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_currentQIn("currentQIn", m_currentQ),
     m_qIn("qIn", m_q),
+    m_dqIn("dqIn", m_dq),
     m_tqIn("tqIn", m_tq),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_zmpIn("zmpIn", m_zmp),
     m_optionalDataIn("optionalDataIn", m_optionalData),
     m_qOut("qOut", m_q),
+    m_dqOut("dqOut", m_dq),
     m_tqOut("tqOut", m_tq),
     m_basePosOut("basePosOut", m_basePos),
     m_baseRpyOut("baseRpyOut", m_baseRpy),
@@ -84,6 +86,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   // Set InPort buffers
     addInPort("currentQIn", m_currentQIn);
     addInPort("qIn", m_qIn);
+    addInPort("dqIn", m_dqIn);
     addInPort("tqIn", m_tqIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
@@ -92,6 +95,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   
   // Set OutPort buffer
     addOutPort("qOut", m_qOut);
+    addOutPort("dqOut", m_dqOut);
     addOutPort("tqOut", m_tqOut);
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
@@ -112,7 +116,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
 
   // </rtc-template>
 
-  RTC::Properties& prop = getProperties();
+  RTC::Properties prop = getProperties();
   coil::stringTo(m_dt, prop["dt"].c_str());
   std::cout << "StateHolder: dt = " << m_dt << std::endl;
   RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -238,16 +242,23 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     if (m_qIn.isNew()){
         m_qIn.read();
     }
+    if (m_dqIn.isNew()){
+        m_dqIn.read();
+    }
     if (m_tqIn.isNew()){
         m_tqIn.read();
     }
     if (m_requestGoActual || (m_q.data.length() == 0 && m_currentQ.data.length() > 0)){
         m_q = m_currentQ;
-        if (m_q.data.length() != m_tq.data.length()) {
-          m_tq.data.length(m_q.data.length());
-          for(size_t i=0;i<m_tq.data.length();i++){
-            m_tq.data[i] = 0;
-          }
+        // Reset reference velocities to zero
+        if (m_q.data.length() != m_dq.data.length()) m_dq.data.length(m_q.data.length());
+        for(size_t i=0;i<m_dq.data.length();i++){
+          m_dq.data[i] = 0;
+        }
+        // Reset reference torques to zero
+        if (m_q.data.length() != m_tq.data.length()) m_tq.data.length(m_q.data.length());
+        for(size_t i=0;i<m_tq.data.length();i++){
+          m_tq.data[i] = 0;
         }
         // Reset reference wrenches to zero
         for (unsigned int i=0; i<m_wrenchesIn.size(); i++){
@@ -297,6 +308,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     // put timestamps
     m_q.tm         = tm;
+    m_dq.tm         = tm;
     m_tq.tm         = tm;
     m_baseTform.tm = tm; 
     m_basePos.tm   = tm; 
@@ -310,6 +322,9 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     // write
     if (m_q.data.length() > 0){
         m_qOut.write();
+    }
+    if (m_dq.data.length() > 0){
+        m_dqOut.write();
     }
     if (m_tq.data.length() > 0){
         m_tqOut.write();

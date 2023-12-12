@@ -25,6 +25,10 @@ public:
   CORBA::Boolean setJointAngles(const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean setJointAnglesWithMask(const dSequence& jvs, const bSequence& mask, CORBA::Double tm);
   CORBA::Boolean setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm);
+  CORBA::Boolean setJointVelocities(const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointVelocitiesSequence(const dSequenceSequence& jvs, const dSequence &tms);
+  CORBA::Boolean setJointTorques(const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointTorquesSequence(const dSequenceSequence& jvs, const dSequence &tms);
   CORBA::Boolean setBasePos(const dSequence& pos, CORBA::Double tm);
   CORBA::Boolean setBaseRpy(const dSequence& rpy, CORBA::Double tm);
   CORBA::Boolean setZmp(const dSequence& zmp, CORBA::Double tm);
@@ -41,6 +45,10 @@ public:
   CORBA::Boolean removeJointGroup(const char* gname);
   CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean setJointAnglesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
+  CORBA::Boolean setJointVelocitiesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointVelocitiesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
+  CORBA::Boolean setJointTorquesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean setJointTorquesSequenceOfGroup(const char *gname, const dSequenceSequence& jvs, const dSequence &tms);
   CORBA::Boolean clearJointAnglesOfGroup(const char *gname);
   CORBA::Boolean clearOfGroup(const char *gname, CORBA::Double  i_timelimit);
   CORBA::Boolean playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm);

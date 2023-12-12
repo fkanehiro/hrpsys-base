@@ -56,6 +56,38 @@ module OpenHRP
     boolean setJointAngle(in string jname, in double jv, in double tm);
 
     /**
+     * @brief Interpolate all joint velocities on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint velocitys
+     * @param tm duration [s]
+     * @return true joint velocitys are set successfully, false otherwise
+     */
+    boolean setJointVelocities(in dSequence jvs, in double tm);
+
+    /**
+     * @brief Interpolate all joint velocitys on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
+     * @param jvs sequence of sequence of joint velocitys [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint velocitys are set successfully, false otherwise
+     */
+    boolean setJointVelocitiesSequence(in dSequenceSequence jvss, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint torques on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint torques
+     * @param tm duration [s]
+     * @return true joint torques are set successfully, false otherwise
+     */
+    boolean setJointTorques(in dSequence jvs, in double tm);
+
+    /**
+     * @brief Interpolate all joint torques on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
+     * @param jvs sequence of sequence of joint torques [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint torques are set successfully, false otherwise
+     */
+    boolean setJointTorquesSequence(in dSequenceSequence jvss, in dSequence tms);
+
+    /**
      * @brief Interpolate position of the base link. Function returns without waiting for interpolation to finish
      * @param pos position of the base link [m]
      * @param tm duration [s]
@@ -162,6 +194,24 @@ module OpenHRP
     boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
 
     /**
+     * @brief Interpolate joint velocities in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param gname name of the joint group
+     * @param jvs sequence of joint velocities
+     * @param tm duration [s]
+     * @return true joint velocities are set successfully, false otherwise
+     */
+    boolean setJointVelocitiesOfGroup(in string gname, in dSequence jvs, in double tm);
+
+    /**
+     * @brief Interpolate joint torques in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param gname name of the joint group
+     * @param jvs sequence of joint torques
+     * @param tm duration [s]
+     * @return true joint torques are set successfully, false otherwise
+     */
+    boolean setJointTorquesOfGroup(in string gname, in dSequence jvs, in double tm);
+
+    /**
      * @brief clear pattern data with joint group
      * @param gname name of the joint group
      * @param tm duration toward termination [s]
@@ -224,6 +274,24 @@ module OpenHRP
      * @return true joint angles are set successfully, false otherwise
      */
     boolean setJointAnglesSequenceOfGroup(in string gname, in dSequenceSequence jvss, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint velocities in groups, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
+     * @param gname name of the joint group
+     * @param jvs sequence of sequence of joint velocities [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint velocities are set successfully, false otherwise
+     */
+    boolean setJointVelocitiesSequenceOfGroup(in string gname, in dSequenceSequence jvss, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint torques in groups, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
+     * @param gname name of the joint group
+     * @param jvs sequence of sequence of joint torques [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint torques are set successfully, false otherwise
+     */
+    boolean setJointTorquesSequenceOfGroup(in string gname, in dSequenceSequence jvss, in dSequence tms);
 
     /**
      * @brief Interpolate all joint angles, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.  [>= 315.5.0]

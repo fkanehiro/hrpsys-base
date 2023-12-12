@@ -104,6 +104,10 @@ class SequencePlayer
   bool setJointAnglesSequence(const OpenHRP::dSequenceSequence angless, const OpenHRP::bSequence& mask, const OpenHRP::dSequence& times);
   bool setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence i_jvss, const OpenHRP::dSequenceSequence i_vels, const OpenHRP::dSequenceSequence i_torques, const OpenHRP::dSequenceSequence i_poss, const OpenHRP::dSequenceSequence i_rpys, const OpenHRP::dSequenceSequence i_accs, const OpenHRP::dSequenceSequence i_zmps, const OpenHRP::dSequenceSequence i_wrenches, const OpenHRP::dSequenceSequence i_optionals, const dSequence i_tms);
   bool clearJointAngles();
+  bool setJointVelocities(const double *velocitys, double tm);
+  bool setJointVelocitiesSequence(const OpenHRP::dSequenceSequence velocityss, const OpenHRP::dSequence& times);
+  bool setJointTorques(const double *torques, double tm);
+  bool setJointTorquesSequence(const OpenHRP::dSequenceSequence torquess, const OpenHRP::dSequence& times);
   bool setBasePos(const double *pos, double tm);
   bool setBaseRpy(const double *rpy, double tm);
   bool setZmp(const double *zmp, double tm);
@@ -117,6 +121,10 @@ class SequencePlayer
   bool removeJointGroup(const char *gname);
   bool setJointAnglesOfGroup(const char *gname, const OpenHRP::dSequence& jvs, double tm);
   bool setJointAnglesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence angless, const OpenHRP::dSequence& times);
+  bool setJointVelocitiesOfGroup(const char *gname, const OpenHRP::dSequence& jvs, double tm);
+  bool setJointVelocitiesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence velocitiess, const OpenHRP::dSequence& times);
+  bool setJointTorquesOfGroup(const char *gname, const OpenHRP::dSequence& jvs, double tm);
+  bool setJointTorquesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence torquess, const OpenHRP::dSequence& times);
     bool clearJointAnglesOfGroup(const char *gname);
   bool playPatternOfGroup(const char *gname, const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequence& tm);
 
@@ -147,6 +155,8 @@ class SequencePlayer
   OutPort<TimedDoubleSeq> m_qRefOut;
   TimedDoubleSeq m_tqRef;
   OutPort<TimedDoubleSeq> m_tqRefOut;
+  TimedDoubleSeq m_dqRef;
+  OutPort<TimedDoubleSeq> m_dqRefOut;
   TimedPoint3D m_zmpRef;
   OutPort<TimedPoint3D> m_zmpRefOut;
   TimedAcceleration3D m_accRef;
