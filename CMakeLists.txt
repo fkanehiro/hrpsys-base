@@ -204,7 +204,7 @@ message(STATUS "compile iob with -DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION}")
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)
 endif()
-add_subdirectory(python)
+add_subdirectory(src/hrpsys) # for doc/html/index.html
 add_subdirectory(idl)
 add_subdirectory(lib)
 add_subdirectory(ec)
