@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -42,10 +42,10 @@ def init ():
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     hcf.startAutoBalancer(limbs=['rleg','lleg','rarm','larm'])
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print("hrpsys_version = %s"%hrpsys_version)
+    print(("hrpsys_version = %s"%hrpsys_version))
 
 def demoGaitGeneratorSetFootSteps(print_str="1. setFootSteps"):
-    print >> sys.stderr, print_str
+    print(print_str, file=sys.stderr)
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg"),
                                                              OpenHRP.AutoBalancerService.Footstep([0.7+0.00,+0.19,0], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.15,+0.19,0], [1,0,0,0], "lleg"),
@@ -74,7 +74,7 @@ def demoGaitGeneratorSetFootStepsCycloidDelay():
     demoGaitGeneratorSetFootSteps("3. setFootSteps with Cycloiddelay orbit");
 
 def demoGaitGeneratorSetFootStepsCrawl(print_str="4. setFootSteps in Crawl"):
-    print >> sys.stderr, print_str
+    print(print_str, file=sys.stderr)
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.7+0.01,+0.19,0], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.01,+0.19,0], [1,0,0,0], "lleg")]),
@@ -83,7 +83,7 @@ def demoGaitGeneratorSetFootStepsCrawl(print_str="4. setFootSteps in Crawl"):
     hcf.abc_svc.waitFootSteps()
 
 def demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5. go pos in trot"):
-    print >> sys.stderr, print_str
+    print(print_str, file=sys.stderr)
     # set gait type
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.default_gait_type = gait_type
@@ -97,7 +97,7 @@ def demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5.
     hcf.abc_svc.waitFootSteps()
 
 def demoGoVelocityQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="7. go velocity in trot"):
-    print >> sys.stderr, print_str
+    print(print_str, file=sys.stderr)
     # set gait type
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.default_gait_type = gait_type

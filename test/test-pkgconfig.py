@@ -57,13 +57,13 @@ class TestHrpsysPkgconfig(unittest.TestCase):
     def test_compile_iob(self):
         global PID
         cmd = "%s pkg-config hrpsys-base --cflags --libs"%(self.PKG_CONFIG_PATH)
-        print "`"+cmd+"` =",check_output(cmd, shell=True, stderr=STDOUT)
+        print("`"+cmd+"` =",check_output(cmd, shell=True, stderr=STDOUT))
         ret = call("gcc -o hrpsys-sample-pkg-config /tmp/%d-hrpsys-sample.cpp `%s` -lhrpIo"%(PID,cmd), shell=True)
         self.assertTrue(ret==0)
 
     def test_idlfile(self):
         cmd = "%s pkg-config hrpsys-base --variable=idldir"%(self.PKG_CONFIG_PATH)
-        print "`"+cmd+"`/RobotHardwareService.idl = ",os.path.join(check_output(cmd, shell=True, stderr=STDOUT).rstrip(), "RobotHardwareService.idl")
+        print("`"+cmd+"`/RobotHardwareService.idl = ",os.path.join(check_output(cmd, shell=True, stderr=STDOUT).rstrip(), "RobotHardwareService.idl"))
         self.assertTrue(os.path.exists(os.path.join(check_output(cmd, shell=True).rstrip(), "RobotHardwareService.idl")))
 
 #unittest.main()

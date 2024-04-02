@@ -93,7 +93,7 @@ class RTcomponent:
 		cfg = self.ref.get_configuration()
 		cfgsets = cfg.get_configuration_sets()
 		if len(cfgsets) == 0:
-			print "configuration set is not found"
+			print("configuration set is not found")
 			return None
 		cfgset = cfgsets[0]
 		for d in cfgset.configuration_data:
@@ -108,11 +108,11 @@ class RTcomponent:
 		cfg = self.ref.get_configuration()
 		cfgsets = cfg.get_configuration_sets()
 		if len(cfgsets) == 0:
-			print "configuration set is not found"
+			print("configuration set is not found")
 			return
 		cfgset = cfgsets[0]
 		for d in cfgset.configuration_data:
-			print d.name,":",d.value.extract_string()
+			print(d.name,":",d.value.extract_string())
 		
 
 	##
@@ -204,7 +204,7 @@ class RTCmanager:
 		try:
 			self.ref.load_module(path, initfunc)
 		except:
-			print "failed to load",path
+			print("failed to load",path)
 
 	##
 	# \brief create an instance of RT component
@@ -216,7 +216,7 @@ class RTCmanager:
 		if name != None:
 			rtc = findRTC(name)
 			if rtc != None:
-				print 'RTC named "',name,'" already exists.'
+				print('RTC named "',name,'" already exists.')
 				return rtc
 		args = module
 		if name != None:
@@ -277,7 +277,7 @@ def initCORBA():
 	nshost = System.getProperty("NS_OPT").split(':')[2]
 	if nshost == "localhost" or nshost == "127.0.0.1":
 		nshost = socket.gethostname()
-	print 'nshost =',nshost
+	print('nshost =',nshost)
 	orb = ORB.init(args, props)
 
 	nameserver = orb.resolve_initial_references("NameService");
@@ -330,7 +330,7 @@ def findRTCmanager(hostname=None, rnc=None):
 		obj = findObject("manager","mgr",cxt)
 		return RTCmanager(ManagerHelper.narrow(obj))
 	except:
-		print "exception in findRTCmanager("+hostname+")"
+		print("exception in findRTCmanager("+hostname+")")
 
 ##
 # \brief get RT component
@@ -381,9 +381,9 @@ def serializeComponents(rtcs, stopEC=True):
 			if ec.add_component(rtc.ref) == ReturnCode_t.RTC_OK:
 				rtc.ec = ec
 			else:
-				print 'error in add_component()'
+				print('error in add_component()')
 		else:
-			print 'already serialized'
+			print('already serialized')
 
 ##
 # \brief check two ports are connected or not
@@ -435,10 +435,10 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 		inPs = [inPs]
 	for inP in inPs: 
 		if isConnected(outP, inP) == True:
-			print outP.get_port_profile().name,'and',inP.get_port_profile().name,'are already connected'
+			print(outP.get_port_profile().name,'and',inP.get_port_profile().name,'are already connected')
 			continue
 		if dataTypeOfPort(outP) != dataTypeOfPort(inP):
-			print outP.get_port_profile().name,'and',inP.get_port_profile().name,'have different data types'
+			print(outP.get_port_profile().name,'and',inP.get_port_profile().name,'have different data types')
 			continue
 			
 		con_prof = ConnectorProfile()
@@ -480,11 +480,11 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 		con_prof_holder = ConnectorProfileHolder()
 		con_prof_holder.value = con_prof
 		if inP.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
-			print "failed to connect(",outP.get_port_profile().name,'<->',inP.get_port_profile().name,")"
+			print("failed to connect(",outP.get_port_profile().name,'<->',inP.get_port_profile().name,")")
 			continue
 		# confirm connection
 		if isConnected(outP, inP) == False:
-			print "connet() returned RTC_OK, but not connected"
+			print("connet() returned RTC_OK, but not connected")
 
 ##
 # \brief convert data into CDR format
@@ -551,7 +551,7 @@ def writeDataPort(port, data, tm=1.0):
 	con_prof_holder = ConnectorProfileHolder()
 	con_prof_holder.value = con_prof
 	if port.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
-		print "failed to connect"
+		print("failed to connect")
 		return None
 	for p in con_prof_holder.value.properties:
 		if p.name == 'dataport.corba_cdr.inport_ior':
@@ -560,7 +560,7 @@ def writeDataPort(port, data, tm=1.0):
 			inport = InPortCdrHelper.narrow(obj)
 			cdr = data2cdr(data)
 			if inport.put(cdr) != PortStatus.PORT_OK:
-				print "failed to put"
+				print("failed to put")
 			time.sleep(tm)
 			port.disconnect(con_prof_holder.value.connector_id)
 	return None		
@@ -604,7 +604,7 @@ def readDataPort(port, timeout = 1.0):
 	con_prof_holder = ConnectorProfileHolder()
 	con_prof_holder.value = con_prof
 	if port.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
-		print "failed to connect"
+		print("failed to connect")
 		return None
 	for p in con_prof_holder.value.properties:
 		#print p.name
@@ -646,7 +646,7 @@ def findService(rtc, port_name, type_name, instance_name):
 	else:
 		p = rtc.port(port_name)
 		if p == None:
-			print "can't find a port named",port_name
+			print("can't find a port named",port_name)
 			return None
 		else:
 			port_prof = [p.get_port_profile()]
@@ -660,7 +660,7 @@ def findService(rtc, port_name, type_name, instance_name):
 			if aif.instance_name == instance_name and (type_name == "" or aif.type_name == type_name):
 				port = pp.port_ref
 	if port == None:
-		print "can't find a service named",instance_name
+		print("can't find a service named",instance_name)
 		return None
         #print port
 	con_prof = ConnectorProfile()	
@@ -684,7 +684,7 @@ def setConfiguration(rtc, nvlist):
 	cfg = rtc.get_configuration()
 	cfgsets = cfg.get_configuration_sets()
 	if len(cfgsets) == 0:
-		print "configuration set is not found"
+		print("configuration set is not found")
 		return
 	cfgset = cfgsets[0]
 	for nv in nvlist:
@@ -698,7 +698,7 @@ def setConfiguration(rtc, nvlist):
 				found = True
 				break;
 		if not found:
-			print "no such property(",name,")"
+			print("no such property(",name,")")
 	cfg.activate_configuration_set('default')
 
 ##

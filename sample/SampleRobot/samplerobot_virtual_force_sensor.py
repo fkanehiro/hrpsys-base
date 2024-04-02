@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -31,26 +31,26 @@ def demo ():
     # vs check
     port_names = fsensor_names
     if all(map (lambda x : hcf.vs.port(x), fsensor_names)):
-        print hcf.vs.name(), "ports are OK (", port_names, ")"
+        print(hcf.vs.name(), "ports are OK (", port_names, ")")
     # seq check
     port_names = map (lambda x : x+"Ref", fsensor_names)
     if all(map (lambda x : hcf.seq.port(x), port_names)):
-        print hcf.seq.name(), "ports are OK (", port_names, ")"
+        print(hcf.seq.name(), "ports are OK (", port_names, ")")
     # sh check
     port_names = map (lambda x : x+"Out", fsensor_names)
     if all(map (lambda x : hcf.sh.port(x), port_names)):
-        print hcf.sh.name(), "ports are OK (", port_names, ")"
+        print(hcf.sh.name(), "ports are OK (", port_names, ")")
     port_names = map (lambda x : x+"In", fsensor_names)
     if all(map (lambda x : hcf.sh.port(x), port_names)):
-        print hcf.sh.name(), "ports are OK (", port_names, ")"
+        print(hcf.sh.name(), "ports are OK (", port_names, ")")
     # ic check
     port_names = map (lambda x : "ref_"+x+"In", fsensor_names)
     if all(map (lambda x : hcf.ic.port(x), port_names)):
-        print hcf.ic.name(), "ports are OK (", port_names, ")"
+        print(hcf.ic.name(), "ports are OK (", port_names, ")")
     # abc check
     port_names = map (lambda x : "ref_"+x+"In", fsensor_names)
     if all(map (lambda x : hcf.ic.port(x), port_names)):
-        print hcf.ic.name(), "ports are OK (", port_names, ")"
+        print(hcf.ic.name(), "ports are OK (", port_names, ")")
 
     # 2. Test impedance controller
     ret1=hcf.ic_svc.getImpedanceControllerParam("vrhsensor")
@@ -75,7 +75,7 @@ def demo ():
                              0,0,0,0,0,0,], 2.0);
     hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.deleteImpedanceController("vrhsensor")
-    print "test ImpedanceController for virtual force sensor => OK"
+    print("test ImpedanceController for virtual force sensor => OK")
 
 if __name__ == '__main__':
     demo()

@@ -28,8 +28,8 @@ if __name__ == '__main__':
     samplerobot_terrain_walk.demo()
     import sys
     if len(sys.argv) != 2:
-        print "Usage:"
-        print " ",sys.argv[0]," --StairUp or --StairDown or --SlopeUpDown"
+        print("Usage:")
+        print(" ",sys.argv[0]," --StairUp or --StairDown or --SlopeUpDown")
     else:
         if sys.argv[1] == "--StairUp":
             samplerobot_terrain_walk.demoStairUp()
@@ -38,8 +38,8 @@ if __name__ == '__main__':
         elif sys.argv[1] == "--SlopeUpDown":
             samplerobot_terrain_walk.demoSlopeUpDown()
         else:
-            print "Usage:"
-            print " ",sys.argv[0]," --StairUp or --StairDown or --SlopeUpDown"
+            print("Usage:")
+            print(" ",sys.argv[0]," --StairUp or --StairDown or --SlopeUpDown")
 
 
 ## IGNORE ME: this code used for rostest

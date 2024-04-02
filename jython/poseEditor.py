@@ -65,7 +65,7 @@ class poseEditor(JFrame):
         for li in self.bodyInfo.links():
             if li.jointId >= 0:
                 self.dof += 1
-        print "dof=",self.dof
+        print("dof=",self.dof)
         self.setSize(550, 800)
         self.seq = seq
         self.sh = sh

@@ -29,15 +29,15 @@ def init():
 
     ms = rtm.findRTCmanager()
 
-    print "creating components"
+    print("creating components")
     createComps()
       
-    print "connecting components"
+    print("connecting components")
     connectComps()
 
-    print "activating components"
+    print("activating components")
     activateComps()
-    print "initialized successfully"
+    print("initialized successfully")
 
 def loadPattern(basename, tm=1.0):
     seq_svc.loadPattern(basename, tm)

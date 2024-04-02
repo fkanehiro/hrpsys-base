@@ -61,7 +61,7 @@ def jpeg():
     jd.start()
     civ.start()
     time.sleep(3)
-    print "jpeg quality 95 -> 30"
+    print("jpeg quality 95 -> 30")
     je.setProperty("quality", "30")
 
     

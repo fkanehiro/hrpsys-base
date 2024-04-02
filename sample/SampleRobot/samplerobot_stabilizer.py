@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -26,7 +26,7 @@ def init ():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     half_sitting_pose = [-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print("hrpsys_version = %s"%hrpsys_version)
+    print(("hrpsys_version = %s"%hrpsys_version))
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         # on < 315.5.0 this outputs huge error log message
         hcf.seq_svc.setJointAngles(initial_pose, 2.0)
@@ -45,12 +45,12 @@ def calcCOP ():
             [(cop_info[1]+cop_info[1+3])/(cop_info[2]+cop_info[2+3]),(cop_info[0]+cop_info[0+3])/(cop_info[2]+cop_info[2+3])]] # total ZMP
 
 def demoGetParameter():
-    print >> sys.stderr, "1. getParameter"
+    print("1. getParameter", file=sys.stderr)
     stp = hcf.st_svc.getParameter()
-    print >> sys.stderr, "  getParameter() => OK"
+    print("  getParameter() => OK", file=sys.stderr)
 
 def demoSetParameter():
-    print >> sys.stderr, "2. setParameter"
+    print("2. setParameter", file=sys.stderr)
     stp_org = hcf.st_svc.getParameter()
     # for tpcc
     stp_org.k_tpcc_p=[0.2, 0.2]
@@ -88,7 +88,7 @@ def demoSetParameter():
     stp = hcf.st_svc.getParameter()
     vcheck = stp.k_tpcc_p == stp_org.k_tpcc_p and stp.k_tpcc_x == stp_org.k_tpcc_x and stp.k_brot_p == stp_org.k_brot_p
     if vcheck:
-        print >> sys.stderr, "  setParameter() => OK", vcheck
+        print("  setParameter() => OK", vcheck, file=sys.stderr)
     assert(vcheck)
 
 def changeContactDecisionThre (thre):
@@ -115,14 +115,14 @@ def checkActualBaseAttitude(thre=5.0): # degree
     '''
     act_rpy = checkParameterFromLog("WAIST")[3:]
     ret = abs(math.degrees(act_rpy[0])) < thre and abs(math.degrees(act_rpy[1])) < thre
-    print >> sys.stderr, "  ret = ", ret, ", actual base rpy = (", act_rpy, ")"
+    print("  ret = ", ret, ", actual base rpy = (", act_rpy, ")", file=sys.stderr)
     return ret
 
 def printActualBase():
     '''Print actual base pos and rot
     '''
     act_base = checkParameterFromLog("WAIST")
-    print >> sys.stderr, "  actual base pos = ", act_base[0:3], "[m], actual base rpy = ", act_base[3:], "[rad]"
+    print("  actual base pos = ", act_base[0:3], "[m], actual base rpy = ", act_base[3:], "[rad]", file=sys.stderr)
 
 def changeSTAlgorithm (new_st_alg):
     stp = hcf.st_svc.getParameter()
@@ -136,7 +136,7 @@ def changeSTAlgorithm (new_st_alg):
         hcf.waitInterpolation()
 
 def demoSTLoadPattern ():
-    print >> sys.stderr, "3. EEFMQP st + SequencePlayer loadPattern"
+    print("3. EEFMQP st + SequencePlayer loadPattern", file=sys.stderr)
     if hcf.pdc:
         # Set initial pose of samplerobot-gopos000 before starting of ST
         hcf.seq_svc.setJointAnglesSequenceFull([[0.000242, -0.403476, -0.000185, 0.832071, -0.427767, -6.928952e-05, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, 0.000242, -0.403469, -0.000185, 0.832073, -0.427775, -6.928781e-05, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], # jvss
@@ -163,13 +163,13 @@ def demoSTLoadPattern ():
         hcf.waitInterpolation()
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  ST + loadPattern => OK"
+            print("  ST + loadPattern => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoStartStopTPCCST ():
-    print >> sys.stderr, "4. start and stop TPCC st"
+    print("4. start and stop TPCC st", file=sys.stderr)
     if hcf.pdc:
         # setup controllers
         hcf.startAutoBalancer()
@@ -179,13 +179,13 @@ def demoStartStopTPCCST ():
         #hcf.abc_svc.waitFootSteps()
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+            print("  Start and Stop Stabilizer => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoStartStopEEFMQPST ():
-    print >> sys.stderr, "5. start and stop EEFMQP st"
+    print("5. start and stop EEFMQP st", file=sys.stderr)
     if hcf.pdc:
         # setup controllers
         hcf.startAutoBalancer()
@@ -195,13 +195,13 @@ def demoStartStopEEFMQPST ():
         hcf.abc_svc.waitFootSteps()
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+            print("  Start and Stop Stabilizer => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoSTStairWalk ():
-    print >> sys.stderr, "6. EEFMQPCOP + stair"
+    print("6. EEFMQPCOP + stair", file=sys.stderr)
     if hcf.pdc:
         # setup controllers
         printActualBase()
@@ -241,13 +241,13 @@ def demoSTStairWalk ():
         ret = checkActualBaseAttitude()
         printActualBase()
         if ret:
-            print >> sys.stderr, "  ST + Stair => OK"
+            print("  ST + Stair => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoSTToeHeelWalk ():
-    print >> sys.stderr, "7. EEFMQPCOP + toeheel"
+    print("7. EEFMQPCOP + toeheel", file=sys.stderr)
     if hcf.pdc:
         # setup controllers
         hcf.startAutoBalancer()
@@ -296,13 +296,13 @@ def demoSTToeHeelWalk ():
         hcf.co_svc.enableCollisionDetection()
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  ST + ToeHeel => OK"
+            print("  ST + ToeHeel => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoSTTurnWalk ():
-    print >> sys.stderr, "8. EEFMQPCOP st + Turn walk"
+    print("8. EEFMQPCOP st + Turn walk", file=sys.stderr)
     if hcf.pdc:
         hcf.startAutoBalancer()
         hcf.co_svc.disableCollisionDetection()
@@ -323,15 +323,15 @@ def demoSTTurnWalk ():
         hcf.co_svc.enableCollisionDetection()
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  ST + Turnwalk => OK"
+            print("  ST + Turnwalk => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 
 def demoSTTransitionAirGround ():
     # This example is from YoheiKakiuchi's comment : https://github.com/fkanehiro/hrpsys-base/issues/1098, https://github.com/fkanehiro/hrpsys-base/pull/1102#issuecomment-284609203
-    print >> sys.stderr, "9. ST Transition (in the air and on the ground)"
+    print("9. ST Transition (in the air and on the ground)", file=sys.stderr)
     if hcf.pdc:
         # Init
         stp_org = hcf.st_svc.getParameter()
@@ -339,24 +339,24 @@ def demoSTTransitionAirGround ():
         stp.transition_time = 0.1; # for fast checking
         hcf.st_svc.setParameter(stp)
         # Tests
-        print >> sys.stderr, "  9-1. Check in the air"
+        print("  9-1. Check in the air", file=sys.stderr)
         hcf.startStabilizer()
         mimicInTheAir()
         hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
         cmode1 = hcf.st_svc.getParameter().controller_mode
         vcheck1 = (cmode1 == OpenHRP.StabilizerService.MODE_AIR)
-        print >> sys.stderr, "  9-2. Check on the ground"
+        print("  9-2. Check on the ground", file=sys.stderr)
         mimicOnTheGround()
         hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
         cmode2 = hcf.st_svc.getParameter().controller_mode
         vcheck2 = (cmode2 == OpenHRP.StabilizerService.MODE_ST)
-        print >> sys.stderr, "  9-3. Check in the air and then stopST"
+        print("  9-3. Check in the air and then stopST", file=sys.stderr)
         mimicInTheAir()
         hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until in the air flag is invoked in onExecute
         hcf.stopStabilizer()
         cmode3 = hcf.st_svc.getParameter().controller_mode
         vcheck3 = (cmode3 == OpenHRP.StabilizerService.MODE_IDLE)
-        print >> sys.stderr, "  9-4. Check on the ground"
+        print("  9-4. Check on the ground", file=sys.stderr)
         mimicOnTheGround()
         hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until on the ground flag is invoked in onExecute
         hcf.startStabilizer()
@@ -365,15 +365,15 @@ def demoSTTransitionAirGround ():
         # Finsh
         hcf.st_svc.setParameter(stp_org)
         vcheck_list = [vcheck1, vcheck2, vcheck3, vcheck4]
-        print >> sys.stderr, "  ST Transition Air Ground vcheck = ", vcheck_list, ", cmode = ", [cmode1, cmode2, cmode3, cmode4]
+        print("  ST Transition Air Ground vcheck = ", vcheck_list, ", cmode = ", [cmode1, cmode2, cmode3, cmode4], file=sys.stderr)
         if all(vcheck_list):
-            print >> sys.stderr, "  ST Transition Air Ground => OK"
+            print("  ST Transition Air Ground => OK", file=sys.stderr)
         assert(all(vcheck_list))
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoSTRootRotChange ():
-    print >> sys.stderr, "10. ST root rot change"
+    print("10. ST root rot change", file=sys.stderr)
     if hcf.pdc:
         # 10deg
         root_rot_x_pose=[-0.240857,-0.634561,0.012382,1.30211,-0.669201,0.073893,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.232865,-0.555515,0.011753,1.1356,-0.581653,0.06476,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
@@ -385,33 +385,33 @@ def demoSTRootRotChange ():
         root_rot_xyz_pose=[-0.378611,-0.81283,-0.238181,1.23534,-0.577915,0.061071,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.351695,-0.768514,-0.225097,1.05221,-0.442267,0.050849,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
         hcf.startAutoBalancer();
         changeSTAlgorithm (OpenHRP.StabilizerService.EEFMQPCOP)
-        print >> sys.stderr, "  init"
+        print("  init", file=sys.stderr)
         checkActualBaseAttitude()
         hcf.seq_svc.setJointAngles(root_rot_x_pose, 1.0);hcf.waitInterpolation();
         hcf.seq_svc.setJointAngles(root_rot_x_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
-        print >> sys.stderr, "  root rot x done."
+        print("  root rot x done.", file=sys.stderr)
         checkActualBaseAttitude()
         hcf.seq_svc.setJointAngles(root_rot_y_pose, 1.0);hcf.waitInterpolation();
         hcf.seq_svc.setJointAngles(root_rot_y_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
-        print >> sys.stderr, "  root rot y done."
+        print("  root rot y done.", file=sys.stderr)
         checkActualBaseAttitude()
         hcf.seq_svc.setJointAngles(root_rot_z_pose, 1.0);hcf.waitInterpolation();
         hcf.seq_svc.setJointAngles(root_rot_z_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
-        print >> sys.stderr, "  root rot z done."
+        print("  root rot z done.", file=sys.stderr)
         checkActualBaseAttitude()
         hcf.seq_svc.setJointAngles(root_rot_xyz_pose, 1.0);hcf.waitInterpolation();
         hcf.seq_svc.setJointAngles(root_rot_xyz_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
         hcf.seq_svc.setJointAngles(initial_pose, 1.0);hcf.waitInterpolation();
-        print >> sys.stderr, "  root rot xyz done."
+        print("  root rot xyz done.", file=sys.stderr)
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  ST root rot change => OK"
+            print("  ST root rot change => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
-    print >> sys.stderr, "11. ST mimic rough terrain walk"
+    print("11. ST mimic rough terrain walk", file=sys.stderr)
     if hcf.pdc:
         hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg")]),
                           OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.22,0.09,terrain_height_diff], [1,0,0,0], "lleg")]),
@@ -425,10 +425,10 @@ def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
         hcf.abc_svc.waitFootSteps();
         ret = checkActualBaseAttitude()
         if ret:
-            print >> sys.stderr, "  ST mimic rough terrain walk => OK"
+            print("  ST mimic rough terrain walk => OK", file=sys.stderr)
         assert(ret)
     else:
-        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+        print("  This sample is neglected in High-gain mode simulation", file=sys.stderr)
 
 
 def demo():
@@ -448,7 +448,7 @@ def demo():
             demoSTRootRotChange()
             demoSTMimicRouchTerrainWalk()
     else:
-        print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
+        print("Skip st test because of missing sample1_bush.wrl", file=sys.stderr)
 
 if __name__ == '__main__':
     demo()

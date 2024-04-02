@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -57,7 +57,7 @@ def init ():
     roll_pitch_pose3=[0.463158,0.281851,-0.0701,0.747965,-0.514677,-0.108534,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.486068,0.189331,-0.083976,1.08676,-0.76299,-0.139173,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_poses = [roll_pitch_pose1, roll_pitch_pose2, roll_pitch_pose3]
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print("hrpsys_version = %s"%hrpsys_version)
+    print(("hrpsys_version = %s"%hrpsys_version))
 
 def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     # Reset KF and store data during motion
@@ -92,7 +92,7 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
                     "Actual yaw",   "Estimated base yaw"))
         plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
     except:
-        print >> sys.stderr, "No plot"
+        print("No plot", file=sys.stderr)
 
 def test_bending_common (time, poses):
     hcf.seq_svc.setJointAngles(poses[1], time*0.25)
@@ -131,14 +131,14 @@ def test_walk ():
     hcf.abc_svc.waitFootSteps()
 
 def demoGetKalmanFilterParameter():
-    print >> sys.stderr, "1. getParameter"
+    print("1. getParameter", file=sys.stderr)
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print >> sys.stderr, "  getKalmanFilterParam() => OK"
+        print("  getKalmanFilterParam() => OK", file=sys.stderr)
     assert(ret[0])
 
 def demoSetKalmanFilterParameter():
-    print >> sys.stderr, "2. setParameter"
+    print("2. setParameter", file=sys.stderr)
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
     kfp.Q_rate = 0.003;
@@ -147,7 +147,7 @@ def demoSetKalmanFilterParameter():
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
     ret2 = ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle
     if ret2:
-        print >> sys.stderr, "  setKalmanFilterParam() => OK"
+        print("  setKalmanFilterParam() => OK", file=sys.stderr)
     assert(ret2)
 
 def demo():

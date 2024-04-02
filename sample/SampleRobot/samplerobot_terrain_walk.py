@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -59,7 +59,7 @@ def stairWalk(stair_height = 0.1524):
 
 # sample for SampleRobot.TerrainFloor.SlopeUpDown.xml
 def demoSlopeUpDown():
-    print "Start stlop up down"
+    print("Start stlop up down")
     setupGaitGeneratorParam(True)
     hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     fsList=[OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.8,-0.09,0.0], [1.0,0.0,2.775558e-17,0.0], "rleg")]),
@@ -86,22 +86,22 @@ def demoSlopeUpDown():
 
 # sample for SampleRobot.TerrainFloor.StairUp.xml
 def demoStairUp():
-    print "Start stair up"
+    print("Start stair up")
     stairWalk()
 
 # sample for SampleRobot.TerrainFloor.StairDown.xml
 def demoStairDown():
-    print "Start stair down"
+    print("Start stair down")
     hcf.abc_svc.goPos(0.05, 0.0, 0.0)
     hcf.abc_svc.waitFootSteps()
     stairWalk(-0.1524)
 
 def demoStairUpDown():
-    print "Start stair up"
+    print("Start stair up")
     stairWalk()
     hcf.abc_svc.goPos(0.05, 0.0, 0.0)
     hcf.abc_svc.waitFootSteps()
-    print "Start stair down"
+    print("Start stair down")
     stairWalk(-0.1524)
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -36,10 +36,10 @@ def init ():
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print("hrpsys_version = %s"%hrpsys_version)
+    print(("hrpsys_version = %s"%hrpsys_version))
 
 def demoSetParameterAndStartST():
-    print >> sys.stderr, "1. setParameter"
+    print("1. setParameter", file=sys.stderr)
     stp_org = hcf.st_svc.getParameter()
     # for tpcc
     stp_org.k_tpcc_p=[0.2, 0.2]
@@ -79,7 +79,7 @@ def demoSetParameterAndStartST():
     hcf.startStabilizer ()
 
 def demoSetFootStepsWithST():
-    print >> sys.stderr,"2. setFootSteps"
+    print("2. setFootSteps", file=sys.stderr)
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg"),
                                                              OpenHRP.AutoBalancerService.Footstep([0.7+0.00,+0.19,0], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.15,+0.19,0], [1,0,0,0], "lleg"),
