@@ -169,7 +169,7 @@ if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
 endif()
 
 execute_process(
-  COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+  COMMAND python -c "import sys; print(sys.version_info[0])"
   OUTPUT_VARIABLE PYTHON_VERSION
   RESULT_VARIABLE PYTHON_VERSION_SUCCESS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -225,6 +225,7 @@ endif()
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
 if(need_catkin OR "${CATKIN_BUILD_BINARY_PACKAGE}")
   find_package(catkin)
+  catkin_python_setup()
   if(catkin_FOUND)
     catkin_package_xml()
     if(NOT hrpsys_VERSION VERSION_EQUAL CPACK_PACKAGE_VERSION)
