@@ -70,8 +70,8 @@ add_custom_command(
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile ${input_files}
 )
 
-add_custom_target(doc ALL DEPENDS ${output_dir}/index.html)
-add_custom_target(doc ALL DEPENDS ${output_dir_xml}/index.xml)
+add_custom_target(doc_index_html ALL DEPENDS ${output_dir}/index.html)
+add_custom_target(doc_index_xml ALL DEPENDS ${output_dir_xml}/index.xml)
 
 install(DIRECTORY ${output_dir} DESTINATION share/doc/hrpsys/base)
 install(DIRECTORY ${output_dir_xml} DESTINATION share/doc/hrpsys/base)
