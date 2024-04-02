@@ -1,7 +1,7 @@
-from Tkinter import *
-from tkMessageBox import *
+from tkinter import *
+from tkinter.messagebox import *
 import datetime
-import __builtin__
+import builtins
 import threading
 
 def waitInputConfirm(msg):
@@ -244,7 +244,3 @@ def waitInputMenu(menu):
     thr = threading.Thread(target=waitInputMenuMain, args=(menu,))
     thr.start()
     return thr
-
-__builtin__.waitInputConfirm = waitInputConfirm
-__builtin__.waitInputSelect  = waitInputSelect
-__builtin__.waitInputMenu    = waitInputMenu

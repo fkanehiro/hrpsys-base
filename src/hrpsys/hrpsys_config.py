@@ -3,16 +3,17 @@
 import os
 import rtm
 
-from rtm import *
-from OpenHRP import *
+from .rtm import *
+from .OpenHRP import *
 from hrpsys import *  # load ModelLoader
 from hrpsys import ImpedanceControllerService_idl
-from waitInput import waitInputConfirm
+from .waitInput import waitInputConfirm
 
 import socket
 import time
 import subprocess
-from distutils.version import StrictVersion
+from packaging.version import parse as StrictVersion
+
 
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
