@@ -32,9 +32,9 @@ add_library(hrpsysext SHARED
   PyShape.cpp
   )
 
-find_package(Boost REQUIRED COMPONENTS python)
+find_package(Boost REQUIRED COMPONENTS python38)
 target_link_libraries(hrpsysext
-  Boost::python
+  Boost::python38
   hrpsysUtil
   ${PYTHON_LIBRARIES}
   )
