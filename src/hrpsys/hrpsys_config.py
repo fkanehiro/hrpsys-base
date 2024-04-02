@@ -796,6 +796,8 @@ class HrpsysConfigurator(object):
     def parseUrl(self, url):
         if '$(PROJECT_DIR)' in url:
             path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+            if isinstance(path, bytes):
+                path = path.decode('utf-8')
             path = os.path.join(path, 'share/OpenHRP-3.1/sample/project')
             url = url.replace('$(PROJECT_DIR)', path)
         return url

@@ -12,6 +12,8 @@ import os
 import time
 import re
 
+if sys.version_info[0] >= 3:
+    unicode = str
 ##
 # \brief root naming context
 #
