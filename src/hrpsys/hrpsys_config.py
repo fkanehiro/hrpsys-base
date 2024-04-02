@@ -770,7 +770,7 @@ class HrpsysConfigurator(object):
         '''
         controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
                            self.tc, self.hes, self.el]
-        return filter(lambda c: c != None, controller_list)  # only return existing controllers
+        return list(filter(lambda c: c != None, controller_list))  # only return existing controllers
 
     def getRTCInstanceList(self, verbose=True):
         '''!@brief
