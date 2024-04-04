@@ -42,7 +42,7 @@ def init ():
 #                          'gsens':[0,0,0],
                           'waist':[-0.092492, -6.260780e-05, 0.6318, -0.000205, 0.348204, 0.000268],
                           'waist_acc':[0]*3,
-                          'torque':range(dof), # non realistic value
+                          'torque':list(range(dof)), # non realistic value
                           'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6, # non realistic value
                           'optionaldata':[0,1,0,0,0.1,0.1,0.1,0.1] # non realistic value
                           }
