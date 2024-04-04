@@ -6,7 +6,7 @@ import os
 sys.path.append("@python_dist_pkg_dir@/hrpsys")
 import hrpsysext
 
-execfile("@python_dist_pkg_dir@/hrpsys/waitInput.py")
+exec(compile(open("@python_dist_pkg_dir@/hrpsys/waitInput.py", "rb").read(), "@python_dist_pkg_dir@/hrpsys/waitInput.py", 'exec'))
 
 sys.path.append(os.getcwd())
 
@@ -53,7 +53,7 @@ else:
         sim.start(sim.totalTime)
 
         if script != None:
-            execfile(script)
+            exec(compile(open(script, "rb").read(), script, 'exec'))
 
 
 
