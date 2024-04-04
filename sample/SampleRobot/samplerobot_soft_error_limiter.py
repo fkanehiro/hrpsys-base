@@ -17,7 +17,7 @@ from subprocess import check_output
 
 # Tempolarily remove tc which is limit position range
 def getRTCList ():
-    return filter(lambda x : x[0]!='tc', hcf.getRTCListUnstable())
+    return [x for x in hcf.getRTCListUnstable() if x[0]!='tc']
 
 def init ():
     global hcf, initial_pose, limit_table_list, bodyinfo, hrpsys_version

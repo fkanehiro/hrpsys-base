@@ -19,7 +19,7 @@ def init ():
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     if hcf.es != None:
-        for sen in filter(lambda x: x.type == "Force", hcf.sensors):
+        for sen in [x for x in hcf.sensors if x.type == "Force"]:
             hcf.connectLoggerPort(hcf.es, sen.name+"Out")
     init_pose = [0]*29
     reset_pose = [0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,0.15708,-0.113446,0.637045,0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
