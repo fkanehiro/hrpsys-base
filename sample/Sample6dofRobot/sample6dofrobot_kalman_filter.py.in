@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -63,7 +63,7 @@ def demo():
     # 1. getParameter
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print "getKalmanFilterParam() => OK"
+        print("getKalmanFilterParam() => OK")
     # 2. setParameter
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
@@ -72,7 +72,7 @@ def demo():
     ret=hcf.kf_svc.setKalmanFilterParam(kfp)
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
     if ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle:
-        print "setKalmanFilterParam() => OK"
+        print("setKalmanFilterParam() => OK")
 
     # 3. check log and plot
     offset = math.radians(85)   # we need this because we rotate waist of this robot in xml file.

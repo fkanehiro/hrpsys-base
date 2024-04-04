@@ -13,7 +13,7 @@ sys.path.append(os.getcwd())
 argc = len(sys.argv)
 
 if argc < 2:
-    print "Usage: hrpsys-simulator project.xml [script.py]"
+    print("Usage: hrpsys-simulator project.xml [script.py]")
 else:    
     project = sys.argv[1]
 
