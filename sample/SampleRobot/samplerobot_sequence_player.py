@@ -47,7 +47,7 @@ def init ():
                           'optionaldata':[0,1,0,0,0.1,0.1,0.1,0.1] # non realistic value
                           }
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
     hcf.seq_svc.removeJointGroup('larm')
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.waitInterpolation();

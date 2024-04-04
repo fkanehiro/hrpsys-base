@@ -27,7 +27,7 @@ def init ():
     wrench_command0 = [0.0]*24
     wrench_command1 = [1.0]*24
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def arrayDistance (angle1, angle2):
     return sum([abs(i-j) for (i,j) in zip(angle1,angle2)])

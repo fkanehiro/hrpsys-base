@@ -23,7 +23,7 @@ def init ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.5)
     hcf.waitInterpolation()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-remove-force-offset-check-param"):
     hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)

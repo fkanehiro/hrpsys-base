@@ -21,7 +21,7 @@ def init ():
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
     if hcf.rfu != None:
         hcf.connectLoggerPort(hcf.rfu, 'ref_rhsensorOut')
         hcf.connectLoggerPort(hcf.rfu, 'ref_lhsensorOut')

@@ -37,7 +37,7 @@ def init ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demo ():
     init()

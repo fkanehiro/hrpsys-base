@@ -27,7 +27,7 @@ def init ():
     hcf.waitInterpolation()
     hcf.startAutoBalancer()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def checkActualBaseAttitude():
     rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation

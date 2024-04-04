@@ -40,7 +40,7 @@ def init ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def testPoseList(pose_list, initial_pose):
     for pose in pose_list:

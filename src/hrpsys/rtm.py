@@ -120,8 +120,8 @@ class RTcomponent:
                 return True
             ret = ec.activate_component(self.ref)
             if  ret != RTC.RTC_OK:
-                print(('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
-                       (self.name(), ret)))
+                print('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
+                       (self.name(), ret))
                 return False
             tm = 0 
             while tm < timeout:
@@ -129,8 +129,8 @@ class RTcomponent:
                     return True
                 time.sleep(0.01)
                 tm += 0.01
-        print(('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
-               self.name()))
+        print('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
+               self.name())
         return False
 
     ##
@@ -147,8 +147,8 @@ class RTcomponent:
                 return True
             ret = ec.deactivate_component(self.ref)
             if  ret != RTC.RTC_OK:
-                print(('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
-                       (self.name(), ret)))
+                print('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
+                       (self.name(), ret))
                 return False
             tm = 0
             while tm < timeout:
@@ -156,8 +156,8 @@ class RTcomponent:
                     return True
                 time.sleep(0.01)
                 tm += 0.01
-        print(('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
-               self.name()))
+        print('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
+               self.name())
         return False
 
     ##
@@ -236,7 +236,7 @@ class RTCmanager:
         try:
             self.ref.load_module(path, initfunc)
         except:
-            print(("failed to load", path))
+            print("failed to load", path)
 
     ##
     # \brief create an instance of RT component
@@ -248,7 +248,7 @@ class RTCmanager:
         if name != None:
             rtc = findRTC(name)
             if rtc != None:
-                print(('RTC named "' + name + '" already exists.'))
+                print('RTC named "' + name + '" already exists.')
                 return rtc
         args = module
         if name != None:
@@ -334,7 +334,7 @@ def initCORBA():
     mc.parseArgs(rtm_argv)
 
     if nshost != None: # these values can be set via other script like "import rtm; rtm.nshost=XXX"
-        print(("\033[34m[rtm.py] nshost already set as " + str(nshost) + "\033[0m"))
+        print("\033[34m[rtm.py] nshost already set as " + str(nshost) + "\033[0m")
     else:
         try:
             nshost = mc._argprop.getProperty("corba.nameservers").split(":")[0]
@@ -342,10 +342,10 @@ def initCORBA():
                 raise
         except:
             nshost = socket.gethostname() # default
-            print(("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nshost) + " as nshost \033[0m"))
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nshost) + " as nshost \033[0m")
 
     if nsport != None:
-        print(("\033[34m[rtm.py] nsport already set as " + str(nsport) + "\033[0m"))
+        print("\033[34m[rtm.py] nsport already set as " + str(nsport) + "\033[0m")
     else:
         try:
             nsport = int(mc._argprop.getProperty("corba.nameservers").split(":")[1])
@@ -353,15 +353,15 @@ def initCORBA():
                 raise
         except:
             nsport = 15005  # default
-            print(("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nsport) + " as nsport \033[0m"))
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nsport) + " as nsport \033[0m")
 
     if mgrhost != None: 
-        print(("\033[34m[rtm.py] mgrhost already set as " + str(mgrhost) + "\033[0m"))
+        print("\033[34m[rtm.py] mgrhost already set as " + str(mgrhost) + "\033[0m")
     else:
         mgrhost = nshost
 
     if mgrport != None: 
-        print(("\033[34m[rtm.py] mgrport already set as " + str(mgrport) + "\033[0m"))
+        print("\033[34m[rtm.py] mgrport already set as " + str(mgrport) + "\033[0m")
     else:
         try:
             mgrport = int(mc._argprop.getProperty("corba.master_manager").split(":")[1])
@@ -369,10 +369,10 @@ def initCORBA():
                 raise
         except:
             mgrport = 2810  # default
-            print(("\033[34m[rtm.py] Failed to parse corba.master_manager, use " + str(mgrport) + "\033[0m"))
+            print("\033[34m[rtm.py] Failed to parse corba.master_manager, use " + str(mgrport) + "\033[0m")
 
-    print(("\033[34m[rtm.py] configuration ORB with %s:%s\033[0m"%(nshost, nsport)))
-    print(("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(mgrhost, mgrport)))
+    print("\033[34m[rtm.py] configuration ORB with %s:%s\033[0m"%(nshost, nsport))
+    print("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(mgrhost, mgrport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
@@ -394,7 +394,7 @@ def initCORBA():
                      'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
     except Exception:
         _, e, _ = sys.exc_info()
-        print((str(e)))
+        print(str(e))
 
     return None
 
@@ -426,7 +426,7 @@ def findObject(name, kind="", rnc=None):
     if not rnc:
         rnc = rootnc
         if not rnc:
-            print(("[ERROR] findObject(%r,kind=%r,rnc=%r) rootnc is not found" % (name, kind, rnc)))
+            print("[ERROR] findObject(%r,kind=%r,rnc=%r) rootnc is not found" % (name, kind, rnc))
     return rnc.resolve(path)
 
 ##
@@ -438,8 +438,8 @@ def findObject(name, kind="", rnc=None):
 #
 def findRTCmanager(hostname=None, rnc=None):
     if not rootnc:
-        print(("[ERROR] findRTCmanager(hostname=%r,rnc=%r) rootnc is not defined, need to call initCORBA()" % \
-              (hostname, rnc)))
+        print("[ERROR] findRTCmanager(hostname=%r,rnc=%r) rootnc is not defined, need to call initCORBA()" % \
+              (hostname, rnc))
     if not hostname:
         hostname = nshost
         cxt = None
@@ -464,7 +464,7 @@ def findRTCmanager(hostname=None, rnc=None):
     def getManagerDirectly(hostname, mgr=None):
         global orb, mgrport
         corbaloc = "corbaloc:iiop:" + hostname + ":" + str(mgrport) + "/manager"
-        print(("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m"))
+        print("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m")
         try:
             obj = orb.string_to_object(corbaloc)
             mgr = RTCmanager(obj._narrow(RTM.Manager))
@@ -546,10 +546,10 @@ def serializeComponents(rtcs, stopEC=True):
                 else:
                     print('error in add_component()')
             else:
-                print((rtc.name() + 'is already serialized'))
+                print(rtc.name() + 'is already serialized')
         except Exception:
             _, e, _ = sys.exc_info()
-            print(("[rtm.py] \033[31m   error in serialize %s of %s %s\033[0m" % (rtc.name(),  [[r, r.name()] for r in rtcs], str(e))))
+            print("[rtm.py] \033[31m   error in serialize %s of %s %s\033[0m" % (rtc.name(),  [[r, r.name()] for r in rtcs], str(e)))
             raise e
 
 ##
@@ -580,7 +580,7 @@ def disconnectPorts(outP, inP):
         if len(ports) == 2:
             pname = ports[1].get_port_profile().name
             if pname == iname:
-                print(('[rtm.py]    Disconnect %s - %s' %(op.name, iname)))
+                print('[rtm.py]    Disconnect %s - %s' %(op.name, iname))
                 outP.disconnect(con_prof.connector_id)
                 return True
     return False
@@ -611,21 +611,21 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
     if not isinstance(inPs, list):
         inPs = [inPs]
     if not outP:
-        print(('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
-              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs], inPs)))
+        print('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs], inPs))
         return
     for inP in inPs:
         if not inP:
-            print(('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
-                  (outP.get_port_profile().name, inP, inPs)))
+            print('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+                  (outP.get_port_profile().name, inP, inPs))
             continue
         if isConnected(outP, inP) == True:
-            print(('[rtm.py]      %s and %s are already connected' % \
-                  (outP.get_port_profile().name, inP.get_port_profile().name)))
+            print('[rtm.py]      %s and %s are already connected' % \
+                  (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
         if dataTypeOfPort(outP) != dataTypeOfPort(inP):
-            print(('[rtm.py] \033[31m     %s and %s have different data types\033[0m' % \
-                  (outP.get_port_profile().name, inP.get_port_profile().name)))
+            print('[rtm.py] \033[31m     %s and %s have different data types\033[0m' % \
+                  (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
         nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any(interfaceType))
         nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any(dataflow))
@@ -636,8 +636,8 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
         nv7 = SDOPackage.NameValue("dataport.data_type", any.to_any(dataTypeOfPort(outP)))
         con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP],
                                         [nv1, nv2, nv3, nv4, nv5, nv6, nv7])
-        print(('[rtm.py]    Connect ' + outP.get_port_profile().name + ' - ' + \
-              inP.get_port_profile().name+' (dataflow_type='+dataflow+', subscription_type='+ subscription+', bufferlength='+str(bufferlength)+', push_rate='+str(rate)+', push_policy='+pushpolicy+')'))
+        print('[rtm.py]    Connect ' + outP.get_port_profile().name + ' - ' + \
+              inP.get_port_profile().name+' (dataflow_type='+dataflow+', subscription_type='+ subscription+', bufferlength='+str(bufferlength)+', push_rate='+str(rate)+', push_policy='+pushpolicy+')')
         ret, prof = inP.connect(con_prof)
         if ret != RTC.RTC_OK:
             print("failed to connect")
@@ -847,7 +847,7 @@ def findService(rtc, port_name, type_name, instance_name):
     else:
         p = rtc.port(port_name)
         if p == None:
-            print(("can't find a port named" + port_name))
+            print("can't find a port named" + port_name)
             return None
         else:
             port_prof = [p.get_port_profile()]
@@ -863,7 +863,7 @@ def findService(rtc, port_name, type_name, instance_name):
                aif.polarity == PROVIDED:
                 port = pp.port_ref
     if port == None:
-        print(("can't find a service named", instance_name))
+        print("can't find a service named", instance_name)
         return None
     con_prof = RTC.ConnectorProfile("noname", "", [port], [])
     ret, con_prof = port.connect(con_prof)

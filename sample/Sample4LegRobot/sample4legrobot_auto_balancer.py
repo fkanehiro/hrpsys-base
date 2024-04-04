@@ -42,7 +42,7 @@ def init ():
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     hcf.startAutoBalancer(limbs=['rleg','lleg','rarm','larm'])
     hrpsys_version = hcf.seq.ref.get_component_profile().version
-    print(("hrpsys_version = %s"%hrpsys_version))
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demoGaitGeneratorSetFootSteps(print_str="1. setFootSteps"):
     print(print_str, file=sys.stderr)
