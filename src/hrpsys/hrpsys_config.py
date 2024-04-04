@@ -824,15 +824,14 @@ class HrpsysConfigurator(object):
         if url == '':
             return []
         else:
-            return sum(map(lambda x: x.sensors,
-                           [x for x in self.getBodyInfo(url)._get_links() if len(x.sensors) > 0]), [])  # sum is for list flatten
+            return sum([x.sensors for x in [x for x in self.getBodyInfo(url)._get_links() if len(x.sensors) > 0]], [])  # sum is for list flatten
 
     # public method to get sensors list
     def getForceSensorNames(self):
         '''!@brief
         Get list of force sensor names. Returns existence force sensors and virtual force sensors. self.sensors and virtual force sensors are assumed.
         '''
-        ret = map (lambda x : x.name, [x for x in self.sensors if x.type == "Force"])
+        ret = [x.name for x in [x for x in self.sensors if x.type == "Force"]]
         if self.vs != None:
             ret += [x for x in self.vs.ports.keys() if str.find(x, 'v') >= 0 and str.find(x, 'sensor') >= 0]
         return ret
@@ -2039,7 +2038,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         If Groups is not defined or Groups does not have rarm and larm, rleg and lleg by default.
         '''
         if limbs==None:
-            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
+            if self.Groups != None and "rarm" in [x[0] for x in self.Groups] and "larm" in [x[0] for x in self.Groups]:
                 limbs=["rleg", "lleg", "rarm", "larm"]
             else:
                 limbs=["rleg", "lleg"]
@@ -2166,13 +2165,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         print(self.configurator_name + "Start Default Unstable Controllers")
         # Check robot setting
-        is_legged_robot = map(lambda x: x[0], [x for x in self.Groups if re.match(".*leg", x[0])])
+        is_legged_robot = [x[0] for x in [x for x in self.Groups if re.match(".*leg", x[0])]]
         # Select all arms in "Groups" for impedance as a default setting
         if not ic_limbs:
-            ic_limbs = map(lambda x: x[0], [x for x in self.Groups if re.match(".*(arm)", x[0])])
+            ic_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(arm)", x[0])]]
         # Select all arms/legs in "Groups" for autobalancer as a default setting
         if not abc_limbs:
-            abc_limbs = map(lambda x: x[0], [x for x in self.Groups if re.match(".*(leg|arm)", x[0])])
+            abc_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(leg|arm)", x[0])]]
         # Start controllers
         for limb in ic_limbs:
             self.ic_svc.startImpedanceControllerNoWait(limb)
@@ -2196,10 +2195,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         print(self.configurator_name + "Stop Default Unstable Controllers")
         # Check robot setting
-        is_legged_robot = map(lambda x: x[0], [x for x in self.Groups if re.match(".*leg", x[0])])
+        is_legged_robot = [x[0] for x in [x for x in self.Groups if re.match(".*leg", x[0])]]
         # Select all arms in "Groups" for impedance as a default setting
         if not ic_limbs:
-            ic_limbs = map(lambda x: x[0], [x for x in self.Groups if re.match(".*(arm)", x[0])])
+            ic_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(arm)", x[0])]]
         # Stop controllers
         if is_legged_robot:
             self.stopStabilizer()

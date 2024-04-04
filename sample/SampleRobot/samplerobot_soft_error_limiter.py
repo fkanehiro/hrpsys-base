@@ -66,8 +66,8 @@ def getJointLimitTableInfo (table_idx=0):
     target_jointId = filter( lambda x : x.name == target_joint_name, bodyinfo._get_links())[0].jointId
     target_llimit=float(limit_table_list[2+table_idx*6])
     target_ulimit=float(limit_table_list[3+table_idx*6])
-    self_llimits=map(lambda x : float(x), limit_table_list[4+table_idx*6].split(","))
-    self_ulimits=map(lambda x : float(x), limit_table_list[5+table_idx*6].split(","))
+    self_llimits=[float(x) for x in limit_table_list[4+table_idx*6].split(",")]
+    self_ulimits=[float(x) for x in limit_table_list[5+table_idx*6].split(",")]
     return [self_joint_name, target_joint_name,
             self_jointId, target_jointId,
             target_llimit, target_ulimit,
@@ -86,7 +86,7 @@ def testLimitTables (table_idx=0, debug=True, loop_mod=1):
     assert(uret)
 
 def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit, target_ulimit, angle_violation, debug=True, loop_mod=1, thre=1e-2):
-    tmp_pose=map(lambda x : x, initial_pose)
+    tmp_pose=[x for x in initial_pose]
     ret=[]
     for idx in range(int(target_ulimit-target_llimit+1)):
         if idx%loop_mod != 0: # skip if loop_mod is specified
@@ -194,7 +194,7 @@ def setAndCheckJointVelocityLimit (joint_name, thre=1e-5, dt=0.002):
         poslist=[]
         for line in open("/tmp/test-samplerobot-el-vel-check.SampleRobot(Robot)0_q", "r"):
             poslist.append(float(line.split(" ")[link_info.jointId+1]))
-        tmp = map(lambda x,y : x-y, poslist[1:], poslist[0:-1])
+        tmp = list(map(lambda x,y : x-y, poslist[1:], poslist[0:-1]))
         max_ret_vel = max(tmp)/dt if is_upper_limit else min(tmp)/dt
         is_vel_limited = abs(max_ret_vel - vel_limit) < thre
         # Enable error limit by reverting limit value and reset joint angle
@@ -242,7 +242,7 @@ def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
         refposlist=[]
         for line in open("/tmp/test-samplerobot-el-err-check.el_q", "r"):
             refposlist.append(float(line.split(" ")[link_info.jointId+1]))
-        tmp = map(lambda x,y : x-y, refposlist, poslist)
+        tmp = list(map(lambda x,y : x-y, refposlist, poslist))
         max_ret_err = max(tmp) if is_upper_limit else min(tmp)
         is_err_limited = abs(max_ret_err - error_limit) < thre
         # Enable error limit by reverting limit value and reset joint angle

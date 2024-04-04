@@ -71,7 +71,7 @@ def demoSetParameter():
                      OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, tmp_leg_outside_margin])]
     rarm_vertices = rleg_vertices
     larm_vertices = lleg_vertices
-    stp_org.eefm_support_polygon_vertices_sequence = map (lambda x : OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x), [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices])
+    stp_org.eefm_support_polygon_vertices_sequence = [OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x) for x in [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices]]
     stp_org.eefm_leg_inside_margin=tmp_leg_inside_margin
     stp_org.eefm_leg_outside_margin=tmp_leg_outside_margin
     stp_org.eefm_leg_front_margin=tmp_leg_front_margin
@@ -108,7 +108,7 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-stabilizer-check-p
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-stabilizer-check-param", save_log=True, rtc_name="SampleRobot(Robot)0"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def checkActualBaseAttitude(thre=5.0): # degree
     '''Check whether the robot falls down based on actual robot base-link attitude.

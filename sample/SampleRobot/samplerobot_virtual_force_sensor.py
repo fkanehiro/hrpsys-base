@@ -30,26 +30,26 @@ def demo ():
     fsensor_names = hcf.getForceSensorNames()
     # vs check
     port_names = fsensor_names
-    if all(map (lambda x : hcf.vs.port(x), fsensor_names)):
+    if all([hcf.vs.port(x) for x in fsensor_names]):
         print(hcf.vs.name(), "ports are OK (", port_names, ")")
     # seq check
-    port_names = map (lambda x : x+"Ref", fsensor_names)
-    if all(map (lambda x : hcf.seq.port(x), port_names)):
+    port_names = [x+"Ref" for x in fsensor_names]
+    if all([hcf.seq.port(x) for x in port_names]):
         print(hcf.seq.name(), "ports are OK (", port_names, ")")
     # sh check
-    port_names = map (lambda x : x+"Out", fsensor_names)
-    if all(map (lambda x : hcf.sh.port(x), port_names)):
+    port_names = [x+"Out" for x in fsensor_names]
+    if all([hcf.sh.port(x) for x in port_names]):
         print(hcf.sh.name(), "ports are OK (", port_names, ")")
-    port_names = map (lambda x : x+"In", fsensor_names)
-    if all(map (lambda x : hcf.sh.port(x), port_names)):
+    port_names = [x+"In" for x in fsensor_names]
+    if all([hcf.sh.port(x) for x in port_names]):
         print(hcf.sh.name(), "ports are OK (", port_names, ")")
     # ic check
-    port_names = map (lambda x : "ref_"+x+"In", fsensor_names)
-    if all(map (lambda x : hcf.ic.port(x), port_names)):
+    port_names = ["ref_"+x+"In" for x in fsensor_names]
+    if all([hcf.ic.port(x) for x in port_names]):
         print(hcf.ic.name(), "ports are OK (", port_names, ")")
     # abc check
-    port_names = map (lambda x : "ref_"+x+"In", fsensor_names)
-    if all(map (lambda x : hcf.ic.port(x), port_names)):
+    port_names = ["ref_"+x+"In" for x in fsensor_names]
+    if all([hcf.ic.port(x) for x in port_names]):
         print(hcf.ic.name(), "ports are OK (", port_names, ")")
 
     # 2. Test impedance controller

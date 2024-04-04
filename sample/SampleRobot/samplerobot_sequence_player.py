@@ -76,7 +76,7 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-sequence-player-ch
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-sequence-player-check-param", save_log=True, rtc_name="sh"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def checkServoStateFromLog(log_fname="/tmp/test-samplerobot-sequence-player-check-param"):
     hcf.saveLog(log_fname)
@@ -126,7 +126,7 @@ def checkTorque (var_doc, save_log=True):
 def checkWrenches (var_doc, save_log=True):
     if save_log:
         saveLogForCheckParameter()
-    ret = checkArrayEquality(reduce(lambda x,y:x+y, map(lambda fs : checkParameterFromLog(fs+"Out", save_log=False), ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])), var_doc['wrenches'], eps=1e-5)
+    ret = checkArrayEquality(reduce(lambda x,y:x+y, [checkParameterFromLog(fs+"Out", save_log=False) for fs in ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor']]), var_doc['wrenches'], eps=1e-5)
     print("  wrenches => ", ret)
     assert(ret is True)
 
@@ -446,13 +446,13 @@ def demoSetTargetPose():
     print("   check setTargetPose", file=sys.stderr)
     hcf.seq_svc.setTargetPose('larm:WAIST', pos0, rpy0, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    print(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0))
+    print(list(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0)))
     checkJointAngles(p0, 0.01)
 
     clearLogForCheckParameter(5000)
     hcf.seq_svc.setTargetPose('larm:WAIST', pos1, rpy1, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    print(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1))
+    print(list(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)))
     checkJointAngles(p1, 0.01)
     assert(checkServoStateFromLog() is True)
 
@@ -462,13 +462,13 @@ def demoSetTargetPose():
     print("   check setTargetPose without giving reference frame", file=sys.stderr)
     hcf.seq_svc.setTargetPose('larm', pos0_world, rpy0_world, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    print(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0))
+    print(list(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0)))
     checkJointAngles(p0, 0.01)
 
     clearLogForCheckParameter(5000)
     hcf.seq_svc.setTargetPose('larm', pos1_world, rpy1_world, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    print(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1))
+    print(list(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)))
     checkJointAngles(p1, 0.01)
     assert(checkServoStateFromLog() is True)
 
@@ -481,7 +481,7 @@ def demoSetTargetPose():
     clearLogForCheckParameter(5000)
     hcf.seq_svc.setTargetPose('larm:WAIST', pos1, rpy1, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm')
-    print(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1))
+    print(list(map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)))
     checkJointAngles(p1, 0.1)
     assert(checkServoStateFromLog() is True)
     hcf.seq_svc.removeJointGroup('larm')

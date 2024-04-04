@@ -55,7 +55,7 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-auto-balancer-chec
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-auto-balancer-check-param", save_log=True, rtc_name="SampleRobot(Robot)0"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def checkActualBaseAttitude(ref_rpy = None, thre=0.1): # degree
     '''Check whether the robot falls down based on actual robot base-link attitude.
@@ -109,7 +109,7 @@ def calcVelListFromPosList(pos_list, dt):
     vel_list=[]
     ppos=pos_list[0]
     for pos in pos_list:
-        vel_list.append(map(lambda x, y: (x-y)/dt, pos, ppos));
+        vel_list.append(list(map(lambda x, y: (x-y)/dt, pos, ppos)));
         ppos=pos
     return vel_list
 
@@ -122,15 +122,15 @@ def checkTooLargeABCCogAcc (acc_thre = 5.0): # [m/s^2]
     tm_list=[]
     for line in open("/tmp/test-abc-log.abc_cogOut", "r"):
         tm_list.append(float(line.split(" ")[0]));
-        cog_list.append(map(float, line.split(" ")[1:-1]));
+        cog_list.append(list(map(float, line.split(" ")[1:-1])));
     cog_list=cog_list[:-1000] # ?? Neglect latter elements
     dt = tm_list[1]-tm_list[0] # [s]
     # Calculate velocity and acceleration
     dcog_list=calcVelListFromPosList(cog_list, dt)
     ddcog_list=calcVelListFromPosList(dcog_list, dt)
     # Check max
-    max_cogx_acc = max(map(lambda x : abs(x[0]), ddcog_list))
-    max_cogy_acc = max(map(lambda x : abs(x[1]), ddcog_list))
+    max_cogx_acc = max([abs(x[0]) for x in ddcog_list])
+    max_cogy_acc = max([abs(x[1]) for x in ddcog_list])
     ret = (max_cogx_acc < acc_thre) and (max_cogy_acc < acc_thre)
     print("  Check acc x = ", max_cogx_acc, ", y = ", max_cogy_acc, ", thre = ", acc_thre, "[m/s^2], ret = ", ret, file=sys.stderr)
     assert(ret)
@@ -521,8 +521,8 @@ def demoGaitGeneratorOverwriteFootstepsBase(axis, overwrite_offset_idx = 1, init
     # Get remaining footstep
     [remain_fs, current_fs_idx]=hcf.abc_svc.getRemainingFootstepSequence()[1:]
     #print >> sys.stderr, remain_fs
-    print("    Remaining legs = ", map(lambda fs : fs.leg, remain_fs), file=sys.stderr)
-    print("    Remaining idx  = ", map(lambda idx : current_fs_idx+idx, range(len(remain_fs))), file=sys.stderr)
+    print("    Remaining legs = ", [fs.leg for fs in remain_fs], file=sys.stderr)
+    print("    Remaining idx  = ", [current_fs_idx+idx for idx in range(len(remain_fs))], file=sys.stderr)
     # Footstep index to be overwritten
     overwrite_fs_idx = current_fs_idx + overwrite_offset_idx
     print("    Overwrite index = ",overwrite_fs_idx, ", leg = ", remain_fs[overwrite_offset_idx].leg, file=sys.stderr)

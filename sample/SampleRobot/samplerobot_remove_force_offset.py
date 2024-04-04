@@ -31,7 +31,7 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-remove-force-offse
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-remove-force-offset-check-param", save_log=True, rtc_name="rmfo"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def demoGetForceMomentOffsetParam ():
     print("1. GetForceMomentOffsetParam", file=sys.stderr)
@@ -93,9 +93,9 @@ def demoDumpLoadForceMomentOffsetParams():
     ret = hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
     print("  Value check", file=sys.stderr)
     data_str=filter(lambda x : x.find("lhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
-    vcheck = map(float, data_str.split(" ")[7:10]) == l_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == l_fmop.link_offset_mass
+    vcheck = list(map(float, data_str.split(" ")[7:10])) == l_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == l_fmop.link_offset_mass
     data_str=filter(lambda x : x.find("rhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
-    vcheck = vcheck and map(float, data_str.split(" ")[7:10]) == r_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == r_fmop.link_offset_mass
+    vcheck = vcheck and list(map(float, data_str.split(" ")[7:10])) == r_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == r_fmop.link_offset_mass
     import os
     if ret and os.path.exists("/tmp/test-rmfo-offsets.dat") and vcheck:
         print("    dumpForceMomentOffsetParams => OK", file=sys.stderr)

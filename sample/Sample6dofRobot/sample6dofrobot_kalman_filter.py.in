@@ -42,11 +42,11 @@ def test_kf_plot (time, av1, av2, av3, optional_out_file_name): # time [s]
     for line in open("/tmp/test-kf-sample6dofrobot-{0}s.Sample6dofRobot(Robot)0_WAIST".format(time), "r"):
         act_rpy_ret.append(line.split(" ")[0:-1])
     initial_sec=int(act_rpy_ret[0][0].split(".")[0])
-    tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
+    tm_list=[int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6 for x in act_rpy_ret]
     plt.clf()
     for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[4+idx]) / math.pi, act_rpy_ret))
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, kf_ret), ":")
+        plt.plot(tm_list, [180.0 * float(x[4+idx]) / math.pi for x in act_rpy_ret])
+        plt.plot(tm_list, [180.0 * float(x[1+idx]) / math.pi for x in kf_ret], ":")
     plt.xlabel("Time [s]")
     plt.ylabel("Angle [deg]")
     plt.title("KF actual-estimated data (motion time = {0}[s], {1})".format(time,optional_out_file_name))

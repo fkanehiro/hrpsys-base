@@ -119,7 +119,7 @@ def demoSetReferecenForceUpdateParamWhileActive ():
     rfup.motion_dir = tmp_value = [0,0,-1]
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
     print("   motion_dir ...", file=sys.stderr)
-    assert(ret and (map (lambda x,y : abs(x-y)<1e-5, hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].motion_dir, tmp_value)))
+    assert(ret and (list(map (lambda x,y : abs(x-y)<1e-5, hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].motion_dir, tmp_value))))
     rfup.p_gain = tmp_value = rfup.p_gain*0.1
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
     print("   p_gain ...", file=sys.stderr)
@@ -154,7 +154,7 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-reference-force-up
 def checkDataPortFromLog(port_name, log_fname="/tmp/test-samplerobot-reference-force-updater-check-port",save_log=True, rtc_name="rfu"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def demo():
     init()

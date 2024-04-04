@@ -40,11 +40,11 @@ def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-emergency-stopper-
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-emergency-stopper-check-param", save_log=True, rtc_name="es"):
     if save_log:
         saveLogForCheckParameter(log_fname)
-    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+    return list(map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1]))
 
 def getWrenchArray ():
     saveLogForCheckParameter()
-    return reduce(lambda x,y: x+y, (map(lambda fs : checkParameterFromLog(fs+"Out", save_log=False), ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])))
+    return reduce(lambda x,y: x+y, ([checkParameterFromLog(fs+"Out", save_log=False) for fs in ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor']]))
 
 # demo functions
 def demoEmergencyStopJointAngle ():
