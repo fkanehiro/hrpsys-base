@@ -92,9 +92,9 @@ def demoDumpLoadForceMomentOffsetParams():
     print("  Dump param as file", file=sys.stderr)
     ret = hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
     print("  Value check", file=sys.stderr)
-    data_str=filter(lambda x : x.find("lhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    data_str=[x for x in open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n") if x.find("lhsensor") >= 0][0]
     vcheck = list(map(float, data_str.split(" ")[7:10])) == l_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == l_fmop.link_offset_mass
-    data_str=filter(lambda x : x.find("rhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    data_str=[x for x in open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n") if x.find("rhsensor") >= 0][0]
     vcheck = vcheck and list(map(float, data_str.split(" ")[7:10])) == r_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == r_fmop.link_offset_mass
     import os
     if ret and os.path.exists("/tmp/test-rmfo-offsets.dat") and vcheck:

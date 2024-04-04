@@ -28,7 +28,7 @@ def init ():
     # load joint limit table from conf file
     HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
     f=open("{}/share/hrpsys/samples/SampleRobot/SampleRobot.500.el.conf".format(HRPSYS_DIR))
-    limit_table_str=filter(lambda x : x.find("joint_limit_table") > -1 , f.readlines())[0]
+    limit_table_str=[x for x in f.readlines() if x.find("joint_limit_table") > -1][0]
     limit_table_list=limit_table_str.split(":")[1:]
     f.close()
     # set bodyinfo
@@ -62,8 +62,8 @@ def deg2rad (ang):
 def getJointLimitTableInfo (table_idx=0):
     self_joint_name = limit_table_list[0+table_idx*6].replace(' ', '')
     target_joint_name = limit_table_list[1+table_idx*6].replace(' ', '')
-    self_jointId = filter( lambda x : x.name == self_joint_name, bodyinfo._get_links())[0].jointId
-    target_jointId = filter( lambda x : x.name == target_joint_name, bodyinfo._get_links())[0].jointId
+    self_jointId = [x for x in bodyinfo._get_links() if x.name == self_joint_name][0].jointId
+    target_jointId = [x for x in bodyinfo._get_links() if x.name == target_joint_name][0].jointId
     target_llimit=float(limit_table_list[2+table_idx*6])
     target_ulimit=float(limit_table_list[3+table_idx*6])
     self_llimits=[float(x) for x in limit_table_list[4+table_idx*6].split(",")]
@@ -132,7 +132,7 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
 def setAndCheckJointLimit (joint_name):
     print("  ", joint_name, file=sys.stderr)
     # ulimit check
-    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
+    link_info=[x for x in bodyinfo._get_links() if x.name==joint_name][0]
     hcf.seq_svc.setJointAngle(joint_name, math.radians(1)+link_info.ulimit[0], 1)
     hcf.waitInterpolation()
     #   Dummy setJointAngles to wait for command joint angles are static
@@ -163,7 +163,7 @@ def demoPositionLimit():
     setAndCheckJointLimit('LARM_SHOULDER_P')
 
 def setAndCheckJointVelocityLimit (joint_name, thre=1e-5, dt=0.002):
-    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
+    link_info=[x for x in bodyinfo._get_links() if x.name==joint_name][0]
     # lvlimit and uvlimit existence check
     if not(len(link_info.lvlimit) == 1 and len(link_info.uvlimit) == 1):
         print("  ", joint_name, " test neglected because no lvlimit and uvlimit are found.", file=sys.stderr)
@@ -212,7 +212,7 @@ def demoVelocityLimit():
     setAndCheckJointVelocityLimit('LARM_WRIST_P')
 
 def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
-    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
+    link_info=[x for x in bodyinfo._get_links() if x.name==joint_name][0]
     for is_upper_limit in [True, False]: # uvlimit or lvlimit
         print("  ", joint_name, ", uvlimit" if is_upper_limit else ", lvlimit", file=sys.stderr)
         # Disable error limit for checking vel limit
