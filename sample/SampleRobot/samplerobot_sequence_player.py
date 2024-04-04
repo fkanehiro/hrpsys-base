@@ -14,6 +14,7 @@ except:
     import time
 
 from distutils.version import StrictVersion
+from functools import reduce
 
 def init ():
     global hcf, hrpsys_version

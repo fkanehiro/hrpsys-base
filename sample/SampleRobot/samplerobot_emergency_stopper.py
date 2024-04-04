@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from functools import reduce
 
 try:
     from hrpsys.hrpsys_config import *
