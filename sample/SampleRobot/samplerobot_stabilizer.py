@@ -158,7 +158,7 @@ def demoSTLoadPattern ():
         changeSTAlgorithm (OpenHRP.StabilizerService.EEFMQP)
         hcf.startStabilizer()
         # Exec loadPattern
-        HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+        HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip().decode()
         hcf.loadPattern(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/data/samplerobot-gopos000', 0.0)
         hcf.waitInterpolation()
         ret = checkActualBaseAttitude()
@@ -432,7 +432,7 @@ def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
 
 
 def demo():
-    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
+    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip().decode()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
         init()
         if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):

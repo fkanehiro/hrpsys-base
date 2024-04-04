@@ -26,7 +26,7 @@ def init ():
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     # load joint limit table from conf file
-    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip().decode()
     f=open("{}/share/hrpsys/samples/SampleRobot/SampleRobot.500.el.conf".format(HRPSYS_DIR))
     limit_table_str=[x for x in f.readlines() if x.find("joint_limit_table") > -1][0]
     limit_table_list=limit_table_str.split(":")[1:]
@@ -50,7 +50,7 @@ def demo ():
 
 def demoTestAllLimitTables():
     print("1. demo all jointLimitTables", file=sys.stderr)
-    for table_idx in range(len(limit_table_list)/6):
+    for table_idx in range(len(limit_table_list)//6):
         testLimitTables(table_idx, True, 5)
 
 def rad2deg (ang):

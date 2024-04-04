@@ -91,7 +91,7 @@ def init ():
     hcf.ic_svc.setImpedanceControllerParam("larm", icp)
     hcf.Groups = defJointGroups()
     hcf.startDefaultUnstableControllers(['rarm', 'larm'], ["rleg", "lleg", "rarm", "larm"])
-    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip().decode()
     hcf.rmfo_svc.loadForceMomentOffsetParams(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/ForceSensorOffset_SampleRobot.txt')
 
 def demoDualarmCarryup (is_walk=True, auto_detecion = True):
