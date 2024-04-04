@@ -14,7 +14,7 @@ def waitInputConfirm(msg):
     except Exception:
         _, e, _ = sys.exc_info()
         if "couldn't connect to display" in str(e):
-            c = raw_input(msg+' (Enter [Y/y] to proceed) ').lower()
+            c = input(msg+' (Enter [Y/y] to proceed) ').lower()
             return c == 'y' or c == ''
         raise
     finally:

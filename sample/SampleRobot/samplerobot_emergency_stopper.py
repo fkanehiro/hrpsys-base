@@ -96,11 +96,11 @@ def demoEmergencyStopJointAngleWithKeyInteracton ():
     print("  send angle_vector_sequence of %d [sec]" % (play_time*len(pose_list)), file=sys.stderr)
     print("  press Enter to stop / release motion", file=sys.stderr)
     while True:
-        raw_input()
+        input()
         print("  stop motion", file=sys.stderr)
         hcf.es_svc.stopMotion()
         if hcf.seq_svc.isEmpty(): break
-        raw_input()
+        input()
         print("  release motion", file=sys.stderr)
         hcf.es_svc.releaseMotion()
         if hcf.seq_svc.isEmpty(): break
