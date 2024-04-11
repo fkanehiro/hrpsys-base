@@ -311,6 +311,7 @@ bool KalmanFilter::resetKalmanFilterState()
 {
     rpy_kf.resetKalmanFilterState();
     ekf_filter.resetKalmanFilterState();
+    return true;
 };
 
 bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
