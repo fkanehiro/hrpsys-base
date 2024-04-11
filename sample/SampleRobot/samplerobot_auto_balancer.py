@@ -772,7 +772,7 @@ def demoStandingPosResetting():
 def demo():
     start_time = time.time()
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         # sample for AutoBalancer mode
         demoAutoBalancerFixFeet()

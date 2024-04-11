@@ -165,7 +165,7 @@ def demoEmergencyStopReleaseWhenDeactivated():
 
 def demo(key_interaction=False):
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.6.0'):
         if key_interaction:
             demoEmergencyStopJointAngleWithKeyInteracton()

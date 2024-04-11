@@ -41,7 +41,7 @@ def init ():
 
 def demo ():
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoTestAllLimitTables()
         demoPositionLimit()

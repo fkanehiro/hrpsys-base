@@ -15,7 +15,7 @@ except:
 
 import math
 from subprocess import check_output
-from distutils.version import StrictVersion
+from packaging.version import parse as StrictVersion
 
 def init ():
     global hcf, initial_pose, half_sitting_pose, hrpsys_version

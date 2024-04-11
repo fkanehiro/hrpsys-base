@@ -13,7 +13,7 @@ except:
     import socket
     import time
 
-from distutils.version import StrictVersion
+from packaging.version import parse as StrictVersion
 from functools import reduce
 
 def init ():
