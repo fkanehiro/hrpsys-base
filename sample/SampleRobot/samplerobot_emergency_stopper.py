@@ -14,6 +14,9 @@ except:
     import socket
     import time
 
+if hasattr(__builtins__, 'raw_input'):
+    input = raw_input
+
 def init ():
     global hcf, init_pose, reset_pose, wrench_command0, wrench_command1, hrpsys_version
     hcf = HrpsysConfigurator()

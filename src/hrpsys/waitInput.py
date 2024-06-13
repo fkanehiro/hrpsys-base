@@ -4,6 +4,9 @@ import datetime
 import builtins
 import threading
 
+if hasattr(__builtins__, 'raw_input'):
+    input = raw_input
+
 def waitInputConfirm(msg):
     root = None
     try:
