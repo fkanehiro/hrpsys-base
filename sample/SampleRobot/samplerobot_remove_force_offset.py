@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -22,7 +23,7 @@ def init ():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.5)
     hcf.waitInterpolation()
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-remove-force-offset-check-param"):

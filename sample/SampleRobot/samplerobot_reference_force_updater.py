@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -20,7 +21,7 @@ def init ():
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
     if hcf.rfu != None:
         hcf.connectLoggerPort(hcf.rfu, 'ref_rhsensorOut')

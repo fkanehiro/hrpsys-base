@@ -367,14 +367,14 @@ class HrpsysConfigurator(object):
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
-        if StrictVersion(self.seq_version) >= StrictVersion('315.2.6'):
+        if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.2.6'):
             connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
-        if StrictVersion(self.seq_version) >= StrictVersion('315.2.0'):
+        if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.2.0'):
             connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in self.getForceSensorNames():
             connectPorts(self.seq.port(sen + "Ref"),
@@ -466,14 +466,14 @@ class HrpsysConfigurator(object):
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
-            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
+            if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for rfu
         if self.rfu:
             if self.es:
                 connectPorts(self.es.port("q"), self.rfu.port("qRef"))
-            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
+            if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.rfu.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.rfu.port("baseRpyIn"))
         # connection for tf
@@ -812,7 +812,7 @@ class HrpsysConfigurator(object):
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
         url = self.parseUrl(url)
         print(self.configurator_name + "  bodyinfo URL = file://" + url)
-        return mdlldr.getBodyInfo("file://" + url)
+        return mdlldr.getBodyInfo(str("file://" + url))
 
     # public method to get sensors list
     def getSensors(self, url):
@@ -1263,7 +1263,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
+        if StrictVersion(self.fk_version.strip('"')) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
@@ -1363,7 +1363,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
+        if StrictVersion(self.fk_version.strip('"')) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
@@ -2137,13 +2137,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
                        (which you can find by "self.hrpsys_version" command). For instance, if your
                        hrpsys is 315.10.1, refer to "startImpedance_315_4" method.
         '''
-        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version.strip('"')) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstartImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.startImpedance_315_4(arm, **kwargs)
 
     def stopImpedance(self, arm):
-        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version.strip('"')) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstopImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.stopImpedance_315_4(arm)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -36,7 +37,7 @@ def init ():
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def demo ():

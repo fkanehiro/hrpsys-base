@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -46,7 +47,7 @@ def init ():
                           'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6, # non realistic value
                           'optionaldata':[0,1,0,0,0.1,0.1,0.1,0.1] # non realistic value
                           }
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
     hcf.seq_svc.removeJointGroup('larm')
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);

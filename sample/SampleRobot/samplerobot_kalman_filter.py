@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -56,7 +57,7 @@ def init ():
     roll_pitch_pose2=[-0.486326,-1.18821,-0.026531,0.908889,-0.267927,0.130916,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.430362,-0.964194,0.009303,0.590166,-0.173131,0.103544,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_pose3=[0.463158,0.281851,-0.0701,0.747965,-0.514677,-0.108534,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.486068,0.189331,-0.083976,1.08676,-0.76299,-0.139173,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_poses = [roll_pitch_pose1, roll_pitch_pose2, roll_pitch_pose3]
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
