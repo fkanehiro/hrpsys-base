@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include "VirtualForceSensor.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
@@ -181,10 +182,11 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
   static int loop = 0;
   loop ++;
 
-  coil::TimeValue coiltm(coil::gettimeofday());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
   RTC::Time tm;
-  tm.sec = coiltm.sec();
-  tm.nsec = coiltm.usec()*1000;
+  tm.sec = tv.tv_sec;
+  tm.nsec = tv.tv_usec*1000;
 
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();

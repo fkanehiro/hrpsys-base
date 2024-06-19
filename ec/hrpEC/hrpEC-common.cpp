@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include "hrpEC.h"
 #include "hrpsys/io/iob.h"
 #ifdef OPENRTM_VERSION_TRUNK
@@ -36,9 +37,8 @@ namespace RTC
         long period_nsec = (m_period.sec()*1e9+m_period.usec()*1e3);
         double period_sec = period_nsec/1e9;
 #else
-        coil::TimeValue period(getPeriod());
-        double period_sec = (double)period;
-        long period_nsec = period_sec*1e9;
+        long period_nsec = getPeriod().count();
+        double period_sec = period_nsec/1e9;
 #endif
 	    int nsubstep = number_of_substeps();
         set_signal_period(period_nsec/nsubstep);

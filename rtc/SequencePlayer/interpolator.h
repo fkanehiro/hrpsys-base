@@ -3,7 +3,7 @@
 
 #include <deque>
 #include <string>
-#include <coil/Mutex.h>
+#include <mutex>
 
 using namespace std;
 
@@ -94,7 +94,7 @@ private:
 			    double gx,
 			    double &xx, double &vv, double &aa);
   //Mutex to avoid poping twice the same element
-  coil::Mutex pop_mutex_;
+  std::mutex pop_mutex_;
 };
 
 #endif

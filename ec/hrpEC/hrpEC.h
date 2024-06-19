@@ -4,8 +4,6 @@
 
 #include <rtm/RTC.h>
 
-#include <coil/Mutex.h>
-#include <coil/Condition.h>
 #include <coil/Task.h>
 
 #include <rtm/Manager.h>

@@ -161,7 +161,7 @@ class OccupancyGridMap3D
   std::string m_initialMap;
   std::string m_knownMapPath;
   std::string m_cwd;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   int m_debugLevel;
   int dummy;
 };

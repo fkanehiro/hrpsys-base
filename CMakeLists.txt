@@ -65,7 +65,8 @@ include_directories(${CMAKE_BINARY_DIR})
 
 # OpenRTM-aist(>= 1.0.0)
 find_package(OpenRTM REQUIRED)
-if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.2/rtm/RTObjectStateMachine.h")
+if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.2/rtm/RTObjectStateMachine.h"
+    OR EXISTS "${OPENRTM_DIR}/include/openrtm-2.0/rtm/RTObjectStateMachine.h")
 add_definitions(-DOPENRTM_VERSION_TRUNK)
 endif()
 
@@ -179,9 +180,16 @@ if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
     OUTPUT_VARIABLE PYTHON_VERSION
     RESULT_VARIABLE PYTHON_VERSION_SUCCESS
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
-    message(FATAL_ERROR "Could not determine Python 2 version, maybe it is not installed?")
-  endif()
+endif()
+if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
+  execute_process(
+    COMMAND python3 -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"VERSION\"))"
+    OUTPUT_VARIABLE PYTHON_VERSION
+    RESULT_VARIABLE PYTHON_VERSION_SUCCESS
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
+  message(FATAL_ERROR "Could not determine Python version, maybe it is not installed?")
 endif()
 set(python_dist_pkg_dir lib/python${PYTHON_VERSION}/dist-packages)
 

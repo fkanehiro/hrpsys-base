@@ -19,7 +19,7 @@
 #include <boost/assign.hpp>
 
 #define MAX_TRANSITION_COUNT (static_cast<int>(2/m_dt))
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 // Module specification
 // <rtc-template block="module_spec">

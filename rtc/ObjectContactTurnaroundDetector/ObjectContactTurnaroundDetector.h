@@ -169,7 +169,7 @@ class ObjectContactTurnaroundDetector
   hrp::Vector3 octd_axis;
   double m_dt;
   hrp::BodyPtr m_robot;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   unsigned int m_debugLevel;
   int dummy;
   int loop;

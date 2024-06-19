@@ -157,7 +157,7 @@ class ForwardKinematics
   int dummy;
   hrp::BodyPtr m_refBody, m_actBody;
   hrp::Link *m_refLink, *m_actLink, *m_sensorAttachedLink;
-  coil::Mutex m_bodyMutex;
+  std::mutex m_bodyMutex;
   Time m_tm;
   std::string m_sensorAttachedLinkName;
 };

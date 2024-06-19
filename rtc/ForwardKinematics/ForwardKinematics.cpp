@@ -7,13 +7,14 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include <rtm/CorbaNaming.h>
 #include "ForwardKinematics.h"
 
 #include "hrpModel/Link.h"
 #include "hrpModel/ModelLoaderUtil.h"
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -166,9 +167,10 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
 
-  coil::TimeValue tm(coil::gettimeofday());
-  m_tm.sec  = tm.sec();
-  m_tm.nsec = tm.usec() * 1000;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  m_tm.sec  = tv.tv_sec;
+  m_tm.nsec = tv.tv_usec * 1000;
 
   if (m_qIn.isNew()) {
       m_qIn.read();

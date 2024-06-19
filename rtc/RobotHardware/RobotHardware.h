@@ -10,6 +10,7 @@
 #ifndef ROBOT_HARDWARE_H
 #define ROBOT_HARDWARE_H
 
+#include <sys/time.h>
 #include <rtm/idl/BasicDataType.hh>
 #include <rtm/idl/ExtendedDataTypes.hh>
 #include "hrpsys/idl/HRPDataTypes.hh"
@@ -105,9 +106,10 @@ class RobotHardware
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   virtual inline void getTimeNow(Time &tm) {
-      coil::TimeValue coiltm(coil::gettimeofday());
-      tm.sec  = coiltm.sec();
-      tm.nsec = coiltm.usec() * 1000;
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      tm.sec  = tv.tv_sec;
+      tm.nsec = tv.tv_usec * 1000;
   };
 
  protected:

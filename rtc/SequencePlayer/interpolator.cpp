@@ -4,7 +4,6 @@
 #include <cstring>
 using namespace std;
 #include "interpolator.h"
-#include <coil/Guard.h>
 
 interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_, double default_avg_vel_)
 {
@@ -272,7 +271,7 @@ void interpolator::push(const double *x_, const double *v_, const double *a_, bo
 
 void interpolator::pop()
 {
-  coil::Guard<coil::Mutex> lock(pop_mutex_);
+  std::lock_guard<std::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.front();
@@ -289,7 +288,7 @@ void interpolator::pop()
 
 void interpolator::pop_back()
 {
-  coil::Guard<coil::Mutex> lock(pop_mutex_);
+  std::lock_guard<std::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.back();

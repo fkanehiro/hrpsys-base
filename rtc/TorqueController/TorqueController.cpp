@@ -36,7 +36,7 @@ static const char* torquecontroller_spec[] =
 };
 // </rtc-template>
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 TorqueController::TorqueController(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),

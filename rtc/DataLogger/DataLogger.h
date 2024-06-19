@@ -163,7 +163,7 @@ class DataLogger
 
  private:
   bool m_suspendFlag;
-  coil::Mutex m_suspendFlagMutex;
+  std::mutex m_suspendFlagMutex;
   unsigned int m_log_precision;
   int dummy;
 };

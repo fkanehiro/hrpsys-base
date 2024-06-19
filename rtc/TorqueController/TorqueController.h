@@ -165,7 +165,7 @@ private:
   long long m_loop;
   hrp::BodyPtr m_robot;
   std::vector<MotorTorqueController> m_motorTorqueControllers;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   void executeTorqueControl(hrp::dvector &dq);
   void updateParam(double &val, double &val_new);
   bool isDebug(int cycle = 20);

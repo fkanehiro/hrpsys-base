@@ -7,6 +7,8 @@
  * $Id$
  */
 
+#include <iostream>
+#include <chrono>
 #include "OccupancyGridMap3D.h"
 #include "hrpUtil/Eigen3d.h"
 #include <octomap/octomap.h>
@@ -21,7 +23,7 @@ inline bool isnan(double x)
 }
 #endif
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 using namespace octomap;
 
@@ -207,7 +209,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "OccupancyGrid3D::onExecute(" << ec_id << ")" << std::endl;
-    coil::TimeValue t1(coil::gettimeofday());
+    auto t1 = std::chrono::system_clock::now();
 
     if (m_updateIn.isNew())  m_updateIn.read();
 
@@ -437,11 +439,11 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
         m_updateOut.write();
     }
 
-    coil::TimeValue t2(coil::gettimeofday());
+    auto t2 = std::chrono::system_clock::now();
     if (m_debugLevel > 0){
-        coil::TimeValue dt = t2-t1;
+        auto dt = t2 - t1;
         std::cout << "OccupancyGridMap3D::onExecute() : " 
-                  << dt.sec()*1e3+dt.usec()/1e3 << "[ms]" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(dt).count() << "[ms]" << std::endl;
     }
 
     return RTC::RTC_OK;
@@ -485,7 +487,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onRateChanged(RTC::UniqueId ec_id)
 OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
 {
     Guard guard(m_mutex);
-    coil::TimeValue t1(coil::gettimeofday());
+    auto t1 = std::chrono::system_clock::now();
 
     OpenHRP::OGMap3D *map = new OpenHRP::OGMap3D;
     double size = m_map->getResolution();
@@ -604,11 +606,11 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                   << nu << std::endl;
 #endif
     }
-    coil::TimeValue t2(coil::gettimeofday());
+    auto t2 = std::chrono::system_clock::now();
     if (m_debugLevel > 0){
-        coil::TimeValue dt = t2-t1;
+        auto dt = t2 - t1;
         std::cout << "OccupancyGridMap3D::getOGMap3D() : " 
-                  << dt.sec()*1e3+dt.usec()/1e3 << "[ms]" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(dt).count() << "[ms]" << std::endl;
     }
 
     return map;

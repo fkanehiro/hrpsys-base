@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include "CaptureController.h"
 
 // Module specification
@@ -108,7 +109,9 @@ RTC::ReturnCode_t CaptureController::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t CaptureController::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
-  m_tOld = (double)(coil::gettimeofday());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  m_tOld = tv.tv_sec + tv.tv_usec/1e6;
   if (m_initialMode == "continuous"){
     m_mode = CONTINUOUS;
   }else if(m_initialMode == "oneshot"){
@@ -128,7 +131,9 @@ RTC::ReturnCode_t CaptureController::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t CaptureController::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << m_data.data << std::endl;
-  double tNew = (double)(coil::gettimeofday());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  double tNew = tv.tv_sec + tv.tv_usec/1e6;
   double dt = (double)(tNew - m_tOld);
   if (m_mode != SLEEP && dt > 1.0/m_frameRate && m_imageIn.isNew()){
     m_imageIn.read();

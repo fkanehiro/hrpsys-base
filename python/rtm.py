@@ -12,6 +12,9 @@ import os
 import time
 import re
 
+if sys.version[0] == "3":
+    def unicode(s):
+        return s
 ##
 # \brief root naming context
 #

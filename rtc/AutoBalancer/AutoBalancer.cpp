@@ -17,7 +17,7 @@
 #include "hrpsys/util/Hrpsys.h"
 
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 using namespace rats;
 
 // Module specification

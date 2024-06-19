@@ -189,7 +189,7 @@ class RemoveForceSensorLinkOffset
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   int max_sensor_offset_calib_counter;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
 };
 
 

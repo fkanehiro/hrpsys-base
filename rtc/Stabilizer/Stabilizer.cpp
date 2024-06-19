@@ -16,7 +16,7 @@
 #include <math.h>
 #include <boost/lambda/lambda.hpp>
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 #ifndef deg2rad
 #define deg2rad(x) ((x) * M_PI / 180.0)

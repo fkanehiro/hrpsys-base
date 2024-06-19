@@ -146,7 +146,7 @@ private:
     std::vector<IIRFilterPtr > m_filters;
     hrp::Vector3 m_previous_pos;
 
-    coil::Mutex m_mutex;
+    std::mutex m_mutex;
 };
 
 

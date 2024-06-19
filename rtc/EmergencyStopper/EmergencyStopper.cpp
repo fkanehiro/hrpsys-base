@@ -18,7 +18,7 @@
 #include "EmergencyStopper.h"
 #include <iomanip>
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 // Module specification
 // <rtc-template block="module_spec">

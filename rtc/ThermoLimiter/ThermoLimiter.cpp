@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include "ThermoLimiter.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
@@ -15,7 +16,7 @@
 
 #define DQ_MAX 1.0
 
-typedef coil::Guard<coil::Mutex> Guard;
+typedef std::lock_guard<std::mutex> Guard;
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -217,10 +218,11 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
   }
   
-  coil::TimeValue coiltm(coil::gettimeofday());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
   RTC::Time tm;
-  tm.sec = coiltm.sec();
-  tm.nsec = coiltm.usec()*1000;
+  tm.sec = tv.tv_sec;
+  tm.nsec = tv.tv_usec*1000;
   hrp::dvector tauMax;
   tauMax.resize(m_robot->numJoints());
 

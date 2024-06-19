@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include "StateHolder.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpUtil/Eigen3d.h>
@@ -230,9 +231,10 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
         m_currentQIn.read();
         tm = m_currentQ.tm;
     }else{
-        coil::TimeValue coiltm(coil::gettimeofday());
-        tm.sec = coiltm.sec();
-        tm.nsec = coiltm.usec()*1000;
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        tm.sec = tv.tv_sec;
+        tm.nsec = tv.tv_usec*1000;
     }
 
     if (m_qIn.isNew()){

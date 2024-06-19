@@ -183,7 +183,7 @@ class ImpedanceController
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
   double m_dt;
   hrp::BodyPtr m_robot;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   hrp::dvector qrefv;
   unsigned int m_debugLevel;
   int dummy;

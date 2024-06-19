@@ -12,6 +12,7 @@
  * $Id$
  */
 
+#include <sys/time.h>
 #include "ThermoEstimator.h"
 #include "hrpsys/idl/RobotHardwareService.hh"
 #include <rtm/CorbaNaming.h>
@@ -203,10 +204,11 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   unsigned int numJoints = m_robot->numJoints();
   m_loop++;
   
-  coil::TimeValue coiltm(coil::gettimeofday());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
   RTC::Time tm;
-  tm.sec = coiltm.sec();
-  tm.nsec = coiltm.usec()*1000;
+  tm.sec = tv.tv_sec;
+  tm.nsec = tv.tv_usec*1000;
 
   if (m_tauInIn.isNew()) {
     m_tauInIn.read();

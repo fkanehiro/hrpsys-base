@@ -283,7 +283,7 @@ class Stabilizer
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<hrp::JointPathExPtr> jpe_v;
   hrp::BodyPtr m_robot;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<STIKParam> stikp;

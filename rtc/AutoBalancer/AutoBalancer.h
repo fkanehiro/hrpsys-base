@@ -261,7 +261,7 @@ class AutoBalancer
   std::vector<hrp::Vector3> default_zmp_offsets;
   double m_dt;
   hrp::BodyPtr m_robot;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   double d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
   bool use_limb_stretch_avoidance;
 

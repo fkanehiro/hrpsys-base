@@ -188,7 +188,7 @@ class SequencePlayer
   std::string m_gname;
   unsigned int m_debugLevel;
   size_t optional_data_dim;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   double m_error_pos, m_error_rot;
   short m_iteration;
   std::string m_fixedLink;

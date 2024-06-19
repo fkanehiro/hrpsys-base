@@ -191,7 +191,7 @@ private:
     std::queue<std::vector<double> > m_input_posture_queue;
     std::queue<std::vector<double> > m_input_wrenches_queue;
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
-    coil::Mutex m_mutex;
+    std::mutex m_mutex;
     BeepClient bc;
     int dummy;
 };

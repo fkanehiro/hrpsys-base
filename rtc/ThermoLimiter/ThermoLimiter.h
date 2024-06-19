@@ -153,7 +153,7 @@ class ThermoLimiter
   hrp::dvector m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
   std::vector<MotorHeatParam> m_motorHeatParams;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   BeepClient bc;
 
   void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);

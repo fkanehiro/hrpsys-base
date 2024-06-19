@@ -235,7 +235,7 @@ class ReferenceForceUpdater
   hrp::BodyPtr m_robot;
   double m_dt;
   unsigned int m_debugLevel;
-  coil::Mutex m_mutex;
+  std::mutex m_mutex;
   std::map<std::string, ee_trans> ee_map;
   std::map<std::string, size_t> ee_index_map;
   std::map<std::string, ReferenceForceUpdaterParam> m_RFUParam;
