@@ -5,7 +5,7 @@ import time
 import os
 import thread
 
-execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py")
+exec(compile(open("@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py", "rb").read(), "@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py", 'exec'))
 
 sys.path.append(os.getcwd())
 
@@ -32,7 +32,7 @@ thread.start_new_thread(runSimulator, args)
 time.sleep(1)
 
 if script != None:
-   execfile(script)
+   exec(compile(open(script, "rb").read(), script, 'exec'))
 
 
 

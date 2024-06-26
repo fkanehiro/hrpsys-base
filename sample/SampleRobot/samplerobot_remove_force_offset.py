@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -22,7 +23,7 @@ def init ():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.5)
     hcf.waitInterpolation()
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-remove-force-offset-check-param"):
@@ -92,9 +93,9 @@ def demoDumpLoadForceMomentOffsetParams():
     print("  Dump param as file", file=sys.stderr)
     ret = hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
     print("  Value check", file=sys.stderr)
-    data_str=filter(lambda x : x.find("lhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    data_str=[x for x in open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n") if x.find("lhsensor") >= 0][0]
     vcheck = list(map(float, data_str.split(" ")[7:10])) == l_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == l_fmop.link_offset_mass
-    data_str=filter(lambda x : x.find("rhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    data_str=[x for x in open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n") if x.find("rhsensor") >= 0][0]
     vcheck = vcheck and list(map(float, data_str.split(" ")[7:10])) == r_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == r_fmop.link_offset_mass
     import os
     if ret and os.path.exists("/tmp/test-rmfo-offsets.dat") and vcheck:
@@ -131,7 +132,7 @@ def demoRemoveForceSensorOffsetRMFO():
 def demo():
     import numpy
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoGetForceMomentOffsetParam()
         demoSetForceMomentOffsetParam()

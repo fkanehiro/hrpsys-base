@@ -32,12 +32,21 @@ add_library(hrpsysext SHARED
   PyShape.cpp
   )
 
-find_package(Boost REQUIRED COMPONENTS python38)
-target_link_libraries(hrpsysext
-  Boost::python38
-  hrpsysUtil
-  ${PYTHON_LIBRARIES}
+if("$ENV{ROS_DISTRO}" STRGREATER "melodic")
+  find_package(Boost REQUIRED COMPONENTS python38)
+  target_link_libraries(hrpsysext
+    Boost::python38
+    hrpsysUtil
+    ${PYTHON_LIBRARIES}
   )
+else()
+  find_package(Boost REQUIRED COMPONENTS python)
+  target_link_libraries(hrpsysext
+    Boost::python
+    hrpsysUtil
+    ${PYTHON_LIBRARIES}
+  )
+endif()
 
 set_target_properties(hrpsysext PROPERTIES PREFIX "")
 set_target_properties(hrpsysext PROPERTIES SUFFIX ".so")

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -30,7 +31,7 @@ def init ():
     init_pose = [0]*29
     col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
     col_fail_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.845363,0.03992,0.250074,-1.32816,0.167513,0.016204,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
-    hrpsys_version = hcf.co.ref.get_component_profile().version
+    hrpsys_version = hcf.co.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version, file=sys.stderr)
 
 # demo functions
@@ -147,7 +148,7 @@ def demo():
 
 def demo_co_loop():
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.10.0'):
         demoCollisionCheckSafe()
         demoCollisionCheckFail()

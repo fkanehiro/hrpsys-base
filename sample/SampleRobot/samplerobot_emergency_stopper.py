@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from functools import reduce
 
 try:
@@ -14,6 +15,9 @@ except:
     import socket
     import time
 
+if hasattr(__builtins__, 'raw_input'):
+    input = raw_input
+
 def init ():
     global hcf, init_pose, reset_pose, wrench_command0, wrench_command1, hrpsys_version
     hcf = HrpsysConfigurator()
@@ -26,7 +30,7 @@ def init ():
     reset_pose = [0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,0.15708,-0.113446,0.637045,0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
     wrench_command0 = [0.0]*24
     wrench_command1 = [1.0]*24
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def arrayDistance (angle1, angle2):
@@ -96,11 +100,11 @@ def demoEmergencyStopJointAngleWithKeyInteracton ():
     print("  send angle_vector_sequence of %d [sec]" % (play_time*len(pose_list)), file=sys.stderr)
     print("  press Enter to stop / release motion", file=sys.stderr)
     while True:
-        raw_input()
+        input()
         print("  stop motion", file=sys.stderr)
         hcf.es_svc.stopMotion()
         if hcf.seq_svc.isEmpty(): break
-        raw_input()
+        input()
         print("  release motion", file=sys.stderr)
         hcf.es_svc.releaseMotion()
         if hcf.seq_svc.isEmpty(): break
@@ -165,7 +169,7 @@ def demoEmergencyStopReleaseWhenDeactivated():
 
 def demo(key_interaction=False):
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.6.0'):
         if key_interaction:
             demoEmergencyStopJointAngleWithKeyInteracton()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -47,7 +48,7 @@ def demoSetMaxLogLength():
     hcf.waitInterpolation()
     hcf.saveLog("/tmp/test-samplerobot-log")
     from subprocess import check_output
-    ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).split(" ")[0] == '100'
+    ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).decode().split(" ")[0] == '100'
     if ret:
         print("  maxLength() =>OK", file=sys.stderr)
     assert(ret is True)

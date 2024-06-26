@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
@@ -15,7 +16,7 @@ except:
 
 import math
 from subprocess import check_output
-from distutils.version import StrictVersion
+from packaging.version import parse as StrictVersion
 
 def init ():
     global hcf, initial_pose, half_sitting_pose, hrpsys_version
@@ -25,7 +26,7 @@ def init ():
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     half_sitting_pose = [-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         # on < 315.5.0 this outputs huge error log message
@@ -158,7 +159,7 @@ def demoSTLoadPattern ():
         changeSTAlgorithm (OpenHRP.StabilizerService.EEFMQP)
         hcf.startStabilizer()
         # Exec loadPattern
-        HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+        HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip().decode()
         hcf.loadPattern(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/data/samplerobot-gopos000', 0.0)
         hcf.waitInterpolation()
         ret = checkActualBaseAttitude()
@@ -432,7 +433,7 @@ def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
 
 
 def demo():
-    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
+    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip().decode()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
         init()
         if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
