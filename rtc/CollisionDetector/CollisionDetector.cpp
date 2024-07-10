@@ -21,6 +21,8 @@
 #include "hrpsys/util/BVutil.h"
 #include "hrpsys/idl/RobotHardwareService.hh"
 
+#include <chrono>
+
 #include "CollisionDetector.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
@@ -412,8 +414,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         //        }
         //collision check process in case of angle set above
 	m_robot->calcForwardKinematics();
-	coil::TimeValue tm1 = coil::gettimeofday();
-        std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
+	//coil::TimeValue tm1 = coil::gettimeofday();
+    auto tm1 = std::chrono::steady_clock::now();
+
+    std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
 	for (int i = 0; it != m_pair.end(); it++, i++){
             int sub_size = (m_pair.size() + m_collision_loop -1) / m_collision_loop;  // 10 / 3 = 3  / floor
             // 0 : 0 .. sub_size-1                            // 0 .. 2
@@ -510,7 +514,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         // collison :          false :         >  0  : q( do nothing)
         // recover  :           true :         >  0  : q'
         //std::cerr << "m_recover_time: " << m_recover_time << std::endl;
-        coil::TimeValue tm2 = coil::gettimeofday();
+        auto tm2 = std::chrono::steady_clock::now();
         if (m_safe_posture && m_recover_time == 0){ // safe mode
           //std::cerr << "safe-------------- " << std::endl;
           for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
@@ -564,8 +568,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 #endif
         }
         if ( DEBUGP ) {
-          std::cerr << "[" << m_profile.instance_name << "] check collisions for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000.0 
-                    << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time*m_dt << "[s], loop = " << m_loop_for_check << "/" << m_collision_loop << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] check collisions for " << m_pair.size() << " pairs in " << std::chrono::duration_cast<std::chrono::milliseconds>(tm2 - tm1).count()
+            << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time*m_dt << "[s], loop = " << m_loop_for_check << "/" << m_collision_loop << std::endl;
         }
         if ( m_pair.size() == 0 && ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) ) {
             std::cerr << "[" << m_profile.instance_name << "] CAUTION!! The robot is moving without checking self collision detection!!! please define collision_pair in configuration file" << std::endl;
@@ -609,7 +613,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 #endif // USE_HRPSYSUTIL
 
         // set collisoin state
-        m_state.time = tm2;
+        m_state.time = std::chrono::duration<double, std::milli>(tm2.time_since_epoch()).count();
         for (unsigned int i = 0; i < m_robot->numJoints(); i++ ){
             m_state.angle[i] = m_robot->joint(i)->q;
         }
@@ -636,7 +640,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 v[2] = line.second.data()[2];
             }
         }
-         m_state.computation_time = (tm2-tm1)*1000.0;
+         m_state.computation_time = std::chrono::duration_cast<std::chrono::milliseconds>(tm2 - tm1).count();
         m_state.safe_posture = m_safe_posture;
         m_state.recover_time = m_recover_time;
         m_state.loop_for_check = m_loop_for_check;
