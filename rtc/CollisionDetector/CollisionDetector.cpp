@@ -21,8 +21,6 @@
 #include "hrpsys/util/BVutil.h"
 #include "hrpsys/idl/RobotHardwareService.hh"
 
-#include <chrono>
-
 #include "CollisionDetector.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
@@ -414,7 +412,6 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         //        }
         //collision check process in case of angle set above
 	m_robot->calcForwardKinematics();
-	//coil::TimeValue tm1 = coil::gettimeofday();
     auto tm1 = std::chrono::steady_clock::now();
 
     std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
