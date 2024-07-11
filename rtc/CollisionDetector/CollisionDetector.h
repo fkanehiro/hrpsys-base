@@ -33,6 +33,8 @@
 #include "CollisionDetectorService_impl.h"
 #include "../SoftErrorLimiter/beep.h"
 
+#include <chrono>
+
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 
