@@ -3,7 +3,7 @@ extern "C" {
 #if (defined __APPLE__)
 #include <pcl/surface/qhull.h>
 #else
-#include <qhull/qhull_a.h>
+#include <libqhull/qhull_a.h>
 #endif
 }
 #include <hrpModel/Link.h>
