@@ -1,9 +1,3 @@
-#FIND_PATH(
-#QHULL_DIR
-#NAMES qhull_a.h
-#PATHS /usr/include/libqhull | /usr/local
-#DOC "the top directory of qhull")
-
 find_file(
     QHULL_DIR
     NAMES libqhull/libqhull.h qhull.h
