@@ -170,24 +170,10 @@ if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
 endif()
 
 execute_process(
-  COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+  COMMAND python -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"VERSION\"))"
   OUTPUT_VARIABLE PYTHON_VERSION
   RESULT_VARIABLE PYTHON_VERSION_SUCCESS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
-  execute_process(
-    COMMAND python2 -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
-    OUTPUT_VARIABLE PYTHON_VERSION
-    RESULT_VARIABLE PYTHON_VERSION_SUCCESS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
-if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
-  execute_process(
-    COMMAND python3 -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"VERSION\"))"
-    OUTPUT_VARIABLE PYTHON_VERSION
-    RESULT_VARIABLE PYTHON_VERSION_SUCCESS
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
 if(NOT PYTHON_VERSION_SUCCESS STREQUAL 0)
   message(FATAL_ERROR "Could not determine Python version, maybe it is not installed?")
 endif()
