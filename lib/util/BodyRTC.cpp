@@ -481,11 +481,15 @@ bool BodyRTC::setServoErrorLimit(const char *i_jname, double i_limit)
 
 char *time_string()
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    struct tm *tm_ = localtime(&tv.tv_sec);
-    static char time[20];
-    sprintf(time, "%02d:%02d:%02d.%06d", tm_->tm_hour, tm_->tm_min, tm_->tm_sec, (int)tv.tv_usec);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts); 
+
+    struct tm tm_;
+    localtime_r(&ts.tv_sec, &tm_); 
+
+    static char time[26]; 
+    snprintf(time, sizeof(time), "%02d:%02d:%02d.%06ld", tm_.tm_hour, tm_.tm_min, tm_.tm_sec, ts.tv_nsec / 1000);
+
     return time;
 }
 
