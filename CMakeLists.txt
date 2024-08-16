@@ -18,6 +18,7 @@ option(USE_IRRLICHT "Build Irrlicht components" OFF)
 option(NO_DIGITAL_INPUT "Disable readDigitalInput and lengthDigitalInput" OFF)
 option(USE_QPOASES "Build qpOASES" OFF)
 option(ENABLE_DOXYGEN "Use Doxygen" ON)
+option(ENABLE_PCL "Use PCL" ON)
 
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
@@ -164,9 +165,11 @@ if(USE_HRPSYSUTIL)
     message(FATAL_ERROR "GLEW is required to build hrpsysUtil")
   endif()
 endif()
-find_package(PCL)
-if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
-  message(FATAL_ERROR "PCL is required to build hrpsysUtil on Apple platform")
+if(ENABLE_PCL)
+  find_package(PCL)
+  if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
+    message(FATAL_ERROR "PCL is required to build hrpsysUtil on Apple platform")
+  endif()
 endif()
 
 execute_process(

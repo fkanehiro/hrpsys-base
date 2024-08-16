@@ -1,4 +1,4 @@
-if (APPLE)
+if (APPLE AND ENABLE_PCL)
   include_directories(${PCL_INCLUDE_DIRS})
   link_directories(${PCL_LIBRARY_DIRS})
   add_definitions(${PCL_DEFINITIONS})
