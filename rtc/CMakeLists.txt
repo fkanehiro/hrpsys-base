@@ -80,7 +80,7 @@ if (NOT "${PCL_LIBRARIES}" STREQUAL "")
   list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 endif()
 
-if (PCL_FOUND)
+if (ENABLE_PCL AND PCL_FOUND)
   add_subdirectory(ApproximateVoxelGridFilter)
   add_subdirectory(SORFilter)
   add_subdirectory(MLSFilter)
