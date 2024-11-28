@@ -77,7 +77,7 @@ namespace RTC
 #ifndef OPENRTM_VERSION_TRUNK
             invoke_worker iw;
             struct timeval tbegin, tend;
-	        std::vector<double> processes(m_comps.size());
+            std::vector<double> processes(m_comps.size());
             gettimeofday(&tbegin, NULL);
             for (unsigned int i=0; i< m_comps.size(); i++){
                 iw(m_comps[i]);
@@ -88,9 +88,23 @@ namespace RTC
             }
 #else
             struct timeval tbegin, tend;
-            const RTCList& list = getComponentList();
+            const RTCList& list2 = getComponentList();
+            RTCList list;
+            list.length(list2.length()+1);
+            list[0] = getOwner();
+            for (unsigned int i=0; i<list2.length(); i++){
+                list[i+1] = list2[i];
+            }
             std::vector<double> processes(list.length());
             gettimeofday(&tbegin, NULL);
+            ExecutionContextBase::invokeWorkerPreDo();
+            {
+                std::unique_lock<std::mutex> guard(m_workerthread.mutex_);
+                while (!m_workerthread.running_)
+                    {
+                        m_workerthread.cond_.wait(guard);
+                    }
+            }
             for (unsigned int i=0; i< list.length(); i++){
                 RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
                 rtobj->workerDo(); 
@@ -99,6 +113,7 @@ namespace RTC
                 processes[i] = dt;
                 tbegin = tend;
             }
+            ExecutionContextBase::invokeWorkerPostDo();
 #endif
             if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT &&
                 rtc_names.size() == processes.size()) {
