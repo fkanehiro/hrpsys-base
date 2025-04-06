@@ -21,6 +21,5 @@ override_dh_auto_test:
 override_dh_auto_configure:
     add-apt-repository -y ppa:openrtm/stable
     apt-get update
-    dh_auto_configure
 
 .PHONY: override_dh_compress override_dh_auto_test
