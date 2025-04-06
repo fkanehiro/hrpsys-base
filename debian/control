@@ -2,11 +2,11 @@ Source: hrpsys-base
 Section: science
 Priority: extra
 Maintainer: Fumio KANEHIRO <f-kanehiro@aist.go.jp>
-Build-Depends: debhelper (>= 7.5), cmake(>= 2.4.0), pkg-config (>= 0.22), openrtm-aist (>= 1.0.0), openrtm-aist-dev (>= 1.0.0), jython (>= 2.2.0), libboost-all-dev (>= 1.40.0), liblapack-dev (>= 3.2.1), libeigen3-dev (>= 3.0.1), libjpeg-dev, libpng-dev, openjdk-6-jdk | openjdk-8-jdk, doxygen (>=1.6.3), graphviz, libxml2-dev (>= 2.7.6), libf2c2-dev, libgl1-mesa-dev, libxext-dev, libomniorb4-dev, libcollada-dom-dev, omniidl, omniidl-python, uuid-dev, openhrp, libsdl-dev, libglew-dev, libqhull-dev, freeglut3-dev, libxmu-dev, libopencv-highgui-dev, libopencv-dev
+Build-Depends: debhelper (>= 7.5), cmake(>= 2.4.0), pkg-config (>= 0.22), openrtm2, openrtm2-dev, jython (>= 2.2.0), libboost-all-dev (>= 1.40.0), liblapack-dev (>= 3.2.1), libeigen3-dev (>= 3.0.1), libjpeg-dev, libpng-dev, openjdk-6-jdk | openjdk-8-jdk, doxygen (>=1.6.3), graphviz, libxml2-dev (>= 2.7.6), libf2c2-dev, libgl1-mesa-dev, libxext-dev, libomniorb4-dev, libcollada-dom-dev, omniidl, omniidl-python3, uuid-dev, openhrp, libsdl-dev, libglew-dev, libqhull-dev, freeglut3-dev, libxmu-dev, libopencv-highgui-dev, libopencv-dev
 Standards-Version: 3.9.2
 Homepage: http://code.google.com/p/hrpsys-base
 
 Package: hrpsys-base
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, openrtm-aist-dev, jython, openrtm-aist-python, omniidl-python, python-tk
+Depends: ${shlibs:Depends}, ${misc:Depends}, openrtm2-dev, jython, openrtm2-python3, omniidl-python3, python-tk
 Description: Basic RT components and utilities to control robots using OpenRTM

@@ -5,14 +5,14 @@ on:
     - package-master
   push:
     branches:
-    - debian
+    - "**"
 jobs:
   package:
     uses: jrl-umi3218/github-actions/.github/workflows/package-project.yml@master
     with:
-      main-branch: debian
+      main-branch: ubuntu2204+rtm2
       update-stable-and-head: true
-      deps: '["gergondet/choreonoid"]'
+      # deps: '["ThomasDuvinage/choreonoid"]'
       matrix: |
           {
             "dist": ["focal", "jammy"],
