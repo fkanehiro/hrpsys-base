@@ -12,6 +12,8 @@ import os
 import time
 import re
 
+if sys.version_info[0] >= 3:
+    unicode = str
 ##
 # \brief root naming context
 #
@@ -118,7 +120,7 @@ class RTcomponent:
                 return True
             ret = ec.activate_component(self.ref)
             if  ret != RTC.RTC_OK:
-                print ('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
+                print('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
                        (self.name(), ret))
                 return False
             tm = 0 
@@ -127,7 +129,7 @@ class RTcomponent:
                     return True
                 time.sleep(0.01)
                 tm += 0.01
-        print ('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
+        print('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
                self.name())
         return False
 
@@ -145,7 +147,7 @@ class RTcomponent:
                 return True
             ret = ec.deactivate_component(self.ref)
             if  ret != RTC.RTC_OK:
-                print ('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
+                print('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
                        (self.name(), ret))
                 return False
             tm = 0
@@ -154,7 +156,7 @@ class RTcomponent:
                     return True
                 time.sleep(0.01)
                 tm += 0.01
-        print ('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
+        print('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
                self.name())
         return False
 

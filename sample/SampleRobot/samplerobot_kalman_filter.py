@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -56,7 +57,7 @@ def init ():
     roll_pitch_pose2=[-0.486326,-1.18821,-0.026531,0.908889,-0.267927,0.130916,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.430362,-0.964194,0.009303,0.590166,-0.173131,0.103544,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_pose3=[0.463158,0.281851,-0.0701,0.747965,-0.514677,-0.108534,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.486068,0.189331,-0.083976,1.08676,-0.76299,-0.139173,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_poses = [roll_pitch_pose1, roll_pitch_pose2, roll_pitch_pose3]
-    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    hrpsys_version = hcf.seq.ref.get_component_profile().version.strip('"')
     print("hrpsys_version = %s"%hrpsys_version)
 
 def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
@@ -75,15 +76,15 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
         act_rpy_ret.append(line.split(" ")[0:-1])
     #  Get time list
     initial_sec=int(act_rpy_ret[0][0].split(".")[0])
-    tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
+    tm_list=[int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6 for x in act_rpy_ret]
     # Plotting
     try:
         import matplotlib.pyplot as plt
         plt.clf()
         color_list = ['r', 'g', 'b']
         for idx in range(3):
-            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
-            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
+            plt.plot(tm_list, [180.0 * float(x[1+3+idx]) / math.pi for x in act_rpy_ret], color=color_list[idx])
+            plt.plot(tm_list, [180.0 * float(x[1+idx]) / math.pi for x in estimated_base_rpy_ret], "--", color=color_list[idx])
         plt.xlabel("Time [s]")
         plt.ylabel("Angle [deg]")
         plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
@@ -92,7 +93,7 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
                     "Actual yaw",   "Estimated base yaw"))
         plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
     except:
-        print >> sys.stderr, "No plot"
+        print("No plot", file=sys.stderr)
 
 def test_bending_common (time, poses):
     hcf.seq_svc.setJointAngles(poses[1], time*0.25)
@@ -131,14 +132,14 @@ def test_walk ():
     hcf.abc_svc.waitFootSteps()
 
 def demoGetKalmanFilterParameter():
-    print >> sys.stderr, "1. getParameter"
+    print("1. getParameter", file=sys.stderr)
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print >> sys.stderr, "  getKalmanFilterParam() => OK"
+        print("  getKalmanFilterParam() => OK", file=sys.stderr)
     assert(ret[0])
 
 def demoSetKalmanFilterParameter():
-    print >> sys.stderr, "2. setParameter"
+    print("2. setParameter", file=sys.stderr)
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
     kfp.Q_rate = 0.003;
@@ -147,12 +148,12 @@ def demoSetKalmanFilterParameter():
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
     ret2 = ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle
     if ret2:
-        print >> sys.stderr, "  setKalmanFilterParam() => OK"
+        print("  setKalmanFilterParam() => OK", file=sys.stderr)
     assert(ret2)
 
 def demo():
     init()
-    from distutils.version import StrictVersion
+    from packaging.version import parse as StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoGetKalmanFilterParameter()
         demoSetKalmanFilterParameter()

@@ -16,12 +16,12 @@ aabb.size.l = 2.0
 aabb.size.w = 4.0
 aabb.size.h = 0.1
 map = ogm_svc.getOGMap3D(aabb)
-print "resolution = ",map.resolution
-print "number of voxels = ",map.nx,"x",map.ny,"x",map.nz
+print("resolution = ",map.resolution)
+print("number of voxels = ",map.nx,"x",map.ny,"x",map.nz)
 for x in range(map.nx):
     for y in range(map.ny): 
         for z in range(map.nz): 
-            print map.cells[x*map.ny*map.nz+y*map.nz+z],
-    print
+            print(map.cells[x*map.ny*map.nz+y*map.nz+z], end=' ')
+    print()
 
 

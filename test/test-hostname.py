@@ -34,7 +34,7 @@ class TestHrpsysHostname(unittest.TestCase):
                 if ms and rh :
                     break
                 time.sleep(1)
-                print >>sys.stderr, "wait for RTCmanager=%r, RTC(RobotHardware0)=%r"%(ms,rh)
+                print("wait for RTCmanager=%r, RTC(RobotHardware0)=%r"%(ms,rh), file=sys.stderr)
                 count += 1
             self.assertTrue(ms and rh)
         except Exception as e:
@@ -55,16 +55,16 @@ class TestHrpsysHostname(unittest.TestCase):
         try:
             self.check_initCORBA('unknown')
         except SystemExit as e:
-            print "[This is Expected Failure]"
-            print str(e.message)
+            print("[This is Expected Failure]")
+            print(str(e.message))
 
     @unittest.expectedFailure
     def test_X_123_45_67_89(self):
         try:
             self.check_initCORBA('123.45.67.89')
         except SystemExit as e:
-            print "[This is Expected Failure]"
-            print str(e.message)
+            print("[This is Expected Failure]")
+            print(str(e.message))
 
 #unittest.main()
 if __name__ == '__main__':

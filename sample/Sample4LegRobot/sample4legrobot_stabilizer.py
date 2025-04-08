@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -39,7 +39,7 @@ def init ():
     print("hrpsys_version = %s"%hrpsys_version)
 
 def demoSetParameterAndStartST():
-    print >> sys.stderr, "1. setParameter"
+    print("1. setParameter", file=sys.stderr)
     stp_org = hcf.st_svc.getParameter()
     # for tpcc
     stp_org.k_tpcc_p=[0.2, 0.2]
@@ -60,7 +60,7 @@ def demoSetParameterAndStartST():
                      OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, tmp_leg_outside_margin])]
     rarm_vertices = rleg_vertices
     larm_vertices = lleg_vertices
-    stp_org.eefm_support_polygon_vertices_sequence = map (lambda x : OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x), [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices])
+    stp_org.eefm_support_polygon_vertices_sequence = [OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x) for x in [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices]]
     stp_org.eefm_leg_inside_margin=tmp_leg_inside_margin
     stp_org.eefm_leg_outside_margin=tmp_leg_outside_margin
     stp_org.eefm_leg_front_margin=tmp_leg_front_margin
@@ -79,7 +79,7 @@ def demoSetParameterAndStartST():
     hcf.startStabilizer ()
 
 def demoSetFootStepsWithST():
-    print >> sys.stderr,"2. setFootSteps"
+    print("2. setFootSteps", file=sys.stderr)
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg"),
                                                              OpenHRP.AutoBalancerService.Footstep([0.7+0.00,+0.19,0], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.15,+0.19,0], [1,0,0,0], "lleg"),

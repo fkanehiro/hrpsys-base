@@ -14,7 +14,7 @@ def waitInputConfirm(msg):
     ret = JOptionPane.showConfirmDialog(f, msg, "waitInputConfirm",
                                         JOptionPane.OK_CANCEL_OPTION)
     if ret == 2:
-        raise StandardError, "script is canceled"
+        raise Exception("script is canceled")
     return True
     
 def waitInputSelect(msg):
@@ -29,7 +29,7 @@ def waitInputSelect(msg):
     elif ret == 1:
         return False
     elif ret == 2:
-        raise StandardError, "script is canceled"
+        raise Exception("script is canceled")
 
 class posFilter(FileFilter):
     def accept(self, f):

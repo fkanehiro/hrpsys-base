@@ -44,14 +44,14 @@ class TestJointAngle(unittest.TestCase):
     def test_set_if_find_log(self):
         h = PA10()
         h.findComps()
-        print >>sys.stderr, "log=",h.log, "log_svc=",h.log_svc
+        print("log=",h.log, "log_svc=",h.log_svc, file=sys.stderr)
         self.assertTrue(h.log)
         self.assertTrue(h.log_svc)
 
     def test_get_joint_angles(self):
         h = PA10()
         h.findComps()
-        print >>sys.stderr,  h.getJointAngles()
+        print(h.getJointAngles(), file=sys.stderr)
         self.assertEqual(len(h.getJointAngles()), int(9))
 
     def test_set_joint_angles(self):

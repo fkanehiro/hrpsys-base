@@ -44,7 +44,7 @@ class TestJointAngle(unittest.TestCase):
     def test_set_if_find_log(self):
         h = SampleRobot()
         h.findComps()
-        print >>sys.stderr, "log=",h.log, "log_svc=",h.log_svc
+        print("log=",h.log, "log_svc=",h.log_svc, file=sys.stderr)
         self.assertTrue(h.log)
         self.assertTrue(h.log_svc)
 

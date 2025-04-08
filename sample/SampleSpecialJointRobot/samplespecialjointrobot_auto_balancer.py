@@ -4,7 +4,7 @@ try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -32,19 +32,19 @@ def init ():
 def checkActualBaseAttitude():
     rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
     ret = math.degrees(rpy.r) < 0.1 and math.degrees(rpy.p) < 0.1
-    print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
+    print("  actual base rpy = ", ret, "(", rpy, ")", file=sys.stderr)
     assert (ret)
     return ret
 
 def demoGaitGeneratorNoToeHeelContact():
-    print >> sys.stderr, "1. Do not use toe heel contact"
+    print("1. Do not use toe heel contact", file=sys.stderr)
     hcf.abc_svc.goPos(0.3, 0, 0);
     hcf.abc_svc.waitFootSteps()
     checkActualBaseAttitude()
-    print >> sys.stderr, "  No toe heel contact=>OK"
+    print("  No toe heel contact=>OK", file=sys.stderr)
 
 def demoGaitGeneratorToeHeelContact():
-    print >> sys.stderr, "2. Use toe heel contact"
+    print("2. Use toe heel contact", file=sys.stderr)
     ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
     ggp.toe_pos_offset_x = 1e-3*182.0;
     ggp.heel_pos_offset_x = 1e-3*-72.0;
@@ -60,10 +60,10 @@ def demoGaitGeneratorToeHeelContact():
     ggp.heel_angle = 0;
     hcf.abc_svc.setGaitGeneratorParam(ggp);
     checkActualBaseAttitude()
-    print >> sys.stderr, "  Toe heel contact=>OK"
+    print("  Toe heel contact=>OK", file=sys.stderr)
 
 def demoGaitGeneratorToeHeelContactWithToeJoint():
-    print >> sys.stderr, "3. Use toe heel contact with toe joint"
+    print("3. Use toe heel contact with toe joint", file=sys.stderr)
     ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
     ggp.toe_pos_offset_x = 1e-3*182.0;
     ggp.heel_pos_offset_x = 1e-3*-72.0;
@@ -79,7 +79,7 @@ def demoGaitGeneratorToeHeelContactWithToeJoint():
     ggp.heel_angle = 0;
     hcf.abc_svc.setGaitGeneratorParam(ggp);
     checkActualBaseAttitude()
-    print >> sys.stderr, "  Toe heel contact with toe joint =>OK"
+    print("  Toe heel contact with toe joint =>OK", file=sys.stderr)
 
 
 def demo():

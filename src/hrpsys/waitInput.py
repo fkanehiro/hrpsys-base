@@ -1,8 +1,11 @@
-from Tkinter import *
-from tkMessageBox import *
+from tkinter import *
+from tkinter.messagebox import *
 import datetime
-import __builtin__
+import builtins
 import threading
+
+if hasattr(__builtins__, 'raw_input'):
+    input = raw_input
 
 def waitInputConfirm(msg):
     root = None
@@ -14,7 +17,7 @@ def waitInputConfirm(msg):
     except Exception:
         _, e, _ = sys.exc_info()
         if "couldn't connect to display" in str(e):
-            c = raw_input(msg+' (Enter [Y/y] to proceed) ').lower()
+            c = input(msg+' (Enter [Y/y] to proceed) ').lower()
             return c == 'y' or c == ''
         raise
     finally:
@@ -244,7 +247,3 @@ def waitInputMenu(menu):
     thr = threading.Thread(target=waitInputMenuMain, args=(menu,))
     thr.start()
     return thr
-
-__builtin__.waitInputConfirm = waitInputConfirm
-__builtin__.waitInputSelect  = waitInputSelect
-__builtin__.waitInputMenu    = waitInputMenu

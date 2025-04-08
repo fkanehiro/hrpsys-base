@@ -169,7 +169,7 @@ if(USE_HRPSYSUTIL AND APPLE AND NOT PCL_FOUND)
 endif()
 
 execute_process(
-  COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+  COMMAND python -c "import sys; print(sys.version_info[0])"
   OUTPUT_VARIABLE PYTHON_VERSION
   RESULT_VARIABLE PYTHON_VERSION_SUCCESS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -204,7 +204,7 @@ message(STATUS "compile iob with -DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION}")
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)
 endif()
-add_subdirectory(python)
+add_subdirectory(src/hrpsys) # for doc/html/index.html
 add_subdirectory(idl)
 add_subdirectory(lib)
 add_subdirectory(ec)
@@ -217,14 +217,12 @@ if (NOT QNXNTO)
   add_subdirectory(util)
 endif()
 add_subdirectory(sample)
-if(CATKIN_ENABLE_TESTING)
-  add_subdirectory(test)
-endif()
 
 #if catkin environment
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
 if(need_catkin OR "${CATKIN_BUILD_BINARY_PACKAGE}")
   find_package(catkin)
+  catkin_python_setup()
   if(catkin_FOUND)
     catkin_package_xml()
     if(NOT hrpsys_VERSION VERSION_EQUAL CPACK_PACKAGE_VERSION)

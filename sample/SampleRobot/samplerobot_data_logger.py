@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -25,31 +26,31 @@ def init ():
     hcf.waitInterpolation()
 
 def demoSaveLog():
-    print >> sys.stderr, "1. Save log"
+    print("1. Save log", file=sys.stderr)
     # Save log files for each ports as /tmp/test-samplerobot-log.*
     #   file names are /tmp/test-samplerobot-log.[RTCName]_[PortName], c.f.,  /tmp/test-samplerobot-log.sh_qOut ... etc
     hcf.saveLog("/tmp/test-samplerobot-log")
     ret = os.path.exists("/tmp/test-samplerobot-log.sh_qOut")
     if ret:
-        print >> sys.stderr, "  save() =>OK"
+        print("  save() =>OK", file=sys.stderr)
     assert(ret is True)
 
 def demoClearLog():
-    print >> sys.stderr, "2. Clear buffer"
+    print("2. Clear buffer", file=sys.stderr)
     hcf.clearLog()
-    print >> sys.stderr, "  clear() =>OK"
+    print("  clear() =>OK", file=sys.stderr)
     assert(True)
 
 def demoSetMaxLogLength():
-    print >> sys.stderr, "3. Set max ring-buffer length : 100 [loop] * 0.002 [s] = 0.2 [s] data"
+    print("3. Set max ring-buffer length : 100 [loop] * 0.002 [s] = 0.2 [s] data", file=sys.stderr)
     hcf.setMaxLogLength(100)
     hcf.seq_svc.setJointAngles(initial_pose, 0.2) # wait
     hcf.waitInterpolation()
     hcf.saveLog("/tmp/test-samplerobot-log")
     from subprocess import check_output
-    ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).split(" ")[0] == '100'
+    ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).decode().split(" ")[0] == '100'
     if ret:
-        print >> sys.stderr, "  maxLength() =>OK"
+        print("  maxLength() =>OK", file=sys.stderr)
     assert(ret is True)
 
 def demo ():

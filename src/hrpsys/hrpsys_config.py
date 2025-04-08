@@ -3,16 +3,17 @@
 import os
 import rtm
 
-from rtm import *
-from OpenHRP import *
+from .rtm import *
+from .OpenHRP import *
 from hrpsys import *  # load ModelLoader
 from hrpsys import ImpedanceControllerService_idl
-from waitInput import waitInputConfirm
+from .waitInput import waitInputConfirm
 
 import socket
 import time
 import subprocess
-from distutils.version import StrictVersion
+from packaging.version import parse as StrictVersion
+
 
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
@@ -335,10 +336,10 @@ class HrpsysConfigurator(object):
         # connection for kf
         if self.kf:
             #   currently use first acc and rate sensors for kf
-            s_acc = filter(lambda s: s.type == 'Acceleration', self.sensors)
+            s_acc = [s for s in self.sensors if s.type == 'Acceleration']
             if (len(s_acc) > 0) and self.rh.port(s_acc[0].name) != None:  # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
                 connectPorts(self.rh.port(s_acc[0].name), self.kf.port('acc'))
-            s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
+            s_rate = [s for s in self.sensors if s.type == 'RateGyro']
             if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:  # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
                 connectPorts(self.rh.port(s_rate[0].name), self.kf.port("rate"))
             connectPorts(self.rh.port("q"), self.kf.port("qCurrent"))
@@ -366,14 +367,14 @@ class HrpsysConfigurator(object):
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
-        if StrictVersion(self.seq_version) >= StrictVersion('315.2.6'):
+        if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.2.6'):
             connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
-        if StrictVersion(self.seq_version) >= StrictVersion('315.2.0'):
+        if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.2.0'):
             connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in self.getForceSensorNames():
             connectPorts(self.seq.port(sen + "Ref"),
@@ -446,7 +447,7 @@ class HrpsysConfigurator(object):
                 # connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
                 connectPorts(self.kf.port("rpy"), self.rmfo.port("rpy"))
             connectPorts(self.rh.port("q"), self.rmfo.port("qCurrent"))
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
+            for sen in [x for x in self.sensors if x.type == "Force"]:
                 connectPorts(self.rh.port(sen.name), self.rmfo.port(sen.name))
                 if self.ic:
                     connectPorts(self.rmfo.port("off_" + sen.name),
@@ -458,21 +459,21 @@ class HrpsysConfigurator(object):
                     connectPorts(self.rmfo.port("off_" + sen.name),
                                  self.st.port(sen.name))
         elif self.ic: # if the robot does not have rmfo and kf, but have ic
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
+            for sen in [x for x in self.sensors if x.type == "Force"]:
                 connectPorts(self.rh.port(sen.name),
                              self.ic.port(sen.name))
 
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
-            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
+            if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for rfu
         if self.rfu:
             if self.es:
                 connectPorts(self.es.port("q"), self.rfu.port("qRef"))
-            if StrictVersion(self.seq_version) >= StrictVersion('315.3.0'):
+            if StrictVersion(self.seq_version.strip('"')) >= StrictVersion('315.3.0'):
                 connectPorts(self.sh.port("basePosOut"), self.rfu.port("basePosIn"))
                 connectPorts(self.sh.port("baseRpyOut"), self.rfu.port("baseRpyIn"))
         # connection for tf
@@ -487,8 +488,8 @@ class HrpsysConfigurator(object):
             connectPorts(self.tf.port("tauOut"), self.vs.port("tauIn"))
             #  virtual force sensors
             if self.ic:
-                for vfp in filter(lambda x: str.find(x, 'v') >= 0 and
-                                  str.find(x, 'sensor') >= 0, self.vs.ports.keys()):
+                for vfp in [x for x in self.vs.ports.keys() if str.find(x, 'v') >= 0 and
+                                  str.find(x, 'sensor') >= 0]:
                     connectPorts(self.vs.port(vfp), self.ic.port(vfp))
         # connection for co
         if self.co:
@@ -500,7 +501,7 @@ class HrpsysConfigurator(object):
             if self.kf:
                 connectPorts(self.kf.port("rpy"), self.octd.port("rpy"))
             if self.rmfo:
-                for sen in filter(lambda x: x.type == "Force", self.sensors):
+                for sen in [x for x in self.sensors if x.type == "Force"]:
                     connectPorts(self.rmfo.port("off_" + sen.name), self.octd.port(sen.name))
 
         # connection for gc
@@ -562,10 +563,10 @@ class HrpsysConfigurator(object):
         # connection for acf
         if self.acf:
             #   currently use first acc and rate sensors for acf
-            s_acc = filter(lambda s: s.type == 'Acceleration', self.sensors)
+            s_acc = [s for s in self.sensors if s.type == 'Acceleration']
             if (len(s_acc) > 0) and self.rh.port(s_acc[0].name) != None:
                 connectPorts(self.rh.port(s_acc[0].name), self.acf.port('accIn'))
-            s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
+            s_rate = [s for s in self.sensors if s.type == 'RateGyro']
             if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:
                 connectPorts(self.rh.port(s_rate[0].name), self.acf.port("rateIn"))
             if self.kf:
@@ -769,7 +770,7 @@ class HrpsysConfigurator(object):
         '''
         controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
                            self.tc, self.hes, self.el]
-        return filter(lambda c: c != None, controller_list)  # only return existing controllers
+        return list([c for c in controller_list if c != None])  # only return existing controllers
 
     def getRTCInstanceList(self, verbose=True):
         '''!@brief
@@ -795,6 +796,8 @@ class HrpsysConfigurator(object):
     def parseUrl(self, url):
         if '$(PROJECT_DIR)' in url:
             path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+            if isinstance(path, bytes):
+                path = path.decode('utf-8')
             path = os.path.join(path, 'share/OpenHRP-3.1/sample/project')
             url = url.replace('$(PROJECT_DIR)', path)
         return url
@@ -809,7 +812,7 @@ class HrpsysConfigurator(object):
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
         url = self.parseUrl(url)
         print(self.configurator_name + "  bodyinfo URL = file://" + url)
-        return mdlldr.getBodyInfo("file://" + url)
+        return mdlldr.getBodyInfo(str("file://" + url))
 
     # public method to get sensors list
     def getSensors(self, url):
@@ -821,18 +824,16 @@ class HrpsysConfigurator(object):
         if url == '':
             return []
         else:
-            return sum(map(lambda x: x.sensors,
-                           filter(lambda x: len(x.sensors) > 0,
-                                  self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
+            return sum([x.sensors for x in [x for x in self.getBodyInfo(url)._get_links() if len(x.sensors) > 0]], [])  # sum is for list flatten
 
     # public method to get sensors list
     def getForceSensorNames(self):
         '''!@brief
         Get list of force sensor names. Returns existence force sensors and virtual force sensors. self.sensors and virtual force sensors are assumed.
         '''
-        ret = map (lambda x : x.name, filter(lambda x: x.type == "Force", self.sensors))
+        ret = [x.name for x in [x for x in self.sensors if x.type == "Force"]]
         if self.vs != None:
-            ret += filter(lambda x: str.find(x, 'v') >= 0 and str.find(x, 'sensor') >= 0, self.vs.ports.keys())
+            ret += [x for x in self.vs.ports.keys() if str.find(x, 'v') >= 0 and str.find(x, 'sensor') >= 0]
         return ret
 
     def connectLoggerPort(self, artc, sen_name, log_name=None):
@@ -913,13 +914,13 @@ class HrpsysConfigurator(object):
             self.connectLoggerPort(self.rh, 'servoState')
             if self.simulation_mode:
                 self.connectLoggerPort(self.rh, 'WAIST')
-        for sen in filter(lambda x: x.type == "Force", self.sensors):
+        for sen in [x for x in self.sensors if x.type == "Force"]:
             self.connectLoggerPort(self.sh, sen.name + "Out")
         if self.rmfo != None:
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
+            for sen in [x for x in self.sensors if x.type == "Force"]:
                 self.connectLoggerPort(self.rmfo, "off_"+sen.name)
         if self.rfu != None:
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
+            for sen in [x for x in self.sensors if x.type == "Force"]:
                 self.connectLoggerPort(self.rfu, "ref_"+sen.name+"Out")
         if self.octd != None:
             self.connectLoggerPort(self.octd, "octdData")
@@ -1262,7 +1263,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
+        if StrictVersion(self.fk_version.strip('"')) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
@@ -1362,7 +1363,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
+        if StrictVersion(self.fk_version.strip('"')) < StrictVersion('315.2.5') and ':' in lname:
             raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
@@ -2037,7 +2038,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         If Groups is not defined or Groups does not have rarm and larm, rleg and lleg by default.
         '''
         if limbs==None:
-            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
+            if self.Groups != None and "rarm" in [x[0] for x in self.Groups] and "larm" in [x[0] for x in self.Groups]:
                 limbs=["rleg", "lleg", "rarm", "larm"]
             else:
                 limbs=["rleg", "lleg"]
@@ -2136,13 +2137,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
                        (which you can find by "self.hrpsys_version" command). For instance, if your
                        hrpsys is 315.10.1, refer to "startImpedance_315_4" method.
         '''
-        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version.strip('"')) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstartImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.startImpedance_315_4(arm, **kwargs)
 
     def stopImpedance(self, arm):
-        if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
+        if self.hrpsys_version and StrictVersion(self.hrpsys_version.strip('"')) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstopImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
             self.stopImpedance_315_4(arm)
@@ -2164,13 +2165,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         print(self.configurator_name + "Start Default Unstable Controllers")
         # Check robot setting
-        is_legged_robot = map(lambda x: x[0], filter(lambda x : re.match(".*leg", x[0]), self.Groups))
+        is_legged_robot = [x[0] for x in [x for x in self.Groups if re.match(".*leg", x[0])]]
         # Select all arms in "Groups" for impedance as a default setting
         if not ic_limbs:
-            ic_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(arm)", x[0]), self.Groups))
+            ic_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(arm)", x[0])]]
         # Select all arms/legs in "Groups" for autobalancer as a default setting
         if not abc_limbs:
-            abc_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(leg|arm)", x[0]), self.Groups))
+            abc_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(leg|arm)", x[0])]]
         # Start controllers
         for limb in ic_limbs:
             self.ic_svc.startImpedanceControllerNoWait(limb)
@@ -2194,10 +2195,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         print(self.configurator_name + "Stop Default Unstable Controllers")
         # Check robot setting
-        is_legged_robot = map(lambda x: x[0], filter(lambda x : re.match(".*leg", x[0]), self.Groups))
+        is_legged_robot = [x[0] for x in [x for x in self.Groups if re.match(".*leg", x[0])]]
         # Select all arms in "Groups" for impedance as a default setting
         if not ic_limbs:
-            ic_limbs = map(lambda x: x[0], filter(lambda x : re.match(".*(arm)", x[0]), self.Groups))
+            ic_limbs = [x[0] for x in [x for x in self.Groups if re.match(".*(arm)", x[0])]]
         # Stop controllers
         if is_legged_robot:
             self.stopStabilizer()

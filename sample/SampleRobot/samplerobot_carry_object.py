@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 try:
     from hrpsys.hrpsys_config import *
     import OpenHRP
 except:
-    print "import without hrpsys"
+    print("import without hrpsys")
     import rtm
     from rtm import *
     from OpenHRP import *
@@ -37,7 +38,7 @@ def demoSetParameter():
                      OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, tmp_leg_outside_margin])]
     rarm_vertices = rleg_vertices
     larm_vertices = lleg_vertices
-    stp_org.eefm_support_polygon_vertices_sequence = map (lambda x : OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x), [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices])
+    stp_org.eefm_support_polygon_vertices_sequence = [OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x) for x in [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices]]
     stp_org.eefm_leg_inside_margin=tmp_leg_inside_margin
     stp_org.eefm_leg_outside_margin=tmp_leg_outside_margin
     stp_org.eefm_leg_front_margin=tmp_leg_front_margin
@@ -91,54 +92,54 @@ def init ():
     hcf.ic_svc.setImpedanceControllerParam("larm", icp)
     hcf.Groups = defJointGroups()
     hcf.startDefaultUnstableControllers(['rarm', 'larm'], ["rleg", "lleg", "rarm", "larm"])
-    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip().decode()
     hcf.rmfo_svc.loadForceMomentOffsetParams(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/ForceSensorOffset_SampleRobot.txt')
 
 def demoDualarmCarryup (is_walk=True, auto_detecion = True):
-    print >> sys.stderr, "1. Dual-arm carry-up demo."
-    print >> sys.stderr, "  Reaching"
+    print("1. Dual-arm carry-up demo.", file=sys.stderr)
+    print("  Reaching", file=sys.stderr)
     hcf.seq_svc.setJointAngles(dualarm_via_pose, 2.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(dualarm_reach_pose, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Increase operational force"
+    print("  Increase operational force", file=sys.stderr)
     if auto_detecion:
         objectTurnaroundDetection()
     else:
         hcf.seq_svc.setWrenches([0]*6+[0]*6+[0,0,-9.8*2.5,0,0,0]*2, 2.0) # 2.5[kg]*2 = 5.0[kg]
         hcf.waitInterpolation()
-    print >> sys.stderr, "  Lift up & down"
+    print("  Lift up & down", file=sys.stderr)
     hcf.seq_svc.setJointAngles(dualarm_liftup_pose, 2.0)
     hcf.waitInterpolation()
     if is_walk:
         demoWalk()
     hcf.seq_svc.setJointAngles(dualarm_reach_pose, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Reset operational force"
+    print("  Reset operational force", file=sys.stderr)
     hcf.seq_svc.setWrenches([0]*24, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Releasing"
+    print("  Releasing", file=sys.stderr)
     hcf.seq_svc.setJointAngles(dualarm_via_pose, 2.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
 
 def demoSinglearmCarryup (is_walk=True, auto_detecion = True):
-    print >> sys.stderr, "2. Single-arm carry-up demo."
-    print >> sys.stderr, "  Reaching"
+    print("2. Single-arm carry-up demo.", file=sys.stderr)
+    print("  Reaching", file=sys.stderr)
     hcf.abc_svc.goPos(0.02,0.15,0)
     hcf.abc_svc.waitFootSteps();
     hcf.seq_svc.setJointAngles(singlearm_via_pose, 2.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(singlearm_reach_pose, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Increase operational force"
+    print("  Increase operational force", file=sys.stderr)
     if auto_detecion:
         objectTurnaroundDetection(limbs=['rarm'])
     else:
         hcf.seq_svc.setWrenches([0]*6+[0]*6+[0]*6+[0,0,-9.8*5.0,0,0,0], 2.0)
         hcf.waitInterpolation()
-    print >> sys.stderr, "  Lift up & down"
+    print("  Lift up & down", file=sys.stderr)
     hcf.seq_svc.setJointAngles(singlearm_liftup_pose, 2.0)
     hcf.waitInterpolation()
     if is_walk:
@@ -147,10 +148,10 @@ def demoSinglearmCarryup (is_walk=True, auto_detecion = True):
         demoWalk()
     hcf.seq_svc.setJointAngles(singlearm_reach_pose, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Reset operational force"
+    print("  Reset operational force", file=sys.stderr)
     hcf.seq_svc.setWrenches([0]*24, 2.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Releasing"
+    print("  Releasing", file=sys.stderr)
     hcf.seq_svc.setJointAngles(singlearm_via_pose, 2.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
@@ -174,11 +175,11 @@ def objectTurnaroundDetection(max_time = 4.0, max_ref_force = 9.8*6.0, limbs=["r
         tmpflg = hcf.octd_svc.checkObjectContactTurnaroundDetection()
         #print rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data, rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data
         [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
-        print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
+        print("  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w)
         flg = (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_DETECTOR_IDLE) or (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_STARTED)
         time.sleep(0.5)
     [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
-    print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
+    print("  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w)
     if limbs==['rarm']:
         hcf.seq_svc.setWrenches([0]*18+fv[0]+mv[0], 2.0)
     else:
@@ -196,13 +197,13 @@ def demoWalk ():
     hcf.abc_svc.waitFootSteps();
 
 def demoDualarmPush (auto_detecion = True):
-    print >> sys.stderr, "3. Dual-arm push demo."
-    print >> sys.stderr, "  Move to"
+    print("3. Dual-arm push demo.", file=sys.stderr)
+    print("  Move to", file=sys.stderr)
     hcf.abc_svc.goPos(-0.45,0,0);
     hcf.abc_svc.waitFootSteps();
     hcf.abc_svc.goPos(0,0,(math.degrees(rtm.readDataPort(rtm.findRTC("PushBox(Robot)0").port("WAIST")).data.orientation.y-rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation.y)));
     hcf.abc_svc.waitFootSteps();
-    print >> sys.stderr, "  Reaching"
+    print("  Reaching", file=sys.stderr)
     #hcf.abc_svc.goPos(0.25, -1*(rtm.readDataPort(rtm.findRTC("PushBox(Robot)0").port("WAIST")).data.position.x-rtm.readDataPort(hcf.rh.port("WAIST")).data.position.x), 0);
     hcf.abc_svc.goPos(0.1, -1*(rtm.readDataPort(rtm.findRTC("PushBox(Robot)0").port("WAIST")).data.position.x-rtm.readDataPort(hcf.rh.port("WAIST")).data.position.x), 0);
     hcf.abc_svc.waitFootSteps();
@@ -210,13 +211,13 @@ def demoDualarmPush (auto_detecion = True):
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(dualarm_push_pose, 1.0)
     hcf.waitInterpolation()
-    print >> sys.stderr, "  Increase operational force"
+    print("  Increase operational force", file=sys.stderr)
     if auto_detecion:
         objectTurnaroundDetection(axis=[-1,0,0],max_ref_force=100, max_time=2)
     else:
         hcf.seq_svc.setWrenches([0]*6+[0]*6+[-40,0,0,0,0,0]*2, 2.0)
         hcf.waitInterpolation()
-    print >> sys.stderr, "  Push forward"
+    print("  Push forward", file=sys.stderr)
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.is_hand_fix_mode = True
     hcf.abc_svc.setAutoBalancerParam(abcp)
