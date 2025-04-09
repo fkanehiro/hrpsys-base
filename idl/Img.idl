@@ -27,6 +27,12 @@ struct ImageData
   sequence<octet> raw_data;
 };
 
+struct TimedImageData
+{
+  RTC::Time tm;
+  ImageData data;
+};
+
 
 /* camera image */
 struct CameraIntrinsicParameter

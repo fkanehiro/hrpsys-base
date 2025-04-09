@@ -110,13 +110,13 @@ protected:
   // </rtc-template>
     
   PointCloudTypes::PointCloud m_cloud;
-  OpenHRP::PCDOffsetSeq m_offset;
+  OpenHRP::TimedPCDOffsetSeq m_offset;
   RTC::TimedBoolean m_isOutput;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   
-  InPort<OpenHRP::PCDOffsetSeq> m_offsetIn;
+  InPort<OpenHRP::TimedPCDOffsetSeq> m_offsetIn;
   
   // </rtc-template>
   

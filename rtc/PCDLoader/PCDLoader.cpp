@@ -177,8 +177,8 @@ void PCDLoader::setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::Po
 void PCDLoader::updateOffsetToCloudXYZ(void)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr clouds(new pcl::PointCloud<pcl::PointXYZ>);
-    for (unsigned int i=0; i<m_offset.length(); i++){
-        const OpenHRP::PCDOffset& offset = m_offset[i];
+    for (unsigned int i=0; i<m_offset.data.length(); i++){
+        const OpenHRP::PCDOffset& offset = m_offset.data[i];
         const std::string label(offset.label);
         if( m_clouds_xyz.find(label) != m_clouds_xyz.end() ){
             const hrp::Vector3 center(offset.center.x, offset.center.y, offset.center.z);
@@ -211,8 +211,8 @@ void PCDLoader::updateOffsetToCloudXYZ(void)
 void PCDLoader::updateOffsetToCloudXYZRGB(void)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr clouds(new pcl::PointCloud<pcl::PointXYZRGB>);
-    for (unsigned int i=0; i<m_offset.length(); i++){
-        const OpenHRP::PCDOffset& offset = m_offset[i];
+    for (unsigned int i=0; i<m_offset.data.length(); i++){
+        const OpenHRP::PCDOffset& offset = m_offset.data[i];
         const std::string label(offset.label);
         if( m_clouds_xyzrgb.find(label) != m_clouds_xyzrgb.end() ){
             const hrp::Vector3 center(offset.center.x, offset.center.y, offset.center.z);
