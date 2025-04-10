@@ -12,6 +12,7 @@ jobs:
     with:
       main-branch: ubuntu2204+rtm2
       update-stable-and-head: true
+      with-openrtm: true
       # deps: '["ThomasDuvinage/choreonoid"]'
       matrix: |
           {
