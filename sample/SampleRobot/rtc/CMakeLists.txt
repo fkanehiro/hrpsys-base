@@ -56,5 +56,5 @@ install(CODE "
 execute_process(COMMAND cmake -E create_symlink ../../../lib/SampleComponent.so SampleComponent.so WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys/lib)
 ")
 # compile python idl
-install(CODE "execute_process(COMMAND omniidl -bpython -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} SampleComponentService.idl WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
-install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir}/hrpsys)")
+install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} SampleComponentService.idl WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
+install(CODE "execute_process(COMMAND python -m compileall hrpsys WORKING_DIRECTORY ${python_dist_pkg_dir})")

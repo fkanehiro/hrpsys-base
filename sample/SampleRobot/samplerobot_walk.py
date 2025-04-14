@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 
-try:
-    from hrpsys.hrpsys_config import *
-    import OpenHRP
-except:
-    print "import without hrpsys"
-    import rtm
-    from rtm import *
-    from OpenHRP import *
-    import waitInput
-    from waitInput import *
-    import socket
-    import time
+from hrpsys.hrpsys_config import *
+from hrpsys import OpenHRP
 
 def getRTCList ():
     return [

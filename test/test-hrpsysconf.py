@@ -3,6 +3,9 @@
 PKG = 'hrpsys'
 NAME = 'test-hrpsys-config'
 
+import sys
+print "running test with PYTHONPATH=%s" % ";".join(sys.path)
+
 import imp  ## for rosbuild
 try:
     imp.find_module(PKG)
@@ -11,11 +14,10 @@ except:
 
 from hrpsys.hrpsys_config import *
 from hrpsys import rtm
-import OpenHRP
+from hrpsys import OpenHRP
 
-import argparse,unittest,rostest
-
-import unittest, sys
+import argparse
+import unittest
 
 class SampleHrpsysConfigurator(HrpsysConfigurator):
     def init(self, robotname="SampleRobot(Robot)0", url=""):
@@ -28,7 +30,7 @@ class TestHrpsysConfig(unittest.TestCase):
 
     def test_import_waitinput(self):
         # https://github.com/start-jsk/rtmros_hironx/blob/groovy-devel/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py
-        from waitInput import waitInputConfirm, waitInputSelect
+        from hrpsys.waitInput import waitInputConfirm, waitInputSelect
         self.assertTrue(True)
 
     def test_createcomp(self):
@@ -71,7 +73,9 @@ class TestHrpsysConfig(unittest.TestCase):
                 break;
         self.rh = h.rh
 
-#unittest.main()
 if __name__ == '__main__':
-    import rostest
-    rostest.run(PKG, NAME, TestHrpsysConfig, sys.argv)
+    try:
+        import rostest
+        rostest.run(PKG, NAME, TestHrpsysConfig, sys.argv)
+    except ImportError:
+        unittest.main()
