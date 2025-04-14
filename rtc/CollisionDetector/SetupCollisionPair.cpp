@@ -18,6 +18,8 @@
 extern "C" {
 #if (defined __APPLE__)
 #include <pcl/surface/qhull.h>
+#elif (defined __QNX__)
+#include <libqhull/qhull_a.h>
 #else
 #include <qhull/qhull_a.h>
 #endif

@@ -14,6 +14,7 @@
 #include "hrpsys/idl/ExecutionProfileService.hh"
 
 #ifdef __QNX__
+#include <stdlib.h>
 using std::fprintf;
 #endif
 
