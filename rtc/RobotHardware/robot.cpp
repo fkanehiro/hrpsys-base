@@ -665,9 +665,11 @@ bool robot::checkJointCommands(const double *i_commands)
 bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 {
     int state;
+    joint_control_mode mode;
     for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
-        if (state == ON && m_servoErrorLimit[i] != 0){
+        read_control_mode(i, &mode);
+        if (state == ON && m_servoErrorLimit[i] != 0 && mode != JCM_TORQUE){
             double angle, command;
             read_actual_angle(i, &angle);
             read_command_angle(i, &command);
