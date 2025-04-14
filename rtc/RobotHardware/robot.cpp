@@ -18,6 +18,87 @@
 
 using namespace hrp;
 
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/neutrino.h>
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
+#include <sys/mman.h>
+
+typedef struct
+{
+    uint16_t msg_no;
+    char msg_data[255];
+} client_msg_t;
+static int force_sensor_fd;
+static float force_data[12];
+
+int _number_of_force_sensors()
+{
+    int ret, num;
+    client_msg_t msg;
+    char msg_reply[255];
+
+    /* Open a connection to the server (fd == coid) */
+    force_sensor_fd = open ("/dev/jr3q", O_RDWR);
+    if (force_sensor_fd == -1){
+        fprintf (stderr, "Unable to open server connection: %s\n",
+                 strerror (errno));
+        return EXIT_FAILURE;
+    }
+
+
+    /* Clear the memory for the msg and the reply */
+    memset (&msg, 0, sizeof (msg));
+    memset (&msg_reply, 0, sizeof (msg_reply));
+
+    /* Setup the message data to send to the server */
+    num = 4;
+    msg.msg_no = _IO_MAX + num;
+    snprintf (msg.msg_data, 254, "client %d requesting reply.", getpid ());
+
+    printf ("client: msg_no: _IO_MAX + %d\n", num);
+    fflush (stdout);
+
+    ret = MsgSend (force_sensor_fd, &msg, sizeof (msg), msg_reply, 255);
+    if (ret == -1){
+        fprintf (stderr, "Unable to MsgSend() to server: %s\n",
+                 strerror (errno));
+        return EXIT_FAILURE;
+    }
+    printf ("client: msg_reply:\n%s\n", msg_reply);
+
+    return 2;
+}
+
+int _set_number_of_force_sensors(int num)
+{
+    return 2;
+}
+
+int _read_force_sensor(int id, double *forces)
+{
+    for(int i=0;i < 6; i++){
+        forces[i] = force_data[6*id+i];
+    }
+    return 0;
+}
+
+int _read_force_offset(int id, double *offsets)
+{
+    return 0;
+}
+
+int _write_force_offset(int id, double *offsets)
+{
+    return 0;
+}
+
+
 
 robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_accLimit(0), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_enable_poweroff_check(false),m_servoOnDelay(0)
 {
@@ -76,7 +157,7 @@ bool robot::init()
 
 
     set_number_of_joints(numJoints());
-    set_number_of_force_sensors(numSensors(Sensor::FORCE));
+    _set_number_of_force_sensors(numSensors(Sensor::FORCE));
     set_number_of_gyro_sensors(numSensors(Sensor::RATE_GYRO));
     set_number_of_accelerometers(numSensors(Sensor::ACCELERATION));
 
@@ -85,12 +166,12 @@ bool robot::init()
     force_sum.resize(numSensors(Sensor::FORCE));
 
     if ((number_of_joints() != (int)numJoints())
-	|| (number_of_force_sensors() != (int)numSensors(Sensor::FORCE))
+	|| (_number_of_force_sensors() != (int)numSensors(Sensor::FORCE))
 	|| (number_of_gyro_sensors() != (int)numSensors(Sensor::RATE_GYRO))
 	|| (number_of_accelerometers() != (int)numSensors(Sensor::ACCELERATION))){
       std::cerr << "VRML and IOB are inconsistent" << std::endl;
       std::cerr << "  joints:" << numJoints() << "(VRML), " << number_of_joints() << "(IOB)"  << std::endl;
-      std::cerr << "  force sensor:" << numSensors(Sensor::FORCE) << "(VRML), " << number_of_force_sensors() << "(IOB)"  << std::endl;
+      std::cerr << "  force sensor:" << numSensors(Sensor::FORCE) << "(VRML), " << _number_of_force_sensors() << "(IOB)"  << std::endl;
       std::cerr << "  gyro sensor:" << numSensors(Sensor::RATE_GYRO) << "(VRML), " << number_of_gyro_sensors() << "(IOB)"  << std::endl;
       std::cerr << "  accelerometer:" << numSensors(Sensor::ACCELERATION) << "(VRML), " << number_of_accelerometers() << "(IOB)"  << std::endl;
       return false;
@@ -305,7 +386,7 @@ void robot::calibrateForceSensorOneStep()
     if (force_calib_counter>0) {
         for (unsigned int j=0; j<numSensors(Sensor::FORCE); j++){
             double force[6];
-            read_force_sensor(j, force);
+            _read_force_sensor(j, force);
             for (int i=0; i<6; i++)
                 force_sum[j][i] += force[i];
         }
@@ -316,7 +397,7 @@ void robot::calibrateForceSensorOneStep()
                 for (int i=0; i<6; i++) {
                     force_sum[j][i] = -force_sum[j][i]/CALIB_COUNT;
                 }
-                write_force_offset(j,  force_sum[j].data());
+                _write_force_offset(j,  force_sum[j].data());
             }
 
             sem_post(&wait_sem);
@@ -350,6 +431,18 @@ void robot::gain_control()
 
 void robot::oneStep()
 {
+    int num = 1, ret;
+    char msg_reply[255];
+    client_msg_t msg;
+    msg.msg_no = _IO_MAX + num;
+    ret = MsgSend (force_sensor_fd, &msg, sizeof (msg), msg_reply, 255);
+    if (ret == -1){
+        fprintf (stderr, "Unable to MsgSend() to server: %s\n",
+                 strerror (errno));
+        return ;
+    }
+    memcpy (force_data, msg_reply, sizeof(float)*12);
+
     calibrateInertiaSensorOneStep();
     calibrateForceSensorOneStep();
     gain_control();
@@ -539,7 +632,7 @@ void robot::readAccelerometer(unsigned int i_rank, double *o_accs)
 
 void robot::readForceSensor(unsigned int i_rank, double *o_forces)
 {
-    read_force_sensor(i_rank, o_forces);
+    _read_force_sensor(i_rank, o_forces);
 }
 
 void robot::writeJointCommands(const double *i_commands)
@@ -686,7 +779,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 
     if (m_rLegForceSensorId >= 0){
         double force[6];
-        read_force_sensor(m_rLegForceSensorId, force);
+        _read_force_sensor(m_rLegForceSensorId, force);
         if (force[FZ] > totalMass()*G(2)*m_fzLimitRatio){
 	    std::cerr << time_string() << ": right Fz limit over: Fz = " << force[FZ] << std::endl;
             o_reason = EMG_FZ;
@@ -696,7 +789,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
     } 
     if (m_lLegForceSensorId >= 0){
         double force[6];
-        read_force_sensor(m_lLegForceSensorId, force);
+        _read_force_sensor(m_lLegForceSensorId, force);
         if (force[FZ] > totalMass()*G(2)*m_fzLimitRatio){
 	    std::cerr << time_string() << ": left Fz limit over: Fz = " << force[FZ] << std::endl;
             o_reason = EMG_FZ;

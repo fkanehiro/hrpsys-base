@@ -75,6 +75,34 @@ public:
     sendPacket(0xFAAF, id, 0x20, 0xFF, 0, 0, NULL);
   }
 
+  int setID(int id, unsigned char new_id) {// #4
+    if (new_id < 1 || 127 < new_id) {
+      fprintf(stderr, "[ServoSerial] Given ID %d is out of range\n", new_id);
+      return -1;
+    }
+    printf("[ServoSerial] setID %d: %d\n", id, new_id);
+    sendPacket(0xFAAF, id, 0x00, 0x04, 1, 1, &new_id);
+    sendPacket(0xFAAF, new_id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
+  }
+
+  int setReverse(int id, int is_reverse) {// #5
+    if (is_reverse != 0 && is_reverse != 1) {
+      printf("[ServoSerial] Change is_reverse %d to 1 as is_reverse should be 0 (false) or 1 (true)\n", is_reverse);
+      is_reverse = 1;
+    }
+    printf("[ServoSerial] setReverse %d: %d\n", id, is_reverse);
+    unsigned char data[1];
+    data[0] = is_reverse;
+    sendPacket(0xFAAF, id, 0x00, 0x05, 1, 1, data);
+    sendPacket(0xFAAF, id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
+  }
+
   int setPosition(int id, double rad) {// #30
     signed short angle = (signed short)(180/M_PI*rad*10);
     printf("[ServoSerial] setPosition %f, %04x\n", 180/M_PI*rad, angle);
@@ -257,6 +285,18 @@ public:
     return 0;
   }
 
+  int getROMData(int id, unsigned char *data) {
+    if (sendPacket(0xFAAF, id, 0x03, 0x00, 0, 1, NULL)<0) {
+      clear_packet();
+      return -1;
+    }
+    if ( receivePacket(id, 0x00, 30, data) < 0 ) {
+      clear_packet();
+      return -1;
+    }
+    return 0;
+  }
+
   int receivePacket(int id, int address, int length, unsigned char data[]){
     unsigned short header;
     unsigned char ids, flags, addr, len, count, sum;
@@ -361,7 +401,7 @@ public:
     timeout.tv_sec = 0;
     timeout.tv_usec = 200*1000;
     select(fd + 1, &set, NULL, NULL, &timeout);
-    ret2 = read(fd, &echo, 8+length*count);
+    ret2 = read(fd, echo, 8+length*count);
 
     
     fprintf(stderr, "[ServoSerial] received: ");

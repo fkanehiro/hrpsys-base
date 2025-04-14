@@ -333,7 +333,7 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
             }
             rad[i] = (angles.get_buffer()[i])*dir+offset;
         }
-        serial->setPositions(servo_id.size(), id, rad, tms);
+        serial->setPositions(len, id, rad, tms);
     }
     return true;
 }
