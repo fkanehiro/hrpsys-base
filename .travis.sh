@@ -61,6 +61,7 @@ echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
 sudo -E sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/ros-latest.list'
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
+sudo apt-get install dpkg -y # for https://github.com/ros/rosdistro/issues/19481
 
 travis_time_end
 travis_time_start disable_ssl
