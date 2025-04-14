@@ -173,7 +173,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names.push_back("lleg");
 
     // Generate FIK
-    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    ik_mode = OpenHRP::AutoBalancerService::SIMPLE;
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -197,7 +198,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         }
         tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         // FIK param
-        SimpleFullbodyInverseKinematicsSolver::IKparam tmp_fikp;
+        FullbodyInverseKinematicsSolver::IKparam tmp_fikp;
         tmp_fikp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), m_dt, false, std::string(m_profile.instance_name)));
         tmp_fikp.target_link = m_robot->link(ee_target);
         tmp_fikp.localPos = tp.localPos;
@@ -208,7 +209,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
           tmp_fikp.parent_name = root->name;
           root = root->parent;
         }
-        fik->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
+        fik->ikp.insert(std::pair<std::string, FullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
         // Fix for toe joint
         //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
         //   Without toe joints, "end-effector link == force-sensor link" is assumed.
@@ -508,7 +509,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         transition_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
       }
       if (control_mode != MODE_IDLE ) {
-        solveFullbodyIK();
+          switch(ik_mode){
+              case OpenHRP::AutoBalancerService::SIMPLE:
+                  solveSimpleFullbodyIK();
+                  break;
+              case OpenHRP::AutoBalancerService::FULLBODY:
+                  solveFullbodyIK();
+                  break;
+              default:
+                  break;
+          }
 //        /////// Inverse Dynamics /////////
 //        if(!idsb.is_initialized){
 //          idsb.setInitState(m_robot, m_dt);
@@ -1077,10 +1087,96 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
 
 void AutoBalancer::solveFullbodyIK ()
 {
+    std::vector<IKConstraint> ik_tgt_list;
+    {
+        IKConstraint tmp;
+        tmp.target_link_name = "WAIST";
+        tmp.localPos = hrp::Vector3::Zero();
+        tmp.localR = hrp::Matrix33::Identity();
+        tmp.targetPos = target_root_p;// will be ignored by selection_vec
+        tmp.targetRpy = hrp::rpyFromRot(target_root_R);
+//        tmp.constraint_weight << 0,0,0,1,1,1;
+        tmp.constraint_weight << 0,0,0,1e-6,1e-6,1e-6;// don't let base rot free (numerical error problem) 最小1e-6?
+        if(transition_interpolator_ratio < 1.0) tmp.constraint_weight << 0,0,0,1,1,1;//transition中に回転フリーは危ない
+        ik_tgt_list.push_back(tmp);
+    }{
+        IKConstraint tmp;
+        tmp.target_link_name = ikp["rleg"].target_link->name;
+        tmp.localPos = ikp["rleg"].localPos;
+        tmp.localR = ikp["rleg"].localR;
+        tmp.targetPos = ikp["rleg"].target_p0;
+        tmp.targetRpy = hrp::rpyFromRot(ikp["rleg"].target_r0);
+        tmp.constraint_weight << 1,1,3,3,3,1;
+        ik_tgt_list.push_back(tmp);
+    }{
+        IKConstraint tmp;
+        tmp.target_link_name = ikp["lleg"].target_link->name;
+        tmp.localPos = ikp["lleg"].localPos;
+        tmp.localR = ikp["lleg"].localR;
+        tmp.targetPos = ikp["lleg"].target_p0;
+        tmp.targetRpy = hrp::rpyFromRot(ikp["lleg"].target_r0);
+        tmp.constraint_weight << 1,1,3,3,3,1;
+        ik_tgt_list.push_back(tmp);
+    }{
+//        IKConstraint tmp;
+//        tmp.target_link_name = ikp["rarm"].target_link->name;
+//        tmp.localPos = ikp["rarm"].localPos;
+//        tmp.localR = ikp["rarm"].localR;
+//        tmp.targetPos = ikp["rarm"].target_p0;
+//        tmp.targetRpy = hrp::rpyFromRot(ikp["rarm"].target_r0);
+//        tmp.constraint_weight << 1,1,1,1,1,1;
+//        ik_tgt_list.push_back(tmp);
+    }{
+//        IKConstraint tmp;
+//        tmp.target_link_name = ikp["larm"].target_link->name;
+//        tmp.localPos = ikp["larm"].localPos;
+//        tmp.localR = ikp["larm"].localR;
+//        tmp.targetPos = ikp["larm"].target_p0;
+//        tmp.targetRpy = hrp::rpyFromRot(ikp["larm"].target_r0);
+//        tmp.constraint_weight << 1,1,1,1,1,1;
+//        ik_tgt_list.push_back(tmp);
+    }{
+        IKConstraint tmp;
+        tmp.target_link_name = "COM";
+        tmp.localPos = hrp::Vector3::Zero();
+        tmp.localR = hrp::Matrix33::Identity();
+        tmp.targetPos = ref_cog;// COM height will not be constraint
+        tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
+        //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
+        tmp.constraint_weight << 3,3,1e-6,1,1,1;// consider angular momentum (JAXON)
+//        tmp.constraint_weight << 3,3,1e-3,1e-5,1e-5,1e-5;// consider angular momentum (CHIDORI)
+        if(transition_interpolator_ratio < 1.0) tmp.constraint_weight.tail(3).fill(0);// disable angular momentum control in transition
+//        tmp.rot_precision = 1e-1;//angular momentum precision
+        ik_tgt_list.push_back(tmp);
+    }
+    // knee stretch protection
+    if(m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(10);
+    if(m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(10);
+//  // reduce chest joint move
+//    if(m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 10;
+    fik->dq_weight_all.tail(3).fill(1e1);//ベースリンク回転変位の重みは1e1以下は暴れる？
+    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-7);//上半身関節角のq_refへの緩い拘束(JAXON)
+    fik->rootlink_rpy_llimit << deg2rad(-10), deg2rad(-10), -DBL_MAX;
+    fik->rootlink_rpy_ulimit << deg2rad(10), deg2rad(10), DBL_MAX;
+  // set desired natural pose and pullback gain
+  for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
+  fik->revertRobotStateToCurrentAll();
+
+  int loop_result = 0;
+  const int IK_MAX_LOOP = 1;
+  loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
+}
+
+void AutoBalancer::solveSimpleFullbodyIK ()
+{
   // Set ik target params
   fik->target_root_p = target_root_p;
   fik->target_root_R = target_root_R;
-  for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+  for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
       it->second.target_p0 = ikp[it->first].target_p0;
       it->second.target_r0 = ikp[it->first].target_r0;
   }
@@ -1790,6 +1886,12 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (size_t i = 0; i < fik->ikp.size(); i++) {
     fik->ikp[ee_vec[i]].limb_length_margin = i_param.limb_length_margin[i];
   }
+  if (control_mode == MODE_IDLE) {
+    ik_mode = i_param.ik_mode;
+    std::cerr << "[" << m_profile.instance_name << "]   ik_mode = " << ik_mode << std::endl;
+  } else {
+    std::cerr << "[" << m_profile.instance_name << "]   ik_mode cannot be set in (control_mode != MODE_IDLE). Current ik_mode is " << ik_mode << std::endl;
+  }
   return true;
 };
 
@@ -1871,6 +1973,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   for (size_t i = 0; i < 3; i++) {
       i_param.additional_force_applied_point_offset[i] = additional_force_applied_point_offset(i);
   }
+  i_param.ik_mode = ik_mode;
   return true;
 };
 
