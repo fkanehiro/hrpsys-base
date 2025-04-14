@@ -30,8 +30,8 @@ class MotorHeatParam
   // default params for motor heat param
   void defaultParams(){
     temperature = 30.0;
-    currentCoeffs = 0.00003;
-    thermoCoeffs = 0.001;
+    currentCoeffs = 0.00001;
+    thermoCoeffs = 0.0012;
   } 
 
 };
