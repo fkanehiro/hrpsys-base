@@ -49,6 +49,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_zmpRefInitIn("zmpRefInit", m_zmpRefInit),
       m_qRefOut("qRef", m_qRef),
       m_tqRefOut("tqRef", m_tqRef),
+      m_dqRefOut("dqRef", m_dqRef),
       m_zmpRefOut("zmpRef", m_zmpRef),
       m_accRefOut("accRef", m_accRef),
       m_basePosOut("basePos", m_basePos),
@@ -88,6 +89,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // Set OutPort buffer
     addOutPort("qRef", m_qRefOut);
     addOutPort("tqRef", m_tqRefOut);
+    addOutPort("dqRef", m_dqRefOut);
     addOutPort("zmpRef", m_zmpRefOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("basePos", m_basePosOut);
@@ -175,6 +177,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // allocate memory for outPorts
     m_qRef.data.length(dof);
     m_tqRef.data.length(dof);
+    m_dqRef.data.length(dof);
     m_optionalData.data.length(optional_data_dim);
 
     return RTC::RTC_OK;
@@ -247,7 +250,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 	Guard guard(m_mutex);
 
         double zmp[3], acc[3], pos[3], rpy[3], wrenches[6*m_wrenches.size()];
-        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches, m_optionalData.data.get_buffer());
+        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches, m_optionalData.data.get_buffer(), m_dqRef.data.get_buffer());
         m_zmpRef.data.x = zmp[0];
         m_zmpRef.data.y = zmp[1];
         m_zmpRef.data.z = zmp[2];
@@ -304,6 +307,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_qRef.tm = m_qInit.tm;
         m_qRefOut.write();
         m_tqRefOut.write();
+        m_dqRefOut.write();
         m_zmpRefOut.write();
         m_accRefOut.write();
         m_basePosOut.write();
@@ -507,6 +511,40 @@ bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const Open
     return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms, angless.length()>0?angless[0].length():0);
 }
 
+bool SequencePlayer::setJointVelocitiesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence velocitiess, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+
+    std::vector<const double*> v_vels;
+    std::vector<double> v_tms;
+    for ( unsigned int i = 0; i < velocitiess.length(); i++ ) v_vels.push_back(velocitiess[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointVelocitiesSequenceOfGroup(gname, v_vels, v_tms, velocitiess.length()>0?velocitiess[0].length():0);
+}
+
+bool SequencePlayer::setJointTorquesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence torquess, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+
+    std::vector<const double*> v_torques;
+    std::vector<double> v_tms;
+    for ( unsigned int i = 0; i < torquess.length(); i++ ) v_torques.push_back(torquess[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointTorquesSequenceOfGroup(gname, v_torques, v_tms, torquess.length()>0?torquess[0].length():0);
+}
+
 bool SequencePlayer::clearJointAnglesOfGroup(const char *gname)
 {
     if ( m_debugLevel > 0 ) {
@@ -543,6 +581,68 @@ bool SequencePlayer::setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence
     for ( unsigned int i = 0; i < i_optionals.length(); i++ ) v_optionals.push_back(i_optionals[i].get_buffer());
     for ( unsigned int i = 0; i < i_tms.length();  i++ )  v_tms.push_back(i_tms[i]);
     return m_seq->setJointAnglesSequenceFull(v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals, v_tms);
+}
+
+bool SequencePlayer::setJointVelocities(const double *velocitys, double tm)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+    std::vector<const double*> v_vels;
+    std::vector<double> v_tms;
+    v_vels.push_back(velocitys);
+    v_tms.push_back(tm);
+    m_seq->setJointVelocitiesSequence(v_vels, v_tms);
+    return true;
+}
+
+bool SequencePlayer::setJointVelocitiesSequence(const OpenHRP::dSequenceSequence velocityss, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    std::vector<const double*> v_vels;
+    std::vector<double> v_tms;
+    for ( unsigned int i = 0; i < velocityss.length(); i++ ) v_vels.push_back(velocityss[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointVelocitiesSequence(v_vels, v_tms);
+}
+
+bool SequencePlayer::setJointTorques(const double *torques, double tm)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+    std::vector<const double*> v_torques;
+    std::vector<double> v_tms;
+    v_torques.push_back(torques);
+    v_tms.push_back(tm);
+    m_seq->setJointTorquesSequence(v_torques, v_tms);
+    return true;
+}
+
+bool SequencePlayer::setJointTorquesSequence(const OpenHRP::dSequenceSequence torquess, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    std::vector<const double*> v_torques;
+    std::vector<double> v_tms;
+    for ( unsigned int i = 0; i < torquess.length(); i++ ) v_torques.push_back(torquess[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointTorquesSequence(v_torques, v_tms);
 }
 
 bool SequencePlayer::setBasePos(const double *pos, double tm)
@@ -873,6 +973,30 @@ bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const dSequence& j
 
     if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
     return m_seq->setJointAnglesOfGroup(gname, jvs.get_buffer(), jvs.length(), tm);
+}
+
+bool SequencePlayer::setJointVelocitiesOfGroup(const char *gname, const dSequence& jvs, double tm)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+    return m_seq->setJointVelocitiesOfGroup(gname, jvs.get_buffer(), jvs.length(), tm);
+}
+
+bool SequencePlayer::setJointTorquesOfGroup(const char *gname, const dSequence& jvs, double tm)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+    return m_seq->setJointTorquesOfGroup(gname, jvs.get_buffer(), jvs.length(), tm);
 }
 
 bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
