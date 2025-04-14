@@ -30,6 +30,7 @@
 #include "interpolator.h"
 
 #include "VclipLinkPair.h"
+#include "FCLLinkPair.h"
 #include "CollisionDetectorService_impl.h"
 #include "../SoftErrorLimiter/beep.h"
 
@@ -161,16 +162,27 @@ class CollisionDetector
 
   
   // </rtc-template>
+  // VClip
   void setupVClipModel(hrp::BodyPtr i_body);
   void setupVClipModel(hrp::Link *i_link);
+#ifdef USE_FCL
+  // FCL
+  void setupFCLModel(hrp::BodyPtr i_body);
+  void setupFCLModel(hrp::Link *i_link);
+#endif // USE_FCL
 
  private:
   class CollisionLinkPair {
   public:
       CollisionLinkPair(VclipLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
-          pair = i_pair;
+          pair = static_cast<boost::intrusive_ptr<CollisionLibraryLinkPair> >(i_pair);
       }
-      VclipLinkPairPtr pair;
+#ifdef USE_FCL
+      CollisionLinkPair(FCLLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
+          pair = static_cast<boost::intrusive_ptr<CollisionLibraryLinkPair> >(i_pair);
+      }
+#endif // USE_FCL
+      boost::intrusive_ptr<CollisionLibraryLinkPair> pair;
       hrp::Vector3 point0, point1;
       double distance;
   };
@@ -181,9 +193,14 @@ class CollisionDetector
   GLbody *m_glbody;
 #endif // USE_HRPSYSUTIL
   std::vector<Vclip::Polyhedron *> m_VclipLinks;
+#ifdef USE_FCL
+  std::vector<FCLModel *> m_FCLLinks;
+#endif // USE_FCL
   std::vector<int> m_curr_collision_mask, m_init_collision_mask;
   bool m_use_limb_collision;
   bool m_use_viewer;
+  enum COLLISION_LIBRARY_TYPE {COLLISION_LIBRARY_VCLIP, COLLISION_LIBRARY_FCL_CONVEX, COLLISION_LIBRARY_FCL_MESH};
+  COLLISION_LIBRARY_TYPE m_collision_library;
   hrp::BodyPtr m_robot;
   std::map<std::string, CollisionLinkPair *> m_pair;
   int m_loop_for_check, m_collision_loop;
