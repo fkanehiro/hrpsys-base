@@ -76,6 +76,7 @@ RTC::ReturnCode_t PCDLoader::onInitialize()
     addPort(m_PCDLoaderServicePort);
     m_service0.setComp(this);
     m_isOutput.data = true;
+    m_isSetOffset = false;
     
     // Set service consumers to Ports
     
@@ -88,7 +89,7 @@ RTC::ReturnCode_t PCDLoader::onInitialize()
     return RTC::RTC_OK;
 }
 
-void PCDLoader::setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw)
+bool PCDLoader::setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw)
 {
     int npoint = cloud_raw->points.size();
     
@@ -121,9 +122,11 @@ void PCDLoader::setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::Point
         ptr[2] = cloud_raw->points[i].z;
         ptr += 4;
     }
+    
+    return (npoint > 0);
 }
 
-void PCDLoader::setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_raw)
+bool PCDLoader::setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_raw)
 {
     int npoint = cloud_raw->points.size();
     
@@ -172,9 +175,11 @@ void PCDLoader::setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::Po
         rgb[2] = cloud_raw->points[i].b;
         ptr += 4;
     }
+    
+    return (npoint > 0);
 }
 
-void PCDLoader::updateOffsetToCloudXYZ(void)
+bool PCDLoader::updateOffsetToCloudXYZ(void)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr clouds(new pcl::PointCloud<pcl::PointXYZ>);
     for (unsigned int i=0; i<m_offset.length(); i++){
@@ -205,10 +210,10 @@ void PCDLoader::updateOffsetToCloudXYZ(void)
             *clouds += *cloud_new;
         }
     }
-    setCloudXYZ(m_cloud, clouds);
+    return setCloudXYZ(m_cloud, clouds);
 }
 
-void PCDLoader::updateOffsetToCloudXYZRGB(void)
+bool PCDLoader::updateOffsetToCloudXYZRGB(void)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr clouds(new pcl::PointCloud<pcl::PointXYZRGB>);
     for (unsigned int i=0; i<m_offset.length(); i++){
@@ -239,7 +244,7 @@ void PCDLoader::updateOffsetToCloudXYZRGB(void)
             *clouds += *cloud_new;
         }
     }
-    setCloudXYZRGB(m_cloud, clouds);
+    return setCloudXYZRGB(m_cloud, clouds);
 }
 
 /*
@@ -310,14 +315,32 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
     if( m_offsetIn.isNew() ){
         m_offsetIn.read();
         if( !m_clouds_xyz.empty() ){
-            updateOffsetToCloudXYZ();
-            m_cloudOut.write();
-            m_isOutputOut.write();
+            if( updateOffsetToCloudXYZ() ){
+                m_cloudOut.write();
+                m_isOutputOut.write();
+            }
         }
         else if( !m_clouds_xyzrgb.empty() ){
-            updateOffsetToCloudXYZRGB();
-            m_cloudOut.write();
-            m_isOutputOut.write();
+            if( updateOffsetToCloudXYZRGB() ){
+                m_cloudOut.write();
+                m_isOutputOut.write();
+            }
+        }
+    }
+    
+    if( m_isSetOffset ){
+        m_isSetOffset = false;
+        if( !m_clouds_xyz.empty() ){
+            if( updateOffsetToCloudXYZ() ){
+                m_cloudOut.write();
+                m_isOutputOut.write();
+            }
+        }
+        else if( !m_clouds_xyzrgb.empty() ){
+            if( updateOffsetToCloudXYZRGB() ){
+                m_cloudOut.write();
+                m_isOutputOut.write();
+            }
         }
     }
     
@@ -387,6 +410,27 @@ bool PCDLoader::load(const std::string& filename, const std::string& label)
     }else{
         std::cerr << "fields[" << m_fields << "] is not supported" << std::endl;
     }
+}
+
+void PCDLoader::offset(const std::string& label, const hrp::Vector3& center,
+                       const hrp::Vector3& offsetP, const hrp::Matrix33& offsetR)
+{
+    m_offset.length(1);
+    OpenHRP::PCDOffset& offset = m_offset[0];
+    offset.center.x = center(0);
+    offset.center.y = center(1);
+    offset.center.z = center(2);
+    
+    offset.data.position.x = offsetP(0);
+    offset.data.position.y = offsetP(1);
+    offset.data.position.z = offsetP(2);
+    
+    hrp::Vector3 rpy(hrp::rpyFromRot(offsetR));
+    offset.data.orientation.r = rpy(0);
+    offset.data.orientation.p = rpy(1);
+    offset.data.orientation.y = rpy(2);
+    
+    m_isSetOffset = true;
 }
 
 extern "C"

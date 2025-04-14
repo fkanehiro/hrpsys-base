@@ -24,5 +24,7 @@ module OpenHRP
             @return true if loaded successfully, false otherwise
         */
         boolean load(in string filename, in string label);
+
+        void offset(in string label, in double cx, in double cy, in double cz, in double ox, in double oy, in double oz, in double r, in double p, in double y);
     };
 };
