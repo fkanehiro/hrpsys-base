@@ -1,6 +1,6 @@
 set(comp_sources PDcontroller.cpp)
 add_library(PDcontroller SHARED ${comp_sources})
-set(libs hrpModel-3.1 ${OPENRTM_LIBRARIES})
+set(libs hrpModel-${OPENHRP_LIBRARY_VERSION} ${OPENRTM_LIBRARIES})
 target_link_libraries(PDcontroller ${libs})
 set_target_properties(PDcontroller PROPERTIES PREFIX "")
 

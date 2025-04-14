@@ -11,7 +11,7 @@ if (USE_HRPSYSUTIL)
 else()
   # BVutil.cpp can be used without hrpsysUtil dependencies
   set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp VclipLinkPair.cpp ../../lib/util/BVutil.cpp ../SoftErrorLimiter/beep.cpp)
-  set(libs hrpModel-3.1 hrpCollision-3.1 hrpsysBaseStub)
+  set(libs hrpModel-${OPENHRP_LIBRARY_VERSION} hrpCollision-${OPENHRP_LIBRARY_VERSION} hrpsysBaseStub)
 endif()
 set(vclip_dir vclip_1.0/)
 set(vclip_sources ${vclip_dir}/src/vclip.C ${vclip_dir}/src/PolyTree.C ${vclip_dir}/src/mv.C)

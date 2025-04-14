@@ -29,7 +29,7 @@ void print_usage(char* progname)
     std::cerr << " run the view server and wait for the client to connect"<< std::endl;
     std::cerr << "  $ " << progname << std::endl;
     std::cerr << " run the view server, load the pa10 robot model, set the background to green and wait for the client to connect"<< std::endl;
-    std::cerr << "  $ " << progname << " /usr/share/OpenHRP-3.1/sample/model/PA10/pa10.main.wrl -bg 0 0.3 0"<< std::endl;
+    std::cerr << "  $ " << progname << " /usr/share/OpenHRP-3.2/sample/model/PA10/pa10.main.wrl -bg 0 0.3 0"<< std::endl;
 }
 
 int main(int argc, char *argv[])

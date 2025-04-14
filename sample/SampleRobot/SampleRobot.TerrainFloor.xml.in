@@ -14,7 +14,7 @@
    <property name="connection" value="HGcontroller0.dqOut:SampleRobot(Robot)0.dqRef"/>
    <property name="connection" value="HGcontroller0.ddqOut:SampleRobot(Robot)0.ddqRef"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1" url="@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/sample1.wrl">
    <property name="rtcName" value="SampleRobot(Robot)0"/>
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>

@@ -57,7 +57,7 @@ class TestJointAngle(unittest.TestCase):
         if os.path.exists(os.path.join(openhrp3_path, "bin")) :
             PKG_CONFIG_PATH='PKG_CONFIG_PATH=%s/lib/pkgconfig:$PKG_CONFIG_PATH'%(openhrp3_path)
 
-        cmd = "%s pkg-config openhrp3.1 --variable=idl_dir"%(PKG_CONFIG_PATH)
+        cmd = "%s pkg-config openhrp3.2 --variable=idl_dir"%(PKG_CONFIG_PATH)
         os.path.join(check_output(cmd, shell=True).rstrip(), "../sample/controller/SampleController/etc/Sample")
         h.loadPattern(os.path.join(check_output(cmd, shell=True).rstrip(), "../sample/controller/SampleController/etc/Sample"), 1)
         self.assertEqual(h.waitInterpolation(), None)

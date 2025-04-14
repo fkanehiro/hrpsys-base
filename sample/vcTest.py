@@ -6,8 +6,8 @@
 import rtm
 import commands
 
-openhrp_dir = commands.getoutput("pkg-config --variable=prefix openhrp3.1")
-project = "file://"+openhrp_dir+"/share/OpenHRP-3.1/sample/project/SampleRobot_inHouse.xml"
+openhrp_dir = commands.getoutput("pkg-config --variable=prefix openhrp3.2")
+project = "file://"+openhrp_dir+"/share/OpenHRP-3.2/sample/project/SampleRobot_inHouse.xml"
 vc = rtm.findRTC("VirtualCamera0")
 print "vc:",vc
 vc.setProperty("project", project)

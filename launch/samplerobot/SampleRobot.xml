@@ -14,7 +14,7 @@
    <property name="connection" value="HGcontroller0.dqOut:SampleRobot(Robot)0.dqRef"/>
    <property name="connection" value="HGcontroller0.ddqOut:SampleRobot(Robot)0.ddqRef"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1" url="/home/k-okada/ros/hydro/src/rtm-ros-robotics/openrtm_common/openhrp3/share/OpenHRP-3.1/sample/model/sample1.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1" url="/home/k-okada/ros/hydro/src/rtm-ros-robotics/openrtm_common/openhrp3/share/OpenHRP-3.2/sample/model/sample1.wrl">
    <property name="rtcName" value="SampleRobot(Robot)0"/>
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
@@ -147,7 +147,7 @@
    <property name="connection" value="HGcontroller0.dqOut:longfloor(Robot)0.dqRef"/>
    <property name="connection" value="HGcontroller0.ddqOut:longfloor(Robot)0.ddqRef"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="/home/k-okada/ros/hydro/src/rtm-ros-robotics/openrtm_common/openhrp3/share/OpenHRP-3.1/sample/model/longfloor.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="/home/k-okada/ros/hydro/src/rtm-ros-robotics/openrtm_common/openhrp3/share/OpenHRP-3.2/sample/model/longfloor.wrl">
    <property name="rtcName" value="longfloor(Robot)0"/>
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
