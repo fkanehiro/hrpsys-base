@@ -29,6 +29,8 @@ set(idl_files
   ReferenceForceUpdaterService.idl
   AccelerationFilterService.idl
   ObjectContactTurnaroundDetectorService.idl
+  WholeBodyMasterSlaveService.idl
+  HapticControllerService.idl
   PCDLoaderService.idl
   )
 

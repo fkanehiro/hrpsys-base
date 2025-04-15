@@ -1,0 +1,53 @@
+/**
+ * @file WholeBodyMasterSlaveService.idl
+ * @brief Services for the WholeBodyMasterSlave interface
+ */
+//#include "OpenHRPCommon.idl"
+module OpenHRP
+{
+  
+  interface WholeBodyMasterSlaveService
+  {
+    typedef sequence<double, 2> DblSequence2;
+    typedef sequence<double, 3> DblSequence3;
+    typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray2[2];
+    typedef double DblArray3[3];
+    typedef double DblArray4[4];
+    typedef sequence<string> StrSequence;
+
+    struct WholeBodyMasterSlaveParam
+    {
+        boolean auto_com_mode;
+        boolean auto_floor_h_mode;
+        boolean auto_foot_landing_by_act_cp;
+        boolean auto_foot_landing_by_act_zmp;
+        double additional_double_support_time;
+        double auto_com_foot_move_detect_height;
+        double auto_floor_h_detect_fz;
+        double auto_floor_h_reset_fz;
+        double base_to_hand_min_distance;
+        double capture_point_extend_ratio;
+        double com_filter_cutoff_hz;
+        double foot_collision_avoidance_distance;
+        double foot_landing_vel;
+        double force_double_support_com_h;
+        double human_to_robot_ratio;
+        double max_double_support_width;
+        double upper_body_rmc_ratio;
+        double single_foot_zmp_safety_distance;
+        double swing_foot_height_offset;
+        DblSequence3 com_offset;
+        DblSequence4 actual_foot_vert_fbio;
+        DblSequence4 safety_foot_vert_fbio;
+        StrSequence use_joints;
+        StrSequence use_targets;
+    };
+    boolean startWholeBodyMasterSlave();
+    boolean stopWholeBodyMasterSlave();
+    boolean pauseWholeBodyMasterSlave();
+    boolean resumeWholeBodyMasterSlave();
+    void setParams(in WholeBodyMasterSlaveParam i_param);
+    void getParams(out WholeBodyMasterSlaveParam i_param);
+  };
+};

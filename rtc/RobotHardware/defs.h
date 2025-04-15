@@ -14,7 +14,7 @@ enum {RL, FB};
 #define sgn(x)	(((x)>0)?1:-1)
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)	((x)*180/M_PI)
-#define sqr(x)		((x)*(x))
+//#define sqr(x)		((x)*(x)) //　conflict with boost?
 #define LPF(dT, omega, x, y)	((y) = (((dT)*(omega)/(1+(dT)*(omega)))*(x)+1/(1+(dT)*(omega))*(y)))
 
 template<class T>
