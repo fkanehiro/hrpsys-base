@@ -617,6 +617,36 @@ int robot::readDriverTemperature(int i)
     return temp;
 }
 
+int robot::readPgain(int i, double &o_pgain)
+{
+    return read_pgain(i, &o_pgain);
+}
+
+int robot::readDgain(int i, double &o_dgain)
+{
+    return read_dgain(i, &o_dgain);
+}
+
+int robot::readTorquePgain(int i, double &o_torquepgain)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+    return read_torque_pgain(i, &o_torquepgain);
+#else
+    o_torquepgain = 0.0;
+    return TRUE;
+#endif
+}
+
+int robot::readTorqueDgain(int i, double &o_torquedgain)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+    return read_torque_dgain(i, &o_torquedgain);
+#else
+    o_torquedgain = 0.0;
+    return TRUE;
+#endif
+}
+
 char *time_string()
 {
     struct timeval tv;

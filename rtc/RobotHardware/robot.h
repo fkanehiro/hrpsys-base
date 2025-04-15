@@ -126,6 +126,34 @@ public:
     int readDriverTemperature(int i);
 
     /**
+       \brief read pgain of motor driver[Nm/rad]
+       \param i joint id
+       \param TRUE if read successfully, E_ID otherwise
+     */
+    int readPgain(int i, double &o_pgain);
+
+    /**
+       \brief read dgain of motor driver[Nm/(rad/s)]
+       \param i joint id
+       \param TRUE if read successfully, E_ID otherwise
+     */
+    int readDgain(int i, double &o_dgain);
+
+    /**
+       \brief read pgain of motor driver[Nm/Nm]
+       \param i joint id
+       \param TRUE if read successfully, E_ID otherwise
+     */
+    int readTorquePgain(int i, double &o_torquepgain);
+
+    /**
+       \brief read dgain of motor driver[Nm/(Nm/s)]
+       \param i joint id
+       \param TRUE if read successfully, E_ID otherwise
+     */
+    int readTorqueDgain(int i, double &o_torquedgain);
+
+    /**
        \brief read voltage and current of the robot power source
        \param o_voltage voltage
        \param o_current current

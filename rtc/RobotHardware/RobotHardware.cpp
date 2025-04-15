@@ -57,6 +57,10 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_ctauOut("ctau", m_ctau),
     m_pdtauOut("pdtau", m_pdtau),
     m_servoStateOut("servoState", m_servoState),
+    m_pgainOut("pgain", m_pgain),
+    m_dgainOut("dgain", m_dgain),
+    m_torquePgainOut("torquePgain", m_torquePgain),
+    m_torqueDgainOut("torqueDgain", m_torqueDgain),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
     m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
@@ -86,6 +90,10 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   addOutPort("ctau", m_ctauOut);
   addOutPort("pdtau", m_pdtauOut);
   addOutPort("servoState", m_servoStateOut);
+  addOutPort("pgain", m_pgainOut);
+  addOutPort("dgain", m_dgainOut);
+  addOutPort("torquePgain", m_torquePgainOut);
+  addOutPort("torqueDgain", m_torqueDgainOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
   addOutPort("rstate2", m_rstate2Out);
 
@@ -141,6 +149,10 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_ctau.data.length(m_robot->numJoints());
   m_pdtau.data.length(m_robot->numJoints());
   m_servoState.data.length(m_robot->numJoints());
+  m_pgain.data.length(m_robot->numJoints());
+  m_dgain.data.length(m_robot->numJoints());
+  m_torquePgain.data.length(m_robot->numJoints());
+  m_torqueDgain.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
   m_dqRef.data.length(m_robot->numJoints());
   m_ddqRef.data.length(m_robot->numJoints());
@@ -335,6 +347,15 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   m_servoState.tm = tm;
 
+  for (unsigned int i=0; i<m_pgain.data.length(); i++) m_robot->readPgain(i, m_pgain.data[i]);
+  m_pgain.tm = tm;
+  for (unsigned int i=0; i<m_dgain.data.length(); i++) m_robot->readDgain(i, m_dgain.data[i]);
+  m_dgain.tm = tm;
+  for (unsigned int i=0; i<m_torquePgain.data.length(); i++) m_robot->readTorquePgain(i, m_torquePgain.data[i]);
+  m_torquePgain.tm = tm;
+  for (unsigned int i=0; i<m_torqueDgain.data.length(); i++) m_robot->readTorqueDgain(i, m_torqueDgain.data[i]);
+  m_torqueDgain.tm = tm;
+
   getStatus2(m_rstate2.data);
   m_rstate2.tm = tm;
   
@@ -346,6 +367,10 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_ctauOut.write();
   m_pdtauOut.write();
   m_servoStateOut.write();
+  m_pgainOut.write();
+  m_dgainOut.write();
+  m_torquePgainOut.write();
+  m_torqueDgainOut.write();
   for (unsigned int i=0; i<m_rateOut.size(); i++){
       m_rateOut[i]->write();
   }
