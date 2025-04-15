@@ -61,42 +61,42 @@ static double switching_inpact_absorber(double force, double lower_th, double up
 Stabilizer::Stabilizer(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_qCurrentIn("qCurrent", m_qCurrent),
-    m_qRefIn("qRef", m_qRef),
-    m_rpyIn("rpy", m_rpy),
-    m_zmpRefIn("zmpRef", m_zmpRef),
+    m_qCurrentIn("qCurrent", m_qCurrent), // 関節角度エンコーダ値
+    m_qRefIn("qRef", m_qRef), // 関節角度入力値
+    m_rpyIn("rpy", m_rpy), // IMU 姿勢計測値 (rpy)
+    m_zmpRefIn("zmpRef", m_zmpRef), // ZMP 入力値 (ベースリンク座標)
     m_StabilizerServicePort("StabilizerService"),
-    m_basePosIn("basePosIn", m_basePos),
-    m_baseRpyIn("baseRpyIn", m_baseRpy),
-    m_contactStatesIn("contactStates", m_contactStates),
-    m_toeheelRatioIn("toeheelRatio", m_toeheelRatio),
-    m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
-    m_qRefSeqIn("qRefSeq", m_qRefSeq),
-    m_walkingStatesIn("walkingStates", m_walkingStates),
-    m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset),
-    m_qRefOut("q", m_qRef),
-    m_tauOut("tau", m_tau),
-    m_zmpOut("zmp", m_zmp),
-    m_refCPOut("refCapturePoint", m_refCP),
-    m_actCPOut("actCapturePoint", m_actCP),
-    m_diffCPOut("diffCapturePoint", m_diffCP),
-    m_diffFootOriginExtMomentOut("diffFootOriginExtMoment", m_diffFootOriginExtMoment),
-    m_actContactStatesOut("actContactStates", m_actContactStates),
-    m_COPInfoOut("COPInfo", m_COPInfo),
-    m_emergencySignalOut("emergencySignal", m_emergencySignal),
+    m_basePosIn("basePosIn", m_basePos), // ベースリンク位置入力値
+    m_baseRpyIn("baseRpyIn", m_baseRpy), // ベースリンク姿勢入力値 (rpy)
+    m_contactStatesIn("contactStates", m_contactStates), // 各足の目標接触状態 (false: 遊脚, true: 支持脚)
+    m_toeheelRatioIn("toeheelRatio", m_toeheelRatio), // 各足の回転状態 (1 -> 0: べた足 -> つま先 or かかと)
+    m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime), // 各足の接地状態(遊脚<->支持脚)が変わるまでの時間
+    m_qRefSeqIn("qRefSeq", m_qRefSeq), // SequencePlayer が出力する関節角度 (補間中かどうかの判断のみに利用)
+    m_walkingStatesIn("walkingStates", m_walkingStates), // 歩行中かどうか (false: 非歩行, true: 歩行)
+    m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset), // 目標外力と釣り合うための重心位置修正量 (world 座標)
+    m_qRefOut("q", m_qRef), // 関節角度出力値
+    m_tauOut("tau", m_tau), // 関節トルク出力値
+    m_zmpOut("zmp", m_zmp), // ZMP 出力値 (ベースリンク座標)
+    m_refCPOut("refCapturePoint", m_refCP), // 目標 Capture Point (ベースリンク座標)
+    m_actCPOut("actCapturePoint", m_actCP), // 実 Capture Point (ベースリンク座標)
+    m_diffCPOut("diffCapturePoint", m_diffCP), // Capture Point 誤差 (world 座標)
+    m_diffFootOriginExtMomentOut("diffFootOriginExtMoment", m_diffFootOriginExtMoment), // モーメント誤差 (支持脚座標)
+    m_actContactStatesOut("actContactStates", m_actContactStates), // 各脚の実接触状態 (false: 遊脚, true: 支持脚)
+    m_COPInfoOut("COPInfo", m_COPInfo), // (COP 計算に必要な)各足に作用するモーメント (end-effector 座標)
+    m_emergencySignalOut("emergencySignal", m_emergencySignal), // 転倒判定フラグ (false: 非転倒, true: 転倒)
     // for debug output
-    m_originRefZmpOut("originRefZmp", m_originRefZmp),
-    m_originRefCogOut("originRefCog", m_originRefCog),
-    m_originRefCogVelOut("originRefCogVel", m_originRefCogVel),
-    m_originNewZmpOut("originNewZmp", m_originNewZmp),
-    m_originActZmpOut("originActZmp", m_originActZmp),
-    m_originActCogOut("originActCog", m_originActCog),
-    m_originActCogVelOut("originActCogVel", m_originActCogVel),
-    m_actBaseRpyOut("actBaseRpy", m_actBaseRpy),
-    m_currentBasePosOut("currentBasePos", m_currentBasePos),
-    m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy),
-    m_allRefWrenchOut("allRefWrench", m_allRefWrench),
-    m_allEECompOut("allEEComp", m_allEEComp),
+    m_originRefZmpOut("originRefZmp", m_originRefZmp), // 目標 ZMP (支持脚座標)
+    m_originRefCogOut("originRefCog", m_originRefCog), // 目標重心位置 (支持脚座標)
+    m_originRefCogVelOut("originRefCogVel", m_originRefCogVel), // 目標重心速度 (支持脚座標)
+    m_originNewZmpOut("originNewZmp", m_originNewZmp), // 安定化のために修正された目標 ZMP (支持脚座標)
+    m_originActZmpOut("originActZmp", m_originActZmp), // 実 ZMP (支持脚座標)
+    m_originActCogOut("originActCog", m_originActCog), // 実重心位置 (支持脚座標)
+    m_originActCogVelOut("originActCogVel", m_originActCogVel), // 実重心速度 (支持脚座標)
+    m_actBaseRpyOut("actBaseRpy", m_actBaseRpy), // 実ベースリンク姿勢 (rpy)
+    m_currentBasePosOut("currentBasePos", m_currentBasePos), // 姿勢追従制御により重心位置が変わらないように修正を加えたベースリンク位置
+    m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy), // ベースリンク姿勢指令値に姿勢追従制御の修正量を加えた姿勢
+    m_allRefWrenchOut("allRefWrench", m_allRefWrench), // 各足の目標レンチ (支持脚座標)
+    m_allEECompOut("allEEComp", m_allEEComp), // 安定化制御により修正された各足先位置姿勢修正量 (pos, rpy)
     m_debugDataOut("debugData", m_debugData),
     control_mode(MODE_IDLE),
     st_algorithm(OpenHRP::StabilizerService::TPCC),
