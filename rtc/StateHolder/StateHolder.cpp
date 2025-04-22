@@ -41,6 +41,7 @@ StateHolder::StateHolder(RTC::Manager* manager)
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_zmpIn("zmpIn", m_zmp),
+    m_wrenchesAllIn("wrenchesAllIn", m_wrenchesAll),
     m_optionalDataIn("optionalDataIn", m_optionalData),
     m_qOut("qOut", m_q),
     m_tqOut("tqOut", m_tq),
@@ -88,6 +89,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("zmpIn", m_zmpIn);
+    addInPort("wrenchesAllIn", m_wrenchesAllIn);
     addInPort("optionalDataIn", m_optionalDataIn);
   
   // Set OutPort buffer
@@ -179,6 +181,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     registerInPort(std::string(fsensor_names[i]+"In").c_str(), *m_wrenchesIn[i]);
     registerOutPort(std::string(fsensor_names[i]+"Out").c_str(), *m_wrenchesOut[i]);
   }
+  m_wrenchesAll.data.length(nforce*6);
 
   
   return RTC::RTC_OK;
@@ -254,6 +257,9 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
             m_wrenches[i].data[0] = m_wrenches[i].data[1] = m_wrenches[i].data[2] = 0.0;
             m_wrenches[i].data[3] = m_wrenches[i].data[4] = m_wrenches[i].data[5] = 0.0;
         }
+        for (unsigned int i=0; i<m_wrenchesAll.data.length(); i++){
+            m_wrenchesAll.data[i] = 0;
+        }
     }
 
     if (m_requestGoActual){
@@ -281,6 +287,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
       if ( m_wrenchesIn[i]->isNew() ) {
         m_wrenchesIn[i]->read();
       }
+      m_wrenchesAllIn.read();
     }
 
     double *a = m_baseTform.data.get_buffer();
