@@ -1,0 +1,38 @@
+module OpenHRP
+{
+  /**
+     @brief service to get/set software emergency mode
+   */
+  interface SoftwareEmergencyService
+  {
+    /**
+       @brief modes of software emergency
+     */
+    enum mode {
+      THROUGH, ///< Commands are sent without any modification
+      FREEZE,  ///< Command is fixed when emergency is detected
+      RELAX    ///< Commands are overwritten by measured states
+    };
+
+    /**
+       @brief set software emergency mode
+       @param m new mode
+       @return true if set successfully, false otherwise
+     */
+    boolean switchModeTo(in mode m);
+
+    /**
+       @brief get current software emergency mode
+       @return current software emergency mode
+     */
+    mode getMode();
+    
+    /**
+       @brief set button status
+       @param id button id
+       @param on true: button is bushed, false: button is released (for alternate button)
+       @return true if set successfully, false otherwise
+     */
+    boolean setButtonStatus(in long id, in boolean on);
+  };
+};

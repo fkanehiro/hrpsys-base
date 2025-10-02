@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=@HOSTNAME_UPPER@EmergencyButtonChecker
+Exec=gnome-terminal -t EmergencyButtonChecker -x bash -c "sudo @CMAKE_INSTALL_PREFIX@/bin/@HOSTNAME_UPPER@EmergencyButtonChecker.sh"
+Terminal=false
+Type=Application
+Icon=@CMAKE_INSTALL_PREFIX@/share/icons/emergency_stop_button.png
+
