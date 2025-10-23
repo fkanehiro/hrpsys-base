@@ -20,6 +20,6 @@ override_dh_auto_test:
 
 # Override the default configure step to pass the custom CMake option
 override_dh_auto_configure:
-	dh_auto_configure -- -DENABLE_PCL=OFF
+	dh_auto_configure -- -DCOMPILE_JAVA_STUFF=OFF -DBUILD_KALMAN_FILTER=OFF -DBUILD_STABILIZER=OFF -DUSE_HRPSYSEXT=OFF -DENABLE_PCL=OFF -DUSE_HRPSYSUTIL=OFF
 
 .PHONY: override_dh_compress override_dh_auto_test override_dh_auto_configure
