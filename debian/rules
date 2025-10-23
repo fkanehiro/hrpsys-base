@@ -18,4 +18,8 @@ override_dh_compress:
 override_dh_auto_test:
 	@echo "skipping auto test"
 
-.PHONY: override_dh_compress override_dh_auto_test
+# Override the default configure step to pass the custom CMake option
+override_dh_auto_configure:
+	dh_auto_configure -- -DENABLE_PCL=OFF
+
+.PHONY: override_dh_compress override_dh_auto_test override_dh_auto_configure
