@@ -173,7 +173,7 @@ if(ENABLE_PCL)
 endif()
 
 execute_process(
-  COMMAND python -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"VERSION\"))"
+  COMMAND python3 -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"VERSION\"))"
   OUTPUT_VARIABLE PYTHON_VERSION
   RESULT_VARIABLE PYTHON_VERSION_SUCCESS
   OUTPUT_STRIP_TRAILING_WHITESPACE)
