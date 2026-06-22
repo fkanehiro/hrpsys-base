@@ -14,22 +14,22 @@ if(UNIX)
     endif()
   else()
     find_program(OPENRTM_CONFIG_EXECUTABLE rtm2-config DOC "The location of the rtm2-config script")
-    mark_as_advanced(OPENRTM_CONFIG_EXECUTABLE)  
+    mark_as_advanced(OPENRTM_CONFIG_EXECUTABLE)
   endif()
 
   if(OPENRTM_CONFIG_EXECUTABLE)
     set(OPENRTM_FOUND TRUE)
-    
+
     execute_process(
       COMMAND ${OPENRTM_CONFIG_EXECUTABLE} --version
       OUTPUT_VARIABLE OPENRTM_VERSION
       RESULT_VARIABLE RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    
+
     if(NOT RESULT EQUAL 0)
       set(OPENRTM_FOUND FALSE)
     endif()
-    
+
     execute_process(
       COMMAND ${OPENRTM_CONFIG_EXECUTABLE} --prefix
       OUTPUT_VARIABLE OPENRTM_DIR
@@ -38,23 +38,29 @@ if(UNIX)
 
     if(RESULT EQUAL 0)
       if(OPENRTM_DIR)
-	if((NOT (OPENRTM_VERSION VERSION_LESS "1.1.0")) AND (OPENRTM_VERSION VERSION_LESS "1.2.0"))
-	  set(OPENRTM_IDL_DIR ${OPENRTM_DIR}/include/openrtm-1.1/rtm/idl)
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.1")
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/idl")
-        elseif(NOT (OPENRTM_VERSION VERSION_LESS "1.2.0") AND (OPENRTM_VERSION VERSION_LESS "2.0.0"))
-	  set(OPENRTM_IDL_DIR ${OPENRTM_DIR}/include/openrtm-1.2/rtm/idl)
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.2")
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.2/rtm/idl")
-        elseif(NOT (OPENRTM_VERSION VERSION_LESS "2.0.0"))
-	  set(OPENRTM_IDL_DIR ${OPENRTM_DIR}/include/openrtm-2.0/rtm/idl)
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-2.0")
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-2.0/rtm/idl")
-	else()
-	  set(OPENRTM_IDL_DIR ${OPENRTM_DIR}/include/rtm/idl)
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include")
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/rtm/idl")
-	endif()
+        string(REGEX MATCH "^([0-9]+)\\.([0-9]+)" _ "${OPENRTM_VERSION}")
+
+        set(OPENRTM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+        set(OPENRTM_VERSION_MINOR "${CMAKE_MATCH_2}")
+        set(OPENRTM_VERSION_MM "${OPENRTM_VERSION_MAJOR}.${OPENRTM_VERSION_MINOR}")
+
+        if(OPENRTM_VERSION_MM)
+          list(APPEND OPENRTM_INCLUDE_DIRS
+            "${OPENRTM_DIR}/include/openrtm-${OPENRTM_VERSION_MM}/rtm/idl"
+            "${OPENRTM_DIR}/include/openrtm-${OPENRTM_VERSION_MM}"
+          )
+          set(OPENRTM_IDL_DIR "${OPENRTM_DIR}/include/openrtm-${OPENRTM_VERSION_MM}/rtm/idl")
+        else()
+          set(OPENRTM_VERSION_MAJOR "")
+          set(OPENRTM_VERSION_MINOR "")
+          set(OPENRTM_VERSION_MM "")
+
+          set(OPENRTM_IDL_DIR "${OPENRTM_DIR}/rtm/idl")
+          list(APPEND OPENRTM_INCLUDE_DIRS
+            "${OPENRTM_DIR}/include/rtm/idl"
+            "${OPENRTM_DIR}/include"
+          )
+        endif()
       endif()
     else()
       set(OPENRTM_FOUND FALSE)
@@ -64,19 +70,19 @@ if(UNIX)
       COMMAND ${OPENRTM_CONFIG_EXECUTABLE} --cflags
       OUTPUT_VARIABLE OPENRTM_CXX_FLAGS
       RESULT_VARIABLE RESULT)
-    
+
     if(RESULT EQUAL 0)
       string(REGEX MATCHALL "-D.*[^ ;]+" OPENRTM_DEFINITIONS ${OPENRTM_CXX_FLAGS})
     else()
       set(OPENRTM_FOUND FALSE)
     endif()
-    
+
     execute_process(
       COMMAND ${OPENRTM_CONFIG_EXECUTABLE} --libs
       OUTPUT_VARIABLE OPENRTM_LIBRARIES
       RESULT_VARIABLE RESULT
       OUTPUT_STRIP_TRAILING_WHITESPACE)
-    
+
     if(RESULT EQUAL 0)
       string(REGEX MATCHALL "-L[^ ;]+" OPENRTM_LIBRARY_DIRS ${OPENRTM_LIBRARIES})
       string(REGEX REPLACE "-L" ";" OPENRTM_LIBRARY_DIRS ${OPENRTM_LIBRARY_DIRS})
@@ -91,38 +97,38 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-  if(NOT OPENRTM_DIR )
+  if(NOT OPENRTM_DIR)
     if(NOT $ENV{RTM_ROOT} STREQUAL "")
-	    set(OPENRTM_DIR $ENV{RTM_ROOT})
-	  endif()
-	endif()
-	if(OPENRTM_DIR )
-    set(OPENRTM_INCLUDE_DIRS ${OPENRTM_DIR} )
-	  set(OPENRTM_DEFINITIONS -D_WIN32_WINNT=0x0400;-DUSE_stub_in_nt_dll )
-	  set(OPENRTM_LIBRARY_DIRS ${OPENRTM_DIR}/bin )	
-	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_INCLUDE_DIRS}/rtm/idl")
-	  set(OPENRTM_LIBRARIES_RELEASE RTC042 ACE )
-	  foreach(library ${OPENRTM_LIBRARIES_RELEASE})
-	    list(APPEND OPENRTM_LIBRARIES optimized ${library} debug ${library}d )
-	  endforeach()
-	  list(APPEND OPENRTM_LIBRARIES ${OMNIORB_LIBRARIES} )
-	endif()
-	
-	if(NOT ACE_ROOT)
-	  if(NOT $ENV{ACE_ROOT} STREQUAL "")
-	    set(ACE_ROOT $ENV{ACE_ROOT})
-	  endif()
-	  set(ACE_ROOT ${ACE_ROOT} CACHE PATH "The top directory of ACE")
-	endif()
-	if(ACE_ROOT)
-	  include_directories(${ACE_ROOT})
-	 	link_directories(${ACE_ROOT}/lib)
+      set(OPENRTM_DIR $ENV{RTM_ROOT})
+    endif()
   endif()
-  
+  if(OPENRTM_DIR)
+    set(OPENRTM_INCLUDE_DIRS ${OPENRTM_DIR})
+    set(OPENRTM_DEFINITIONS -D_WIN32_WINNT=0x0400;-DUSE_stub_in_nt_dll)
+    set(OPENRTM_LIBRARY_DIRS ${OPENRTM_DIR}/bin)
+    list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_INCLUDE_DIRS}/rtm/idl")
+    set(OPENRTM_LIBRARIES_RELEASE RTC042 ACE)
+    foreach(library ${OPENRTM_LIBRARIES_RELEASE})
+      list(APPEND OPENRTM_LIBRARIES optimized ${library} debug ${library}d)
+    endforeach()
+    list(APPEND OPENRTM_LIBRARIES ${OMNIORB_LIBRARIES})
+  endif()
+
+  if(NOT ACE_ROOT)
+    if(NOT $ENV{ACE_ROOT} STREQUAL "")
+      set(ACE_ROOT $ENV{ACE_ROOT})
+    endif()
+    set(ACE_ROOT ${ACE_ROOT} CACHE PATH "The top directory of ACE")
+  endif()
+  if(ACE_ROOT)
+    include_directories(${ACE_ROOT})
+    link_directories(${ACE_ROOT}/lib)
+  endif()
+
   if(OPENRTM_DIR AND ACE_ROOT)
-	 	set(OPENRTM_FOUND TRUE)
-	endif()
-	
+    set(OPENRTM_FOUND TRUE)
+  endif()
+
 endif(WIN32)
 
 if(NOT OPENRTM_FOUND)

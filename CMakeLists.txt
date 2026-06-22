@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.25)
 project(hrpsys)
 
 enable_testing()
@@ -66,8 +66,7 @@ include_directories(${CMAKE_BINARY_DIR})
 
 # OpenRTM-aist(>= 1.0.0)
 find_package(OpenRTM REQUIRED)
-if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.2/rtm/RTObjectStateMachine.h"
-    OR EXISTS "${OPENRTM_DIR}/include/openrtm-2.0/rtm/RTObjectStateMachine.h")
+if(EXISTS "${OPENRTM_DIR}/include/openrtm-${OPENRTM_VERSION_MM}/rtm/RTObjectStateMachine.h")
 add_definitions(-DOPENRTM_VERSION_TRUNK)
 endif()
 
