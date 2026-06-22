@@ -1,0 +1,26 @@
+name: Package hrpsys-base
+on:
+  repository_dispatch:
+    types:
+    - package-master
+  push:
+    branches:
+    - "**"
+jobs:
+  package:
+    uses: jrl-umi3218/github-actions/.github/workflows/package-project.yml@master
+    with:
+      main-branch: ubuntu2204+rtm2
+      update-stable-and-head: true
+      with-openrtm2: true
+      latest-cmake: true
+      main-repo: ThomasDuvinage/hrpsys-base
+      # deps: '["ThomasDuvinage/choreonoid"]'
+      matrix: |
+          {
+            "dist": ["focal", "jammy"],
+            "arch": ["amd64"],
+          }
+    secrets:
+      CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+      GH_TOKEN: ${{ secrets.GH_PAGES_TOKEN }}

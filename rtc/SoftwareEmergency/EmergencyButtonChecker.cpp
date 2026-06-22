@@ -1,5 +1,6 @@
 #include <rtm/RTObject.h>
 #include <signal.h>
+#include <unistd.h>
 #include "hrpsys/idl/SoftwareEmergencyService.hh"
 #include "SoftwareEmergencyUtil.h"
 extern "C"{
