@@ -13,6 +13,7 @@ jobs:
       main-branch: ubuntu2204+rtm2
       update-stable-and-head: true
       with-openrtm2: true
+      latest-cmake: true
       main-repo: ThomasDuvinage/hrpsys-base
       # deps: '["ThomasDuvinage/choreonoid"]'
       matrix: |
