@@ -11,10 +11,10 @@
 #define ACCELERATION_CHECKER_H
 
 #include <rtm/idl/BasicDataType.hh>
+#include <hrpsys/idl/HRPDataTypes.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
-#include <hrpsys/idl/HRPDataTypes.hh>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
