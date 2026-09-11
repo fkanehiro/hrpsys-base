@@ -241,6 +241,11 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
 {
     if ( ! serial ) return true;
 
+    if ( angles.length() != servo_id.size() ) {
+        std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << servo_id.size() << std::endl;
+        return false;
+    }
+
     int id[servo_id.size()];
     double tms[servo_id.size()];
     double rad[servo_id.size()];
@@ -248,10 +253,6 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
         id[i] = servo_id[i];
         tms[i] = tm;
         rad[i] = (angles.get_buffer()[i]*servo_dir[i]+servo_offset[i]);
-    }
-    if ( angles.length() != servo_id.size() ) {
-        std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << servo_id.size() << std::endl;
-        return false;
     }
     return serial->setPositions(servo_id.size(), id, rad, tms) >= 0;
 }
@@ -323,16 +324,19 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
         for( unsigned int i = 0; i < len; i++ ) {
             id[i] = joint_groups[gname][i];
             tms[i] = tm;
-            double offset, dir;
-            for( unsigned int j = 0; j < servo_id.size(); j++ ) {
+            unsigned int j;
+            for( j = 0; j < servo_id.size(); j++ ) {
                 if ( servo_id[j] == id[i]) {
-                    offset = servo_offset[j];
-                    dir = servo_dir[j];
+                    break;
                 }
             }
-            rad[i] = (angles.get_buffer()[i])*dir+offset;
+            if ( j == servo_id.size() ) {
+                std::cerr << "[ERROR] " << m_profile.instance_name << ": unknown servo.id " << id[i] << std::endl;
+                return false;
+            }
+            rad[i] = (angles.get_buffer()[i])*servo_dir[j]+servo_offset[j];
         }
-        return serial->setPositions(servo_id.size(), id, rad, tms) >= 0;
+        return serial->setPositions(len, id, rad, tms) >= 0;
     }
     return true;
 }
@@ -457,4 +461,3 @@ extern "C"
   }
 
 };
-
