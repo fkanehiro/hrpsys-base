@@ -1,8 +1,16 @@
-FIND_PATH(
-QHULL_DIR
-NAMES include/qhull/qhull.h
-PATHS /usr /usr/local
-DOC "the top directory of qhull")
+IF (QNXNTO)
+    FIND_PATH(
+    QHULL_DIR
+    NAMES include/libqhull/libqhull.h
+    PATHS /usr /usr/local /opt/jsk
+    DOC "the top directory of qhull")
+ELSE (QNXNTO)
+    FIND_PATH(
+    QHULL_DIR
+    NAMES include/qhull/qhull.h
+    PATHS /usr /usr/local
+    DOC "the top directory of qhull")
+ENDIF (QNXNTO)
 
 IF ( QHULL_DIR )
     MESSAGE(STATUS "Found Qhull in ${QHULL_DIR}")

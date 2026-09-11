@@ -12,23 +12,146 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <time.h>
+#include <pthread.h>
+#include <vector>
 
 //http://www.futaba.co.jp/dbps_data/_material_/localhost/robot/servo/manuals/RS301CR_RS302CD_114.pdf
 
-#define cfsetspeed(term, baudrate)		\
-  cfsetispeed(term, baudrate);			\
-  cfsetospeed(term, baudrate);
-
-
 class ServoSerial {
+  enum { MAX_RETURN_BYTES = 8 + 255 };
+  pthread_mutex_t mutex;
+  bool mutex_ready;
+  std::vector<unsigned char> input;
+
+  // Getters hold this across send/echo/return. Recursive acquisition allows
+  // the existing public packet helpers to use the same lock.
+  class Guard {
+    ServoSerial *serial;
+  public:
+    Guard(ServoSerial *value) : serial(NULL) {
+      if (!value->mutex_ready) { errno = EIO; return; }
+      int error = pthread_mutex_lock(&value->mutex);
+      if (error) { errno = error; return; }
+      serial = value;
+    }
+    ~Guard() {
+      if (serial) pthread_mutex_unlock(&serial->mutex);
+    }
+    bool locked() const { return serial != NULL; }
+  private:
+    Guard(const Guard &);
+    Guard &operator=(const Guard &);
+  };
+  ServoSerial(const ServoSerial &);
+  ServoSerial &operator=(const ServoSerial &);
+
+  static double nowSeconds() {
+    struct timespec value;
+    if (clock_gettime(CLOCK_MONOTONIC, &value) < 0) return -1;
+    return value.tv_sec + value.tv_nsec * 1e-9;
+  }
+
+  // One deadline for the entire transfer, including interrupted/partial I/O.
+  int transferBytes(void *buffer, int size, double deadline, bool writing,
+                    int &done, bool read_some = false) {
+    done = 0;
+    while (done < size) {
+      double now = nowSeconds();
+      if (now < 0) return -1;
+      double remaining = deadline - now;
+      if (remaining <= 0) { errno = ETIMEDOUT; return -1; }
+      if (fd < 0 || fd >= FD_SETSIZE) { errno = EBADF; return -1; }
+      fd_set set;
+      FD_ZERO(&set);
+      FD_SET(fd, &set);
+      struct timeval timeout;
+      timeout.tv_sec = (long)remaining;
+      timeout.tv_usec = (long)((remaining - timeout.tv_sec) * 1e6);
+      int ready = select(fd + 1, writing ? NULL : &set,
+                         writing ? &set : NULL, NULL, &timeout);
+      if (ready < 0 && errno == EINTR) continue;
+      if (ready < 0) return -1;
+      if (!ready) { errno = ETIMEDOUT; return -1; }
+      char *next = static_cast<char *>(buffer) + done;
+      int count = writing ? write(fd, next, size - done) : read(fd, next, size - done);
+      if (count < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
+      if (count <= 0) { if (!count) errno = EIO; return -1; }
+      done += count;
+      if (!writing && read_some) return done;
+    }
+    return done;
+  }
+
+  // Scan within one deadline. Wrong-ID frames are discarded whole; invalid
+  // or incomplete headers must not hide a later complete valid frame.
+  int readFrame(const unsigned char *echo, int echo_size, int id, int address,
+                int length, unsigned char *result, double deadline) {
+    const size_t capacity = echo_size > MAX_RETURN_BYTES ? echo_size : MAX_RETURN_BYTES;
+    size_t received = 0;
+    while (true) {
+      double now = nowSeconds();
+      if (now < 0) return -1;
+      if (now >= deadline) { errno = ETIMEDOUT; return -1; }
+      for (size_t start = 0; start + 8 <= input.size(); ++start) {
+        const unsigned char *frame = &input[start];
+        bool is_echo = frame[0] == 0xFA && frame[1] == 0xAF;
+        bool is_return = frame[0] == 0xFD && frame[1] == 0xDF;
+        if (!is_echo && !is_return) continue;
+        size_t size = 8 + frame[5] * frame[6];
+        if (size > capacity || (is_return && frame[6] != 1)) continue;
+        if (start + size > input.size()) continue;
+        unsigned char sum = 0;
+        for (size_t i = 2; i + 1 < size; ++i) sum ^= frame[i];
+        if (sum != frame[size - 1]) continue;
+        bool match;
+        if (echo) {
+          match = is_echo && size == (size_t)echo_size && !memcmp(frame, echo, size);
+        } else {
+          match = is_return && frame[2] == id &&
+            frame[4] == address && frame[5] == length;
+        }
+        if (match) memcpy(result, frame, size);
+        input.erase(input.begin(), input.begin() + start + size);
+        if (match) return size;
+        start = (size_t)-1;
+      }
+      // Cap buffered memory and total garbage work independently of elapsed
+      // time. These are parser limits, not a bus recovery/silence guarantee.
+      if (input.size() > capacity)
+        input.erase(input.begin(), input.end() - capacity);
+      if (received >= 4 * capacity) { errno = EOVERFLOW; return -1; }
+      unsigned char bytes[256];
+      size_t remaining = 4 * capacity - received;
+      int size = remaining < sizeof(bytes) ? remaining : sizeof(bytes);
+      int done;
+      int count = transferBytes(bytes, size, deadline, false, done, true);
+      if (count < 0) return -1;
+      received += count;
+      input.insert(input.end(), bytes, bytes + count);
+    }
+  }
+
 public:
   int fd;
 
   ServoSerial(const char *devname)  {
-    fd = open(devname, O_RDWR);
+    fd = -1;
+    mutex_ready = false;
+    pthread_mutexattr_t attr;
+    int error = pthread_mutexattr_init(&attr);
+    if (!error) {
+      error = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+      if (!error) error = pthread_mutex_init(&mutex, &attr);
+      pthread_mutexattr_destroy(&attr);
+    }
+    if (error) { errno = error; return; }
+    mutex_ready = true;
+    fd = open(devname, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd<0) {
       char *pmesg = strerror(errno);
       fprintf (stderr, "[ServoSerial] failed to open %s: %s\n", devname, pmesg);
+      return;
     }
 
     struct termios term;
@@ -36,12 +159,19 @@ public:
     if (res<0) {
       char *pmesg = strerror(errno);
       fprintf (stderr, "[ServoSerial] failed to tcgetattr(): %s\n", pmesg);
+      close(fd);
+      fd = -1;
+      return;
     }
     cfmakeraw(&term);
-    res = cfsetspeed(&term, 115200);
+    res = cfsetospeed(&term, B115200);
+    if (res == 0) res = cfsetispeed(&term, B115200);
     if (res<0) {
       char *pmesg = strerror(errno);
       fprintf (stderr, "[ServoSerial] failed to cfsetspeed(): %s\n", pmesg);
+      close(fd);
+      fd = -1;
+      return;
     }
     term.c_iflag |= IGNPAR;            // Ignore characters with parity errors
     term.c_cflag |= (CLOCAL | CREAD);  // needed for QNX 6.3.2
@@ -61,6 +191,9 @@ public:
     if (res<0) {
       char *pmesg = strerror(errno);
       fprintf (stderr, "[ServoSerial] failed to tcsetattr(): %s\n", pmesg);
+      close(fd);
+      fd = -1;
+      return;
     }
 
     // clear existing packet
@@ -69,18 +202,46 @@ public:
 
   ~ServoSerial()  {
       close(fd);
+      if (mutex_ready) pthread_mutex_destroy(&mutex);
   }
 
   int setReset(int id) {
-    sendPacket(0xFAAF, id, 0x20, 0xFF, 0, 0, NULL);
+    return sendPacket(0xFAAF, id, 0x20, 0xFF, 0, 0, NULL) < 0 ? -1 : 0;
+  }
+
+  int setID(int id, unsigned char new_id) {// #4
+    if (new_id < 1 || 127 < new_id) {
+      fprintf(stderr, "[ServoSerial] Given ID %d is out of range\n", new_id);
+      return -1;
+    }
+    printf("[ServoSerial] setID %d: %d\n", id, new_id);
+    sendPacket(0xFAAF, id, 0x00, 0x04, 1, 1, &new_id);
+    sendPacket(0xFAAF, new_id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
+  }
+
+  int setReverse(int id, int is_reverse) {// #5
+    if (is_reverse != 0 && is_reverse != 1) {
+      printf("[ServoSerial] Change is_reverse %d to 1 as is_reverse should be 0 (false) or 1 (true)\n", is_reverse);
+      is_reverse = 1;
+    }
+    printf("[ServoSerial] setReverse %d: %d\n", id, is_reverse);
+    unsigned char data[1];
+    data[0] = is_reverse;
+    sendPacket(0xFAAF, id, 0x00, 0x05, 1, 1, data);
+    sendPacket(0xFAAF, id, 0x40, 0xFF, 0, 0, NULL);  // Write to Flash ROM
+    // I don't know why, but after the command above, powering off servo is required to get return packet from servo
+    // setReset instead of powering off doesn't work
+    return 0;
   }
 
   int setPosition(int id, double rad) {// #30
     signed short angle = (signed short)(180/M_PI*rad*10);
     printf("[ServoSerial] setPosition %f, %04x\n", 180/M_PI*rad, angle);
     unsigned char data[2] = {0xff & angle, 0xff & (angle>>8)};
-    sendPacket(0xFAAF, id, 0x00, 0x1E, 2, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x1E, 2, 1, data) < 0 ? -1 : 0;
   }
 
   int setPositions(int len, int *id, double *rad) {// #30
@@ -92,8 +253,7 @@ public:
       data[i*3 + 1] = 0xff & angle;
       data[i*3 + 2] = 0xff & (angle>>8);
     }
-    sendPacket(0xFAAF, 0x00, 0x00, 0x1E, 3, len, data);
-    return 0;
+    return sendPacket(0xFAAF, 0x00, 0x00, 0x1E, 3, len, data) < 0 ? -1 : 0;
   }
 
   int setPosition(int id, double rad, double sec) {// #32
@@ -102,8 +262,7 @@ public:
     printf("[ServoSerial] setPosition %f %f, %04x, %04x\n", 180/M_PI*rad, sec, angle, msec);
     unsigned char data[4] = {0xff & angle,0xff & (angle>>8),
 			     0xff & msec, 0xff & (msec>>8) };
-    sendPacket(0xFAAF, id, 0x00, 0x1E, 4, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x1E, 4, 1, data) < 0 ? -1 : 0;
   }
 
   int setPositions(int len, int *id, double *rad, double *sec) {// #32
@@ -118,36 +277,33 @@ public:
       data[i*5 + 3] = 0xff & msec;
       data[i*5 + 4] = 0xff & (msec>>8);
     }
-    sendPacket(0xFAAF, 0x00, 0x00, 0x1E, 5, len, data);
-    return 0;
+    return sendPacket(0xFAAF, 0x00, 0x00, 0x1E, 5, len, data) < 0 ? -1 : 0;
   }
 
   int setMaxTorque(int id, short percentage) {// #35
     unsigned char data[1];
     data[0] = percentage;
-    sendPacket(0xFAAF, id, 0x00, 0x23, 1, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x23, 1, 1, data) < 0 ? -1 : 0;
   }
 
   int setTorqueOn(int id) { // #36
     printf("[ServoSerial] setTorqueOn(%d)\n", id);
     unsigned char data[1] = {0x01};
-    sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data) < 0 ? -1 : 0;
   }
   int setTorqueOff(int id) { // #36
     printf("[ServoSerial] setTorqueOff(%d)\n", id);
     unsigned char data[1] = {0x00};
-    sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data) < 0 ? -1 : 0;
   }
   int setTorqueBreak(int id) { // #36
     unsigned char data[1] = {0x02};
-    sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data);
-    return 0;
+    return sendPacket(0xFAAF, id, 0x00, 0x24, 1, 1, data) < 0 ? -1 : 0;
   }
 
   int getPosition(int id, double *angle) { // #42
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -162,6 +318,8 @@ public:
   }
 
   int getDuration(int id, double *duration) { // #44
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -176,6 +334,8 @@ public:
   }
 
   int getSpeed(int id, double *duration) { // #46
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -190,6 +350,8 @@ public:
   }
 
   int getMaxTorque(int id, short *percentage) {
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x0B, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -204,6 +366,8 @@ public:
   }
 
   int getTorque(int id, double *torque) { // #48
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -218,6 +382,8 @@ public:
   }
 
   int getTemperature(int id, double *temperature) { // #50
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -232,6 +398,8 @@ public:
   }
 
   int getVoltage(int id, double *voltage) { // #52
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x09, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -246,6 +414,8 @@ public:
   }
 
   int getState(int id, unsigned char *data) {
+    Guard lock(this);
+    if (!lock.locked()) return -1;
     if (sendPacket(0xFAAF, id, 0x05, 0x00, 0, 1, NULL)<0) {
       clear_packet();
       return -1;
@@ -257,38 +427,55 @@ public:
     return 0;
   }
 
+  int getROMData(int id, unsigned char *data) {
+    if (sendPacket(0xFAAF, id, 0x03, 0x00, 0, 1, NULL)<0) {
+      clear_packet();
+      return -1;
+    }
+    if ( receivePacket(id, 0x00, 30, data) < 0 ) {
+      clear_packet();
+      return -1;
+    }
+    return 0;
+  }
+
   int receivePacket(int id, int address, int length, unsigned char data[]){
-    unsigned short header;
-    unsigned char ids, flags, addr, len, count, sum;
+    Guard lock(this);
+    if (!lock.locked()) return -1;
+    if (length < 0 || length > 255 || !data) { errno = EINVAL; return -1; }
+    double now = nowSeconds();
+    if (now < 0) return -1;
+    const double deadline = now + 0.2;
+    unsigned char packet[MAX_RETURN_BYTES];
+    if (readFrame(NULL, 0, id, address, length, packet, deadline) < 0) return -1;
+    // Do not copy unvalidated bytes into the caller's output buffer.
+    const unsigned char *payload = packet + 7;
+    unsigned char flags = packet[3];
+    int ret = 1;
+
+#ifdef SERVO_SERIAL_DEBUG
+    const unsigned char *prefix = packet;
+    unsigned char ids, addr, len, count, sum;
     unsigned char s = 0;
-    int ret;
-
     fprintf(stderr, "[ServoSerial] received: ");
-    read(fd, &header, 2);
-    printf("%02X ", header>>8); 
-    printf("%02X ", 0xff&header); fflush(stdout);
-    read(fd, &ids, 1);	s ^= ids;
+    printf("%02X %02X ", prefix[0], prefix[1]);
+    ids = prefix[2]; s ^= ids;
     printf("%02X " , ids); fflush(stdout);
-    read(fd, &flags, 1);s ^= flags;
+    flags = prefix[3]; s ^= flags;
     printf("%02X ", flags); fflush(stdout);
-    read(fd, &addr, 1);	s ^= addr;
+    addr = prefix[4]; s ^= addr;
     printf("%02X ", addr); fflush(stdout);
-    read(fd, &len, 1);	s ^= len;
+    len = prefix[5]; s ^= len;
     printf("%02X ", len); fflush(stdout);
-    read(fd, &count, 1);s ^= count;
+    count = prefix[6]; s ^= count;
     printf("%02X ", count); fflush(stdout);
-    read(fd, data, length);
     for(int i = 0; i < length; i++){
-      s ^= data[i];
-      printf("%02X ", data[i]); fflush(stdout);
+      s ^= payload[i];
+      printf("%02X ", payload[i]); fflush(stdout);
     }
-    ret = read(fd, &sum, 1);
+    sum = payload[length];
     printf("%02X - %02X\n", sum, s); fflush(stdout);
-
-    if ( address != addr || length != len || sum != s ) {
-      fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d)\n", id);
-      ret = -1;
-    }
+#endif
 
     if ( flags & 0x0002 ) { // 0b00000010
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) Fail to process received packet\n", id);
@@ -310,6 +497,8 @@ public:
       ret = -1;
     }
 
+    if (ret > 0) memcpy(data, payload, length);
+    else errno = EIO;
     return ret;
   }
 
@@ -317,6 +506,15 @@ public:
 		 int flag,   int address,
 		 int length, int count,
 		 void *data){
+
+    Guard lock(this);
+    if (!lock.locked()) return -1;
+    if (length < 0 || length > 255 || count < 0 || count > 255 ||
+        (length * count && !data)) { errno = EINVAL; return -1; }
+
+    // Discard only our previous transaction's buffered suffix. Bytes still
+    // arriving on the port are framed below; this does not prove freshness.
+    input.clear();
 
     unsigned char c, sum = 0x00, packet[8+length*count];
     c = 0xff & (header>>8); packet[0] = c;
@@ -334,65 +532,71 @@ public:
     }
     packet[7+length*count] = sum;
 
+#ifdef SERVO_SERIAL_DEBUG
     fprintf (stderr, "[ServoSerial] sending : ");
     for(int i = 0; i < 7 + length*count + 1; i++){
       fprintf(stderr, "%02X ", packet[i]);
     }
     fprintf(stderr, " - ");
+#endif
 
     int ret1;
-    ret1 = write(fd, packet, 8+length*count);
+    double now = nowSeconds();
+    if (now < 0) return -1;
+    int written;
+    ret1 = transferBytes(packet, 8+length*count, now + 0.2, true, written);
+    const int write_error = errno;
 
+#ifdef SERVO_SERIAL_DEBUG
     fprintf(stderr, "%d\n", ret1);
+#endif
 
     if (ret1 != 8+length*count) {
-        fprintf(stderr, "[ServoSerial] Failed to send packet to servo(id:%d)\n", id);
+        // These are bytes accepted by write(), not confirmed physical TX.
+        // Never restart the packet or flush output after a partial write.
+        fprintf(stderr, "[ServoSerial] Failed to send packet to servo(id:%d): %d/%d bytes queued, error:%d\n",
+                id, written, 8+length*count, write_error);
+	errno = write_error;
 	return -1;
     }
 
     unsigned char echo[8 + length*count];
     int ret2;
 
-    // wait at most 200 msec
-    fd_set set;
-    struct timeval timeout;
-    FD_ZERO(&set); /* clear the set */
-    FD_SET(fd, &set); /* add our file descriptor to the set */
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 200*1000;
-    select(fd + 1, &set, NULL, NULL, &timeout);
-    ret2 = read(fd, &echo, 8+length*count);
+    // wait at most 200 msec for the complete echo
+    now = nowSeconds();
+    if (now < 0) return -1;
+    ret2 = readFrame(packet, 8+length*count, id, address, length, echo, now + 0.2);
+    const int read_error = errno;
 
     
+#ifdef SERVO_SERIAL_DEBUG
     fprintf(stderr, "[ServoSerial] received: ");
     for(int i = 0; i < ret2; i++){
       fprintf(stderr, "%02X ", echo[i]);
     }
     fprintf(stderr, " - %d\n", ret2);
+#endif
     if (ret2 != ret1) {
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo (id:%d)\n", id);
+      errno = read_error;
       clear_packet();
       return -1;
     }
     
-    for(int i = 0; i < 8 + length*count; i++){
-      if (echo[i] != packet[i]) {
-	fprintf(stderr, "[ServoSerial] Failed to confirm packet from servo(id:%d)\n", id);
-	clear_packet();
-	ret1 = -1;
-      }
-    }
-
     return ret1;
   }
 
   void clear_packet() {
-    // clear existing packet
-    int oldf = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, oldf | O_NONBLOCK);
-    unsigned char c;
-    while ( read(fd, &c, 1) != EOF );
-    fcntl(fd, F_SETFL, oldf);
+    Guard lock(this);
+    if (!lock.locked()) return;
+    const int saved_errno = errno;
+    // Discard queued input only; this is not a remote-parser reset and does
+    // not prevent a delayed response from arriving after this call.
+    input.clear();
+    if (fd >= 0 && tcflush(fd, TCIFLUSH) < 0)
+      fprintf(stderr, "[ServoSerial] Failed to clear input: %s\n", strerror(errno));
+    errno = saved_errno;
   }
 };
 
