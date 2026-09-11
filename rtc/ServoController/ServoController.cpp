@@ -232,7 +232,7 @@ bool ServoController::setJointAngle(short id, double angle, double tm)
     if ( ! serial ) return true;
     double rad = angle * M_PI / 180;
     for(unsigned int i=0; i<servo_id.size(); i++){
-      if(servo_id[i]==id) serial->setPosition(id,rad+servo_offset[i], tm);
+      if(servo_id[i]==id && serial->setPosition(id,rad+servo_offset[i], tm) < 0) return false;
     }
     return true;
 }
@@ -253,8 +253,7 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
         std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << servo_id.size() << std::endl;
         return false;
     }
-    serial->setPositions(servo_id.size(), id, rad, tms);
-    return true;
+    return serial->setPositions(servo_id.size(), id, rad, tms) >= 0;
 }
 
 bool ServoController::getJointAngle(short id, double &angle)
@@ -262,6 +261,7 @@ bool ServoController::getJointAngle(short id, double &angle)
     if ( ! serial ) return true;
 
     int ret = serial->getPosition(id, &angle);
+    if (ret < 0) return false;
     for(unsigned int i=0; i<servo_id.size(); i++){
       if(servo_id[i]==id){
         double servo_offset_angle = servo_offset[i] * 180 / M_PI;
@@ -269,7 +269,6 @@ bool ServoController::getJointAngle(short id, double &angle)
       }
     }
 
-    if (ret < 0) return false;
     return true;
 }
 
@@ -333,7 +332,7 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
             }
             rad[i] = (angles.get_buffer()[i])*dir+offset;
         }
-        serial->setPositions(servo_id.size(), id, rad, tms);
+        return serial->setPositions(servo_id.size(), id, rad, tms) >= 0;
     }
     return true;
 }
@@ -436,13 +435,13 @@ bool ServoController::servoOff()
 {
     if ( ! serial ) return true;
 
-    int ret;
+    bool result = true;
 
     for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
-        ret = serial->setTorqueOff(*it);
-        if (ret < 0) return false;
+        // Keep attempting every ID when one OFF fails; report aggregate failure.
+        if (serial->setTorqueOff(*it) < 0) result = false;
     }
-    return true;
+    return result;
 }
 
 
@@ -458,5 +457,4 @@ extern "C"
   }
 
 };
-
 
