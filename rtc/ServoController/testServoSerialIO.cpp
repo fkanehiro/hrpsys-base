@@ -1,4 +1,8 @@
 // Linux PTY regression: no robot, ROS graph or physical serial device.
+// Keep checks and their side effects enabled in Release builds.
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <assert.h>
 #include <pty.h>
 #include <pthread.h>

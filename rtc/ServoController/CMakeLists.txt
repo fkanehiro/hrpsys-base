@@ -17,6 +17,20 @@ if(CMAKE_THREAD_LIBS_INIT)
   target_link_libraries(testServoSerial ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
+option(BUILD_SERVO_SERIAL_TEST "Build Linux PTY serial tests (no hardware access)" OFF)
+if(BUILD_SERVO_SERIAL_TEST AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(testServoSerialIO testServoSerialIO.cpp)
+  target_link_libraries(testServoSerialIO ${CMAKE_THREAD_LIBS_INIT} util)
+  foreach(cut RANGE 0 26)
+    add_test(NAME testServoSerialIO-fragment-${cut} COMMAND testServoSerialIO fragment ${cut})
+    set_tests_properties(testServoSerialIO-fragment-${cut} PROPERTIES TIMEOUT 3)
+  endforeach()
+  foreach(mode stale coalesced missing-echo missing-return checksum)
+    add_test(NAME testServoSerialIO-${mode} COMMAND testServoSerialIO ${mode})
+    set_tests_properties(testServoSerialIO-${mode} PROPERTIES TIMEOUT 3)
+  endforeach()
+endif()
+
 set(target ServoController ServoControllerComp)
 
 install(TARGETS ${target}
