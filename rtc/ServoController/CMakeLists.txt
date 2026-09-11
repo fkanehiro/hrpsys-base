@@ -1,4 +1,8 @@
 set(comp_sources ServoController.cpp ServoControllerService_impl.cpp)
+option(SERVO_SERIAL_DEBUG "Log ServoController serial packets (may block callers)" OFF)
+if(SERVO_SERIAL_DEBUG)
+  add_definitions(-DSERVO_SERIAL_DEBUG)
+endif()
 find_package(Threads REQUIRED)
 set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub ${CMAKE_THREAD_LIBS_INIT})
 add_library(ServoController SHARED ${comp_sources})

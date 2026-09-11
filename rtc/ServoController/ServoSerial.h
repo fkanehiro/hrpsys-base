@@ -409,11 +409,14 @@ public:
     unsigned char packet[MAX_RETURN_BYTES];
     if (readFrame(NULL, 0, id, address, length, packet, deadline) < 0) return -1;
     // Do not copy unvalidated bytes into the caller's output buffer.
-    const unsigned char *prefix = packet, *payload = packet + 7;
-    unsigned char ids, flags, addr, len, count, sum;
-    unsigned char s = 0;
+    const unsigned char *payload = packet + 7;
+    unsigned char flags = packet[3];
     int ret = 1;
 
+#ifdef SERVO_SERIAL_DEBUG
+    const unsigned char *prefix = packet;
+    unsigned char ids, addr, len, count, sum;
+    unsigned char s = 0;
     fprintf(stderr, "[ServoSerial] received: ");
     printf("%02X %02X ", prefix[0], prefix[1]);
     ids = prefix[2]; s ^= ids;
@@ -432,6 +435,7 @@ public:
     }
     sum = payload[length];
     printf("%02X - %02X\n", sum, s); fflush(stdout);
+#endif
 
     if ( flags & 0x0002 ) { // 0b00000010
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) Fail to process received packet\n", id);
@@ -488,11 +492,13 @@ public:
     }
     packet[7+length*count] = sum;
 
+#ifdef SERVO_SERIAL_DEBUG
     fprintf (stderr, "[ServoSerial] sending : ");
     for(int i = 0; i < 7 + length*count + 1; i++){
       fprintf(stderr, "%02X ", packet[i]);
     }
     fprintf(stderr, " - ");
+#endif
 
     int ret1;
     double now = nowSeconds();
@@ -501,7 +507,9 @@ public:
     ret1 = transferBytes(packet, 8+length*count, now + 0.2, true, written);
     const int write_error = errno;
 
+#ifdef SERVO_SERIAL_DEBUG
     fprintf(stderr, "%d\n", ret1);
+#endif
 
     if (ret1 != 8+length*count) {
         // These are bytes accepted by write(), not confirmed physical TX.
@@ -522,11 +530,13 @@ public:
     const int read_error = errno;
 
     
+#ifdef SERVO_SERIAL_DEBUG
     fprintf(stderr, "[ServoSerial] received: ");
     for(int i = 0; i < ret2; i++){
       fprintf(stderr, "%02X ", echo[i]);
     }
     fprintf(stderr, " - %d\n", ret2);
+#endif
     if (ret2 != ret1) {
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo (id:%d)\n", id);
       errno = read_error;
