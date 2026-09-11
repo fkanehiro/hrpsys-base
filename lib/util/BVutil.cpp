@@ -1,7 +1,12 @@
 #include <iostream>
+#if (defined __QNX__)
+#include <math.h>
+#endif
 extern "C" {
 #if (defined __APPLE__)
 #include <pcl/surface/qhull.h>
+#elif (defined __QNX__)
+#include <libqhull/qhull_a.h>
 #else
 #include <qhull/qhull_a.h>
 #endif
@@ -97,7 +102,8 @@ void convertToConvexHull(hrp::Link *i_link)
     coldetModel->setPrimitiveType(ColdetModel::SP_MESH);
     // qhull
     int numVertices = i_link->coldetModel->getNumVertices();
-    double points[numVertices*3];
+    double* points;
+    points = new double[numVertices*3];
     float v[3];
     for (int i=0; i<numVertices; i++){
         i_link->coldetModel->getVertex(i, v[0],v[1],v[2]);
@@ -123,6 +129,7 @@ void convertToConvexHull(hrp::Link *i_link)
         index[p] = vertexIndex;
         coldetModel->setVertex(vertexIndex++, points[p*3+0], points[p*3+1], points[p*3+2]);
     }
+    delete[] points;
     facetT *facet;
     int num = qh num_facets;
     int triangleIndex = 0;
