@@ -12,6 +12,17 @@ namespace RTC
 {
     hrpExecutionContext::~hrpExecutionContext()
     {
+#ifdef OPENRTM_VERSION_TRUNK
+        {
+            std::lock_guard<std::mutex> guard(m_svcmutex);
+            m_svc = false;
+        }
+        {
+            std::lock_guard<std::mutex> guard(m_workerthread.mutex_);
+            m_workerthread.running_ = true;
+            m_workerthread.cond_.notify_one();
+        }
+#endif
         wait();
         if (m_thread_pending)
             abort ();
@@ -105,6 +116,7 @@ namespace RTC
                         m_workerthread.cond_.wait(guard);
                     }
             }
+            if (!threadRunning()) break;   
             for (unsigned int i=0; i< list.length(); i++){
                 RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
                 rtobj->workerDo(); 
